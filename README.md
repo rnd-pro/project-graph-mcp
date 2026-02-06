@@ -28,6 +28,13 @@ Supports: Browser, API, CLI, and Integration tests.
 - `get_undocumented` — Find missing JSDoc (@test, @param, @returns)
 - `get_full_analysis` — Run ALL checks + Health Score (0-100)
 
+### 🔧 Custom Rules (Configurable)
+- `get_custom_rules` — List all rulesets and rules
+- `set_custom_rule` — Add/update a rule (agent can configure)
+- `check_custom_rules` — Run custom rules analysis
+
+Includes pre-built `symbiote.json` ruleset with 7 Symbiote.js standards.
+
 ### ⚙️ Filter Configuration
 - `get_filters` / `set_filters` — Configure excluded directories and patterns
 - `add_excludes` / `remove_excludes` — Modify exclude list
