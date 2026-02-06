@@ -55,6 +55,7 @@ Includes 10 pre-built rulesets (62 rules): React 18/19, Vue 3, Next.js 15, Expre
 - `get_filters` / `set_filters` — Configure excluded directories and patterns
 - `add_excludes` / `remove_excludes` — Modify exclude list
 - Automatic `.gitignore` parsing
+- **`.graphignore`** — Project-specific ignore file for custom rules (like .gitignore)
 
 ### 📘 Agent Instructions
 - `get_agent_instructions` — Get coding guidelines, JSDoc format, architecture standards
@@ -150,6 +151,20 @@ Agent workflow:
 4. get_test_summary("src/")
    → { total: 9, passed: 1, pending: 8, progress: 11 }
 ```
+
+## .graphignore
+
+Exclude files from custom rules checking (useful for files containing code examples):
+
+```
+# Comments start with #
+instructions.js          # Exact filename
+outdated-patterns.js     # Files with code examples
+*.min.js                 # Glob suffix
+dist/*                   # Glob prefix
+```
+
+Searches parent directories automatically (like .gitignore).
 
 ## Architecture
 
