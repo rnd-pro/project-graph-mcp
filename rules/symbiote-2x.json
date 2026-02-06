@@ -1,6 +1,6 @@
 {
-  "name": "symbiote",
-  "description": "Symbiote.js component standards",
+  "name": "symbiote-2x",
+  "description": "Symbiote.js 2.x component standards",
   "docs": "https://rnd-pro.com/symbiote/",
   "detect": {
     "packageJson": [
