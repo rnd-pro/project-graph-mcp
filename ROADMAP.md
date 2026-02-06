@@ -8,8 +8,8 @@
   - Detect orphan nodes (no incoming edges)
   - Exclude entry points (exports, event handlers)
 
-### Phase 2: JSDoc Generation
-- [ ] `generate_jsdoc` — Auto-generate JSDoc from AST
+### Phase 2: JSDoc Generation ✅
+- [x] `generate_jsdoc` — Auto-generate JSDoc from AST
   - Extract parameter names and types (if available)
   - Infer return type from return statements
   - Generate template with @test/@expect placeholders
