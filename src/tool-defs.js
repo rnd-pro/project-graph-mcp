@@ -356,4 +356,22 @@ export const TOOLS = [
       required: ['path'],
     },
   },
+  {
+    name: 'get_full_analysis',
+    description: 'Run ALL code quality checks at once. Returns combined report with Health Score (0-100).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Path to scan (e.g., "src/" or ".")',
+        },
+        includeItems: {
+          type: 'boolean',
+          description: 'Include individual items in report',
+        },
+      },
+      required: ['path'],
+    },
+  },
 ];

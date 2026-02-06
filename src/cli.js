@@ -13,6 +13,7 @@ import { getSimilarFunctions } from './similar-functions.js';
 import { getComplexity } from './complexity.js';
 import { getLargeFiles } from './large-files.js';
 import { getOutdatedPatterns } from './outdated-patterns.js';
+import { getFullAnalysis } from './full-analysis.js';
 
 /**
  * Print CLI help
@@ -39,6 +40,7 @@ Commands:
   complexity <path>      Analyze cyclomatic complexity (--min=1)
   largefiles <path>      Find files needing split (--problematic)
   outdated <path>        Find legacy patterns & redundant deps
+  analyze <path>         Run ALL checks with Health Score
   filters                Show current filter configuration
   instructions           Show agent guidelines (JSDoc, Arch)
   help                   Show this help
@@ -140,6 +142,12 @@ export async function runCLI(command, args) {
         const codeOnly = args.includes('--code');
         const depsOnly = args.includes('--deps');
         result = await getOutdatedPatterns(outPath, { codeOnly, depsOnly });
+        break;
+
+      case 'analyze':
+        const anPath = args.find(a => !a.startsWith('--')) || '.';
+        const includeItems = args.includes('--items');
+        result = await getFullAnalysis(anPath, { includeItems });
         break;
 
       case 'help':

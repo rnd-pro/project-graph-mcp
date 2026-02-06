@@ -14,6 +14,7 @@ import { getSimilarFunctions } from './similar-functions.js';
 import { getComplexity } from './complexity.js';
 import { getLargeFiles } from './large-files.js';
 import { getOutdatedPatterns } from './outdated-patterns.js';
+import { getFullAnalysis } from './full-analysis.js';
 
 /**
  * Create MCP server instance
@@ -165,6 +166,9 @@ export function createServer() {
             codeOnly: args.codeOnly,
             depsOnly: args.depsOnly,
           });
+
+        case 'get_full_analysis':
+          return await getFullAnalysis(args.path, { includeItems: args.includeItems });
 
         default:
           throw new Error(`Unknown tool: ${name}`);
