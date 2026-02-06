@@ -26,6 +26,7 @@ Supports: Browser, API, CLI, and Integration tests.
 - `get_large_files` — Files needing split (lines, functions, exports)
 - `get_outdated_patterns` — Legacy code patterns + redundant npm deps (Node 18+ built-ins)
 - `get_undocumented` — Find missing JSDoc (@test, @param, @returns)
+- `get_full_analysis` — Run ALL checks + Health Score (0-100)
 
 ### ⚙️ Filter Configuration
 - `get_filters` / `set_filters` — Configure excluded directories and patterns
