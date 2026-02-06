@@ -78,6 +78,56 @@
       "replacement": "onclick: '^handlerName'",
       "severity": "warning",
       "filePattern": "*.tpl.js"
+    },
+    {
+      "id": "symbiote-no-nested-keys",
+      "name": "No nested property keys",
+      "description": "Property keys nesting not supported (e.g., recentProjects.length)",
+      "pattern": "{{[^}]+\\.[^}]+}}",
+      "patternType": "regex",
+      "replacement": "Use flat property like recentProjectsLength",
+      "severity": "error",
+      "filePattern": "*.tpl.js"
+    },
+    {
+      "id": "symbiote-esm-only",
+      "name": "ESM only - no require()",
+      "description": "Use ESM imports, never CommonJS require()",
+      "pattern": "require(",
+      "patternType": "string",
+      "replacement": "import ... from '...'",
+      "severity": "error",
+      "filePattern": "*.js"
+    },
+    {
+      "id": "symbiote-no-tailwind",
+      "name": "No CSS frameworks",
+      "description": "Don't use Tailwind or other CSS frameworks",
+      "pattern": "tailwind",
+      "patternType": "string",
+      "replacement": "Use native CSS with design tokens",
+      "severity": "error",
+      "filePattern": "*.css"
+    },
+    {
+      "id": "symbiote-no-bem",
+      "name": "No BEM naming",
+      "description": "Use attribute selectors over BEM class naming",
+      "pattern": "__",
+      "patternType": "string",
+      "replacement": "[attr] selectors or custom-tag selectors",
+      "severity": "warning",
+      "filePattern": "*.css.js"
+    },
+    {
+      "id": "symbiote-no-double-quotes",
+      "name": "Single quotes for strings",
+      "description": "Use single quotes, not double quotes",
+      "pattern": "= \"",
+      "patternType": "string",
+      "replacement": "= '...'",
+      "severity": "info",
+      "filePattern": "*.js"
     }
   ]
 }
