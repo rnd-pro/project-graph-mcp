@@ -1,22 +1,30 @@
 # project-graph-mcp
 
-**MCP server for AI agents** — provides minified project graph and browser test checklists.
+**MCP server for AI agents** — provides minified project graph and universal test checklists.
 
 ## Features
 
-### 🗺️ Project Graph (124 tokens)
+### 🗺️ Project Graph (10-50x compression)
 - `get_skeleton` — Compact project overview with class/function counts
 - `expand` — Expand minified symbol to full code
 - `deps` — Dependency tree for any symbol
+- `usages` — Find all usages of a symbol
 - `get_focus_zone` — Auto-enriched context from git diff
 
-### 🧪 Test Checklists
+### 🧪 Test Checklists (Universal)
 - `get_pending_tests` — List tests from `@test/@expect` JSDoc annotations
 - `mark_test_passed` / `mark_test_failed` — Track progress
 - `get_test_summary` — Progress report
 
-### 📝 Documentation Analysis
-- `get_undocumented` — Find missing JSDoc annotations (levels: tests, params, all)
+Supports: Browser, API, CLI, and Integration tests.
+
+### ⚙️ Filter Configuration
+- `get_filters` / `set_filters` — Configure excluded directories and patterns
+- `add_excludes` / `remove_excludes` — Modify exclude list
+- Automatic `.gitignore` parsing
+
+### 📘 Agent Instructions
+- `get_agent_instructions` — Get coding guidelines, JSDoc format, architecture standards
 
 ## Installation
 
@@ -40,20 +48,24 @@ node src/server.js expand SN
 # Get dependencies
 node src/server.js deps SNG
 
-# List pending browser tests
+# List pending tests
 node src/server.js pending src/
 
 # Get test progress summary
 node src/server.js summary src/
 
-# Find undocumented code
-node src/server.js undocumented src/ --level=tests
+# Show filter configuration
+node src/server.js filters
+
+# Show agent instructions
+node src/server.js instructions
 
 # Show help
 node src/server.js help
 ```
 
-### Antigravity Configuration
+## MCP Configuration
+
 Add to `.gemini/settings.json`:
 ```json
 {
@@ -71,26 +83,31 @@ Add to `.gemini/settings.json`:
 Add to your code:
 ```javascript
 /**
- * Toggle pinned state
+ * Create new user via API
  * 
- * @test click: Select a node first
- * @test key: Press 'P' key
- * @expect attr: data-pinned attribute appears
- * @expect visual: 📌 pin icon visible
+ * @test request: POST /api/users with valid data
+ * @expect status: 201 Created
+ * @expect db: User row created
  */
-togglePin() { ... }
+async createUser(data) { ... }
 ```
+
+Supported types:
+- **Browser**: click, key, drag, type, scroll, hover
+- **API**: request, call, invoke, mock
+- **CLI**: run, exec, spawn, input
+- **Integration**: setup, action, teardown, wait
 
 Agent workflow:
 ```
-1. get_pending_tests("src/components")
-   → [{ id: "togglePin.0", type: "click", description: "Select a node" }]
+1. get_pending_tests("src/")
+   → [{ id: "createUser.0", type: "request", description: "POST /api/users" }]
 
-2. Agent runs browser test
+2. Agent runs the test
 
-3. mark_test_passed("togglePin.0")
+3. mark_test_passed("createUser.0")
 
-4. get_test_summary("src/components")
+4. get_test_summary("src/")
    → { total: 9, passed: 1, pending: 8, progress: 11 }
 ```
 
@@ -99,16 +116,22 @@ Agent workflow:
 ```
 project-graph-mcp/
 ├── src/
+│   ├── server.js           # Entry point (CLI/MCP mode switch)
+│   ├── mcp-server.js       # MCP server logic (stdio)
+│   ├── cli.js              # CLI command handling
+│   ├── tool-defs.js        # MCP tool definitions
+│   ├── tools.js            # Tool implementations
 │   ├── parser.js           # AST parser (Acorn)
 │   ├── graph-builder.js    # Minified graph + analysis
 │   ├── test-annotations.js # @test/@expect parsing
-│   ├── tools.js            # MCP tool implementations
-│   └── server.js           # MCP server (stdio)
+│   ├── filters.js          # Exclude patterns, .gitignore
+│   └── instructions.js     # Agent guidelines
 ├── vendor/
 │   ├── acorn.mjs           # AST parser (MIT, vendored)
 │   └── walk.mjs            # AST walker (MIT, vendored)
 └── tests/
-    └── parser.test.js      # Unit tests
+    ├── parser.test.js      # Parser tests
+    └── mcp.test.js         # Server tests
 ```
 
 ## Skeleton Example
