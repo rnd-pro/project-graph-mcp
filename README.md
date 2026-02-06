@@ -66,62 +66,12 @@ node src/server.js help
 
 ## MCP Configuration
 
-### Antigravity / Gemini CLI
-Add to `.gemini/settings.json`:
-```json
-{
-  "mcpServers": {
-    "project-graph": {
-      "command": "node",
-      "args": ["/path/to/project-graph-mcp/src/server.js"]
-    }
-  }
-}
-```
-
-### Cursor
-Add to `.cursor/mcp.json`:
-```json
-{
-  "mcpServers": {
-    "project-graph": {
-      "command": "node",
-      "args": ["/path/to/project-graph-mcp/src/server.js"]
-    }
-  }
-}
-```
-
-### Claude Desktop
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
-```json
-{
-  "mcpServers": {
-    "project-graph": {
-      "command": "node",
-      "args": ["/path/to/project-graph-mcp/src/server.js"]
-    }
-  }
-}
-```
-
-### OpenCode / Crush
-Add to `~/.config/opencode/config.json`:
-```json
-{
-  "mcp": {
-    "servers": {
-      "project-graph": {
-        "command": "node",
-        "args": ["/path/to/project-graph-mcp/src/server.js"]
-      }
-    }
-  }
-}
-```
-
-### Any MCP Client
-The server uses **stdio transport** — pass JSON-RPC messages via stdin/stdout.
+See **[CONFIGURATION.md](CONFIGURATION.md)** for client-specific setup:
+- Antigravity / Gemini CLI
+- Cursor
+- Claude Desktop  
+- OpenCode / Crush
+- VS Code + Copilot
 
 ## Test Annotations
 
