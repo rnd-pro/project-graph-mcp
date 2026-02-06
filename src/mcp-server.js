@@ -9,6 +9,7 @@ import { getFilters, setFilters, addExcludes, removeExcludes, resetFilters } fro
 import { getInstructions } from './instructions.js';
 import { getUndocumentedSummary } from './undocumented.js';
 import { getDeadCode } from './dead-code.js';
+import { generateJSDoc, generateJSDocFor } from './jsdoc-generator.js';
 
 /**
  * Create MCP server instance
@@ -136,6 +137,12 @@ export function createServer() {
         // Code Quality
         case 'get_dead_code':
           return await getDeadCode(args.path);
+
+        case 'generate_jsdoc':
+          if (args.name) {
+            return generateJSDocFor(args.path, args.name);
+          }
+          return generateJSDoc(args.path);
 
         default:
           throw new Error(`Unknown tool: ${name}`);

@@ -258,4 +258,22 @@ export const TOOLS = [
       required: ['path'],
     },
   },
+  {
+    name: 'generate_jsdoc',
+    description: 'Generate JSDoc template for a file or specific function. Returns ready-to-use JSDoc blocks.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Path to JS file',
+        },
+        name: {
+          type: 'string',
+          description: 'Optional: specific function/method name',
+        },
+      },
+      required: ['path'],
+    },
+  },
 ];

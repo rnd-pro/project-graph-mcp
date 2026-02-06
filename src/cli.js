@@ -8,6 +8,7 @@ import { getFilters, addExcludes, resetFilters } from './filters.js';
 import { getInstructions } from './instructions.js';
 import { getUndocumentedSummary } from './undocumented.js';
 import { getDeadCode } from './dead-code.js';
+import { generateJSDoc } from './jsdoc-generator.js';
 
 /**
  * Print CLI help
@@ -29,6 +30,7 @@ Commands:
   summary <path>         Get test progress summary
   undocumented <path>    Find missing JSDoc (--level=tests|params|all)
   deadcode <path>        Find unused functions/classes
+  jsdoc <file>           Generate JSDoc for file
   filters                Show current filter configuration
   instructions           Show agent guidelines (JSDoc, Arch)
   help                   Show this help
@@ -95,6 +97,15 @@ export async function runCLI(command, args) {
       case 'deadcode':
         const dcPath = args[0] || '.';
         result = await getDeadCode(dcPath);
+        break;
+
+      case 'jsdoc':
+        const jsPath = args[0];
+        if (!jsPath) {
+          console.error('Usage: jsdoc <file>');
+          process.exit(1);
+        }
+        result = generateJSDoc(jsPath);
         break;
 
       case 'help':
