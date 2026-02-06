@@ -15,6 +15,7 @@ import { getComplexity } from './complexity.js';
 import { getLargeFiles } from './large-files.js';
 import { getOutdatedPatterns } from './outdated-patterns.js';
 import { getFullAnalysis } from './full-analysis.js';
+import { getCustomRules, setCustomRule, checkCustomRules } from './custom-rules.js';
 
 /**
  * Create MCP server instance
@@ -169,6 +170,18 @@ export function createServer() {
 
         case 'get_full_analysis':
           return await getFullAnalysis(args.path, { includeItems: args.includeItems });
+
+        case 'get_custom_rules':
+          return await getCustomRules();
+
+        case 'set_custom_rule':
+          return await setCustomRule(args.ruleSet, args.rule);
+
+        case 'check_custom_rules':
+          return await checkCustomRules(args.path, {
+            ruleSet: args.ruleSet,
+            severity: args.severity,
+          });
 
         default:
           throw new Error(`Unknown tool: ${name}`);

@@ -1,0 +1,83 @@
+{
+  "name": "symbiote",
+  "description": "Symbiote.js component standards",
+  "rules": [
+    {
+      "id": "symbiote-no-host-setattribute",
+      "name": "No direct setAttribute on host",
+      "description": "Use sub() + setAttribute for reactive host attributes",
+      "pattern": "this.setAttribute",
+      "patternType": "string",
+      "replacement": "sub('prop', v => this.setAttribute(...))",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "exclude": [
+        "*.test.js",
+        "*.spec.js"
+      ]
+    },
+    {
+      "id": "symbiote-no-host-style",
+      "name": "No direct style on host",
+      "description": "Use template binding ${{ 'style.x': 'prop' }}",
+      "pattern": "this.style.",
+      "patternType": "string",
+      "replacement": "${{ 'style.x': 'propName' }}",
+      "severity": "warning",
+      "filePattern": "*.js"
+    },
+    {
+      "id": "symbiote-no-addeventlistener",
+      "name": "No addEventListener on this",
+      "description": "Use template binding ${{ onclick: 'handler' }}",
+      "pattern": "this.addEventListener",
+      "patternType": "string",
+      "replacement": "${{ onclick: 'handlerName' }}",
+      "severity": "info",
+      "filePattern": "*.js"
+    },
+    {
+      "id": "symbiote-no-createelement",
+      "name": "No createElement for lists",
+      "description": "Use Itemize API instead of manual DOM creation",
+      "pattern": "document.createElement",
+      "patternType": "string",
+      "replacement": "itemize=\"items\" in template",
+      "severity": "warning",
+      "filePattern": "*.js"
+    },
+    {
+      "id": "symbiote-no-innerhtml",
+      "name": "No innerHTML manipulation",
+      "description": "Use Symbiote reactive bindings or Itemize",
+      "pattern": ".innerHTML",
+      "patternType": "string",
+      "replacement": "Itemize API or template bindings",
+      "severity": "error",
+      "filePattern": "*.js"
+    },
+    {
+      "id": "symbiote-triple-file",
+      "name": "Triple-file partitioning",
+      "description": "Components should be split into .js, .tpl.js, .css.js",
+      "pattern": "template = html`",
+      "patternType": "string",
+      "replacement": "Import from ComponentName.tpl.js",
+      "severity": "info",
+      "filePattern": "*.js",
+      "exclude": [
+        "*.tpl.js"
+      ]
+    },
+    {
+      "id": "symbiote-itemize-parent-handler",
+      "name": "Use ^ prefix for parent handlers in Itemize",
+      "description": "Handlers in itemize items need ^ prefix to access parent scope",
+      "pattern": "onclick: '(?!\\^)",
+      "patternType": "regex",
+      "replacement": "onclick: '^handlerName'",
+      "severity": "warning",
+      "filePattern": "*.tpl.js"
+    }
+  ]
+}

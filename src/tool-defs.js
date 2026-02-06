@@ -374,4 +374,52 @@ export const TOOLS = [
       required: ['path'],
     },
   },
+  {
+    name: 'get_custom_rules',
+    description: 'List all custom code analysis rules. Rules are stored in JSON files in rules/ directory.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
+  {
+    name: 'set_custom_rule',
+    description: 'Add or update a custom code analysis rule. Creates ruleset if it does not exist.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        ruleSet: {
+          type: 'string',
+          description: 'Name of ruleset (e.g., "symbiote", "react", "custom")',
+        },
+        rule: {
+          type: 'object',
+          description: 'Rule definition with id, name, description, pattern, patternType, replacement, severity, filePattern',
+        },
+      },
+      required: ['ruleSet', 'rule'],
+    },
+  },
+  {
+    name: 'check_custom_rules',
+    description: 'Run custom rules analysis on a directory. Returns violations found.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Path to scan',
+        },
+        ruleSet: {
+          type: 'string',
+          description: 'Optional: specific ruleset to use',
+        },
+        severity: {
+          type: 'string',
+          description: 'Optional: filter by severity (error/warning/info)',
+        },
+      },
+      required: ['path'],
+    },
+  },
 ];
