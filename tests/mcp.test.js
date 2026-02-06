@@ -169,4 +169,24 @@ describe('MCP Server', () => {
     assert.ok(Array.isArray(content.items), 'Should have items array');
   });
 
+  it('should execute get_dead_code tool', async () => {
+    const { createServer } = await import('../src/mcp-server.js');
+    const server = createServer();
+
+    const response = await server.handleRequest({
+      jsonrpc: '2.0',
+      method: 'tools/call',
+      params: {
+        name: 'get_dead_code',
+        arguments: { path: 'src' },
+      },
+      id: 8,
+    });
+
+    assert.ok(response.result, 'Should have result');
+    const content = JSON.parse(response.result.content[0].text);
+    assert.ok(typeof content.total === 'number', 'Should have total count');
+    assert.ok(content.byType, 'Should have byType breakdown');
+  });
+
 });

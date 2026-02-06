@@ -8,6 +8,7 @@ import { getPendingTests, markTestPassed, markTestFailed, getTestSummary, resetT
 import { getFilters, setFilters, addExcludes, removeExcludes, resetFilters } from './filters.js';
 import { getInstructions } from './instructions.js';
 import { getUndocumentedSummary } from './undocumented.js';
+import { getDeadCode } from './dead-code.js';
 
 /**
  * Create MCP server instance
@@ -131,6 +132,10 @@ export function createServer() {
         // Documentation
         case 'get_undocumented':
           return getUndocumentedSummary(args.path, args.level || 'tests');
+
+        // Code Quality
+        case 'get_dead_code':
+          return await getDeadCode(args.path);
 
         default:
           throw new Error(`Unknown tool: ${name}`);

@@ -242,4 +242,20 @@ export const TOOLS = [
       required: ['path'],
     },
   },
+
+  // Code Quality
+  {
+    name: 'get_dead_code',
+    description: 'Find unused functions/classes (dead code). Use for cleanup.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Path to scan (e.g., "src/")',
+        },
+      },
+      required: ['path'],
+    },
+  },
 ];

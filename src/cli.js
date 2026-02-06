@@ -7,6 +7,7 @@ import { getPendingTests, getTestSummary } from './test-annotations.js';
 import { getFilters, addExcludes, resetFilters } from './filters.js';
 import { getInstructions } from './instructions.js';
 import { getUndocumentedSummary } from './undocumented.js';
+import { getDeadCode } from './dead-code.js';
 
 /**
  * Print CLI help
@@ -27,6 +28,7 @@ Commands:
   pending <path>         List pending @test/@expect tests
   summary <path>         Get test progress summary
   undocumented <path>    Find missing JSDoc (--level=tests|params|all)
+  deadcode <path>        Find unused functions/classes
   filters                Show current filter configuration
   instructions           Show agent guidelines (JSDoc, Arch)
   help                   Show this help
@@ -88,6 +90,11 @@ export async function runCLI(command, args) {
         const level = args.find(a => a.startsWith('--level='))?.split('=')[1] || 'tests';
         const uPath = args.find(a => !a.startsWith('--')) || '.';
         result = getUndocumentedSummary(uPath, level);
+        break;
+
+      case 'deadcode':
+        const dcPath = args[0] || '.';
+        result = await getDeadCode(dcPath);
         break;
 
       case 'help':
