@@ -1,0 +1,12 @@
+# Project Graph Ignore File
+# Files matching these patterns are excluded from custom rules checking
+
+# Exclude files containing code examples (may trigger false positives)
+instructions.js
+outdated-patterns.js
+
+# Exclude generated files
+*.min.js
+*.bundle.js
+dist/*
+build/*

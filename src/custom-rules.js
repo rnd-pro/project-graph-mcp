@@ -11,6 +11,58 @@ import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.j
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const RULES_DIR = join(__dirname, '..', 'rules');
 
+/** @type {string[]} Patterns from .graphignore */
+let graphignorePatterns = [];
+
+/**
+ * Parse .graphignore file - searches current and parent directories
+ * @param {string} startDir 
+ */
+function parseGraphignore(startDir) {
+  graphignorePatterns = [];
+
+  // Search up the directory tree for .graphignore
+  let dir = startDir;
+  while (dir !== dirname(dir)) {
+    const ignorePath = join(dir, '.graphignore');
+    if (existsSync(ignorePath)) {
+      try {
+        const content = readFileSync(ignorePath, 'utf-8');
+        graphignorePatterns = content
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line && !line.startsWith('#'));
+        return;
+      } catch (e) { }
+    }
+    dir = dirname(dir);
+  }
+}
+
+/**
+ * Check if file matches .graphignore patterns
+ * @param {string} relativePath 
+ * @returns {boolean}
+ */
+function isGraphignored(relativePath) {
+  const basename = relativePath.split('/').pop();
+
+  for (const pattern of graphignorePatterns) {
+    // Simple glob matching
+    if (pattern.endsWith('*')) {
+      const prefix = pattern.slice(0, -1);
+      if (relativePath.startsWith(prefix) || basename.startsWith(prefix)) return true;
+    } else if (pattern.startsWith('*')) {
+      const suffix = pattern.slice(1);
+      if (relativePath.endsWith(suffix) || basename.endsWith(suffix)) return true;
+    } else {
+      // Exact match on path or basename
+      if (relativePath.includes(pattern) || basename === pattern) return true;
+    }
+  }
+  return false;
+}
+
 /**
  * @typedef {Object} Rule
  * @property {string} id
@@ -80,7 +132,10 @@ function saveRuleSet(ruleSet) {
  * @returns {string[]}
  */
 function findFiles(dir, filePattern, rootDir = dir) {
-  if (dir === rootDir) parseGitignore(rootDir);
+  if (dir === rootDir) {
+    parseGitignore(rootDir);
+    parseGraphignore(rootDir);
+  }
   const files = [];
   const ext = filePattern.replace('*', '');
 
@@ -95,7 +150,7 @@ function findFiles(dir, filePattern, rootDir = dir) {
           files.push(...findFiles(fullPath, filePattern, rootDir));
         }
       } else if (entry.endsWith(ext)) {
-        if (!shouldExcludeFile(entry, relativePath)) {
+        if (!shouldExcludeFile(entry, relativePath) && !isGraphignored(relativePath)) {
           files.push(fullPath);
         }
       }
