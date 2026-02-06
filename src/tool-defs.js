@@ -6,7 +6,7 @@ export const TOOLS = [
   // Graph Tools
   {
     name: 'get_skeleton',
-    description: 'Get compact minified project overview (~500 tokens). Returns legend, stats, and node summaries.',
+    description: 'Get compact minified project overview (10-50x smaller than source). Returns legend, stats, and node summaries.',
     inputSchema: {
       type: 'object',
       properties: {
