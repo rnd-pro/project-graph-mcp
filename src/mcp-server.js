@@ -12,6 +12,7 @@ import { getDeadCode } from './dead-code.js';
 import { generateJSDoc, generateJSDocFor } from './jsdoc-generator.js';
 import { getSimilarFunctions } from './similar-functions.js';
 import { getComplexity } from './complexity.js';
+import { getLargeFiles } from './large-files.js';
 
 /**
  * Create MCP server instance
@@ -154,6 +155,9 @@ export function createServer() {
             minComplexity: args.minComplexity,
             onlyProblematic: args.onlyProblematic,
           });
+
+        case 'get_large_files':
+          return await getLargeFiles(args.path, { onlyProblematic: args.onlyProblematic });
 
         default:
           throw new Error(`Unknown tool: ${name}`);

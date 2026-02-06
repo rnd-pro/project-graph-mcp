@@ -316,4 +316,22 @@ export const TOOLS = [
       required: ['path'],
     },
   },
+  {
+    name: 'get_large_files',
+    description: 'Find files that may need splitting. Analyzes lines, functions, classes, and exports.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Path to scan (e.g., "src/")',
+        },
+        onlyProblematic: {
+          type: 'boolean',
+          description: 'Only show warning/critical files',
+        },
+      },
+      required: ['path'],
+    },
+  },
 ];
