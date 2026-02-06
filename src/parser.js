@@ -278,7 +278,7 @@ function findJSFiles(dir, rootDir = dir) {
         if (!shouldExcludeDir(entry, relativePath)) {
           files.push(...findJSFiles(fullPath, rootDir));
         }
-      } else if (entry.endsWith('.js')) {
+      } else if (entry.endsWith('.js') && !entry.endsWith('.css.js') && !entry.endsWith('.tpl.js')) {
         if (!shouldExcludeFile(entry, relativePath)) {
           files.push(fullPath);
         }
