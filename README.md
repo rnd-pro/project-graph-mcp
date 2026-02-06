@@ -4,6 +4,20 @@
 
 > Developed by [RND-PRO](https://rnd-pro.com)
 
+## Why?
+
+AI agents struggle with large codebases:
+- **Context limits** — can't read entire project at once
+- **No architecture awareness** — miss patterns and conventions
+- **Framework blindness** — don't know React vs Vue vs Symbiote best practices
+- **Manual verification** — no structured way to track what's tested
+
+**Project Graph MCP solves this:**
+- 📦 **10-50x compression** — skeleton view fits in context window
+- 🔍 **Code quality analysis** — dead code, complexity, duplicates
+- 🎯 **Framework-specific rules** — auto-detect and apply (React, Vue, Express, Node.js, Symbiote)
+- ✅ **Test checklists** — track @test/@expect annotations
+
 ## Features
 
 ### 🗺️ Project Graph (10-50x compression)
