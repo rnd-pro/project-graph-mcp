@@ -31,6 +31,12 @@ export function createServer() {
     async handleRequest(request) {
       const { method, params, id } = request;
 
+      // Notifications (no id) should not receive a response per JSON-RPC 2.0
+      if (id === undefined) {
+        // Just acknowledge internally, no response
+        return null;
+      }
+
       try {
         switch (method) {
           case 'initialize':
@@ -207,7 +213,10 @@ export async function startStdioServer() {
     try {
       const request = JSON.parse(line);
       const response = await server.handleRequest(request);
-      console.log(JSON.stringify(response));
+      // Don't respond to notifications (response is null)
+      if (response !== null) {
+        console.log(JSON.stringify(response));
+      }
     } catch (e) {
       console.log(JSON.stringify({
         jsonrpc: '2.0',
