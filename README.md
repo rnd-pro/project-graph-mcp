@@ -58,6 +58,8 @@ Includes 10 pre-built rulesets (62 rules): React 18/19, Vue 3, Next.js 15, Expre
 
 ### 📘 Agent Instructions
 - `get_agent_instructions` — Get coding guidelines, JSDoc format, architecture standards
+- [AGENT_ROLE.md](AGENT_ROLE.md) — Full system prompt for agents
+- [AGENT_ROLE_MINIMAL.md](AGENT_ROLE_MINIMAL.md) — Minimal variant (agent self-discovers)
 
 ## Installation
 
