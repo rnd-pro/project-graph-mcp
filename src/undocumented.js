@@ -1,19 +1,21 @@
 /**
- * Undocumented Code Finder
- * Finds methods/functions missing JSDoc annotations
+ * Undocumented Code Finder (AST-based)
+ * Finds methods/functions missing JSDoc annotations using Acorn AST parser
  */
 
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, relative } from 'path';
+import { parse } from '../vendor/acorn.mjs';
+import * as walk from '../vendor/walk.mjs';
 import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.js';
 
 /**
  * @typedef {Object} UndocumentedItem
- * @property {string} name
+ * @property {string} name - ClassName.methodName or functionName
  * @property {string} type - 'method' | 'function' | 'class'
  * @property {string} file
  * @property {number} line
- * @property {string} [reason] - What's missing
+ * @property {string} reason - What's missing
  */
 
 /**
@@ -53,147 +55,158 @@ function findJSFiles(dir, rootDir = dir) {
 }
 
 /**
- * Check if a JSDoc block has @test annotations
- * @param {string} jsdoc 
- * @returns {boolean}
+ * Extract JSDoc comments from code with their positions
+ * @param {string} code 
+ * @returns {Array<{text: string, endLine: number}>}
  */
-function hasTestAnnotations(jsdoc) {
-  return jsdoc.includes('@test') || jsdoc.includes('@expect');
+function extractComments(code) {
+  const comments = [];
+  const regex = /\/\*\*[\s\S]*?\*\//g;
+  let match;
+
+  while ((match = regex.exec(code)) !== null) {
+    const endLine = code.slice(0, match.index + match[0].length).split('\n').length;
+    comments.push({ text: match[0], endLine });
+  }
+
+  return comments;
 }
 
 /**
- * Check if a JSDoc block has @param annotations
- * @param {string} jsdoc 
- * @returns {boolean}
+ * Find JSDoc comment before a target line
+ * @param {Array<{text: string, endLine: number}>} comments 
+ * @param {number} targetLine 
+ * @returns {string|null}
  */
-function hasParamAnnotations(jsdoc) {
-  return jsdoc.includes('@param');
+function findJSDocBefore(comments, targetLine) {
+  for (const comment of comments) {
+    const gap = targetLine - comment.endLine;
+    if (gap >= 0 && gap <= 2) {
+      return comment.text;
+    }
+  }
+  return null;
 }
 
 /**
- * Check if a JSDoc block has @returns annotation
- * @param {string} jsdoc 
- * @returns {boolean}
+ * Check what's missing from JSDoc based on level
+ * @param {string|null} jsdoc 
+ * @param {'tests'|'params'|'all'} level 
+ * @returns {string[]}
  */
-function hasReturnsAnnotation(jsdoc) {
-  return jsdoc.includes('@returns') || jsdoc.includes('@return');
+function checkMissing(jsdoc, level) {
+  const missing = [];
+
+  if (!jsdoc) {
+    if (level === 'all') missing.push('description');
+    if (level === 'params' || level === 'all') missing.push('@param', '@returns');
+    if (level === 'tests' || level === 'params' || level === 'all') missing.push('@test', '@expect');
+    return missing;
+  }
+
+  if (level === 'tests' || level === 'params' || level === 'all') {
+    if (!jsdoc.includes('@test')) missing.push('@test');
+    if (!jsdoc.includes('@expect')) missing.push('@expect');
+  }
+
+  if (level === 'params' || level === 'all') {
+    if (!jsdoc.includes('@param')) missing.push('@param');
+    if (!jsdoc.includes('@returns') && !jsdoc.includes('@return')) missing.push('@returns');
+  }
+
+  return missing;
 }
 
+/** Skip list for methods */
+const SKIP_METHODS = [
+  'constructor', 'connectedCallback', 'disconnectedCallback',
+  'attributeChangedCallback', 'renderCallback',
+];
+
 /**
- * Parse file and find undocumented items
- * @param {string} content 
+ * Parse file using AST and find undocumented items
+ * @param {string} code 
  * @param {string} filePath 
  * @param {'tests'|'params'|'all'} level
  * @returns {UndocumentedItem[]}
  */
-function parseUndocumented(content, filePath, level) {
+function parseFile(code, filePath, level) {
   const results = [];
 
-  // Find standalone functions
-  const functionRegex = /^(\s*)(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(([^)]*)\)\s*{/gm;
-  const classRegex = /^(\s*)(?:export\s+)?class\s+(\w+)/gm;
-
-  let match;
-
-  // Find classes
-  while ((match = classRegex.exec(content)) !== null) {
-    const lineNum = content.slice(0, match.index).split('\n').length;
-    const prevLines = content.slice(0, match.index);
-    const hasJsdoc = /\/\*\*[\s\S]*?\*\/\s*$/.test(prevLines);
-
-    if (!hasJsdoc && level === 'all') {
-      results.push({
-        name: match[2],
-        type: 'class',
-        file: filePath,
-        line: lineNum,
-        reason: 'No JSDoc',
-      });
-    }
+  let ast;
+  try {
+    ast = parse(code, { ecmaVersion: 'latest', sourceType: 'module', locations: true });
+  } catch (e) {
+    return results;
   }
 
-  // Find standalone functions
-  while ((match = functionRegex.exec(content)) !== null) {
-    const lineNum = content.slice(0, match.index).split('\n').length;
-    const prevLines = content.slice(0, match.index);
-    const jsdocMatch = prevLines.match(/\/\*\*([\s\S]*?)\*\/\s*$/);
-    const jsdoc = jsdocMatch ? jsdocMatch[1] : '';
-    const params = match[3].trim();
+  const comments = extractComments(code);
 
-    const issues = [];
+  walk.simple(ast, {
+    ClassDeclaration(node) {
+      const className = node.id?.name || 'Anonymous';
 
-    if (!jsdocMatch) {
-      if (level !== 'tests') {
-        issues.push('No JSDoc');
+      // Check class itself (only for 'all' level)
+      if (level === 'all') {
+        const classJsdoc = findJSDocBefore(comments, node.loc.start.line);
+        if (!classJsdoc) {
+          results.push({
+            name: className,
+            type: 'class',
+            file: filePath,
+            line: node.loc.start.line,
+            reason: 'No JSDoc',
+          });
+        }
       }
-    } else {
-      if (level === 'tests' && !hasTestAnnotations(jsdoc)) {
-        issues.push('No @test/@expect');
+
+      // Check methods
+      for (const element of node.body.body) {
+        if (element.type === 'MethodDefinition') {
+          const methodName = element.key.name || element.key.value;
+
+          // Skip: constructor, private, getters/setters, lifecycle
+          if (element.kind === 'get' || element.kind === 'set') continue;
+          if (methodName?.startsWith('_')) continue;
+          if (SKIP_METHODS.includes(methodName)) continue;
+
+          const jsdoc = findJSDocBefore(comments, element.loc.start.line);
+          const missing = checkMissing(jsdoc, level);
+
+          if (missing.length > 0) {
+            results.push({
+              name: `${className}.${methodName}`,
+              type: 'method',
+              file: filePath,
+              line: element.loc.start.line,
+              reason: missing.join(', '),
+            });
+          }
+        }
       }
-      if ((level === 'params' || level === 'all') && params && !hasParamAnnotations(jsdoc)) {
-        issues.push('No @param');
+    },
+
+    FunctionDeclaration(node) {
+      if (!node.id) return;
+      const funcName = node.id.name;
+
+      // Skip private functions
+      if (funcName.startsWith('_')) return;
+
+      const jsdoc = findJSDocBefore(comments, node.loc.start.line);
+      const missing = checkMissing(jsdoc, level);
+
+      if (missing.length > 0) {
+        results.push({
+          name: funcName,
+          type: 'function',
+          file: filePath,
+          line: node.loc.start.line,
+          reason: missing.join(', '),
+        });
       }
-      if (level === 'all' && !hasReturnsAnnotation(jsdoc)) {
-        issues.push('No @returns');
-      }
-    }
-
-    if (issues.length > 0) {
-      results.push({
-        name: match[2],
-        type: 'function',
-        file: filePath,
-        line: lineNum,
-        reason: issues.join(', '),
-      });
-    }
-  }
-
-  // Find class methods (indent > 0, not function keyword)
-  const classMethodRegex = /^(  +)(async\s+)?(\w+)\s*\(([^)]*)\)\s*{/gm;
-  while ((match = classMethodRegex.exec(content)) !== null) {
-    const methodName = match[3];
-
-    // Skip constructor, lifecycle methods, and JS keywords
-    const skipNames = [
-      'constructor', 'connectedCallback', 'disconnectedCallback', 'attributeChangedCallback', 'renderCallback',
-      'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'try', 'catch', 'finally', 'with',
-    ];
-    if (skipNames.includes(methodName)) {
-      continue;
-    }
-
-    const lineNum = content.slice(0, match.index).split('\n').length;
-    const prevLines = content.slice(0, match.index);
-    const jsdocMatch = prevLines.match(/\/\*\*([\s\S]*?)\*\/\s*$/);
-    const jsdoc = jsdocMatch ? jsdocMatch[1] : '';
-    const params = match[4].trim();
-
-    const issues = [];
-
-    if (!jsdocMatch) {
-      if (level !== 'tests') {
-        issues.push('No JSDoc');
-      }
-    } else {
-      if (level === 'tests' && !hasTestAnnotations(jsdoc)) {
-        issues.push('No @test/@expect');
-      }
-      if ((level === 'params' || level === 'all') && params && !hasParamAnnotations(jsdoc)) {
-        issues.push('No @param');
-      }
-    }
-
-    if (issues.length > 0) {
-      results.push({
-        name: methodName,
-        type: 'method',
-        file: filePath,
-        line: lineNum,
-        reason: issues.join(', '),
-      });
-    }
-  }
+    },
+  });
 
   return results;
 }
@@ -210,7 +223,7 @@ export function getUndocumented(dir, level = 'tests') {
 
   for (const file of files) {
     const content = readFileSync(file, 'utf-8');
-    const items = parseUndocumented(content, relative(process.cwd(), file), level);
+    const items = parseFile(content, relative(process.cwd(), file), level);
     results.push(...items);
   }
 
