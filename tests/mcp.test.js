@@ -165,7 +165,8 @@ describe('MCP Server', () => {
 
     assert.ok(response.result, 'Should have result');
     const content = JSON.parse(response.result.content[0].text);
-    assert.ok(Array.isArray(content), 'Should return array');
+    assert.ok(typeof content.total === 'number', 'Should have total count');
+    assert.ok(Array.isArray(content.items), 'Should have items array');
   });
 
 });
