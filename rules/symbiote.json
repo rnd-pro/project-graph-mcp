@@ -1,6 +1,7 @@
 {
   "name": "symbiote",
   "description": "Symbiote.js component standards",
+  "docs": "https://rnd-pro.com/symbiote/",
   "rules": [
     {
       "id": "symbiote-no-host-setattribute",
@@ -14,7 +15,8 @@
       "exclude": [
         "*.test.js",
         "*.spec.js"
-      ]
+      ],
+      "docs": "https://rnd-pro.com/symbiote/2x/examples/attributes/"
     },
     {
       "id": "symbiote-no-host-style",
@@ -24,7 +26,8 @@
       "patternType": "string",
       "replacement": "${{ 'style.x': 'propName' }}",
       "severity": "warning",
-      "filePattern": "*.js"
+      "filePattern": "*.js",
+      "docs": "https://rnd-pro.com/symbiote/2x/core/template/"
     },
     {
       "id": "symbiote-no-addeventlistener",
@@ -34,7 +37,8 @@
       "patternType": "string",
       "replacement": "${{ onclick: 'handlerName' }}",
       "severity": "info",
-      "filePattern": "*.js"
+      "filePattern": "*.js",
+      "docs": "https://rnd-pro.com/symbiote/2x/core/template/"
     },
     {
       "id": "symbiote-no-createelement",
@@ -44,7 +48,8 @@
       "patternType": "string",
       "replacement": "itemize=\"items\" in template",
       "severity": "warning",
-      "filePattern": "*.js"
+      "filePattern": "*.js",
+      "docs": "https://rnd-pro.com/symbiote/2x/features/itemize/"
     },
     {
       "id": "symbiote-no-innerhtml",
@@ -54,7 +59,8 @@
       "patternType": "string",
       "replacement": "Itemize API or template bindings",
       "severity": "error",
-      "filePattern": "*.js"
+      "filePattern": "*.js",
+      "docs": "https://rnd-pro.com/symbiote/2x/features/itemize/"
     },
     {
       "id": "symbiote-triple-file",
@@ -67,7 +73,8 @@
       "filePattern": "*.js",
       "exclude": [
         "*.tpl.js"
-      ]
+      ],
+      "docs": "https://rnd-pro.com/symbiote/2x/features/styling/"
     },
     {
       "id": "symbiote-itemize-parent-handler",
@@ -77,7 +84,8 @@
       "patternType": "regex",
       "replacement": "onclick: '^handlerName'",
       "severity": "warning",
-      "filePattern": "*.tpl.js"
+      "filePattern": "*.tpl.js",
+      "docs": "https://rnd-pro.com/symbiote/2x/features/itemize/"
     },
     {
       "id": "symbiote-no-nested-keys",
@@ -87,7 +95,8 @@
       "patternType": "regex",
       "replacement": "Use flat property like recentProjectsLength",
       "severity": "error",
-      "filePattern": "*.tpl.js"
+      "filePattern": "*.tpl.js",
+      "docs": "https://rnd-pro.com/symbiote/2x/core/template/"
     },
     {
       "id": "symbiote-esm-only",
@@ -97,7 +106,8 @@
       "patternType": "string",
       "replacement": "import ... from '...'",
       "severity": "error",
-      "filePattern": "*.js"
+      "filePattern": "*.js",
+      "docs": "https://rnd-pro.com/symbiote/"
     },
     {
       "id": "symbiote-no-tailwind",
@@ -107,7 +117,8 @@
       "patternType": "string",
       "replacement": "Use native CSS with design tokens",
       "severity": "error",
-      "filePattern": "*.css"
+      "filePattern": "*.css",
+      "docs": "https://rnd-pro.com/symbiote/2x/features/styling/"
     },
     {
       "id": "symbiote-no-bem",
@@ -117,7 +128,8 @@
       "patternType": "string",
       "replacement": "[attr] selectors or custom-tag selectors",
       "severity": "warning",
-      "filePattern": "*.css.js"
+      "filePattern": "*.css.js",
+      "docs": "https://rnd-pro.com/symbiote/2x/features/styling/"
     },
     {
       "id": "symbiote-no-double-quotes",
@@ -127,7 +139,8 @@
       "patternType": "string",
       "replacement": "= '...'",
       "severity": "info",
-      "filePattern": "*.js"
+      "filePattern": "*.js",
+      "docs": "https://rnd-pro.com/symbiote/"
     }
   ]
 }
