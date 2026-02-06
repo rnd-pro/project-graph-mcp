@@ -294,4 +294,26 @@ export const TOOLS = [
       required: ['path'],
     },
   },
+  {
+    name: 'get_complexity',
+    description: 'Analyze cyclomatic complexity of functions. Identifies high-complexity code needing refactoring.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Path to scan (e.g., "src/")',
+        },
+        minComplexity: {
+          type: 'number',
+          description: 'Minimum complexity to include (default: 1)',
+        },
+        onlyProblematic: {
+          type: 'boolean',
+          description: 'Only show high/critical items',
+        },
+      },
+      required: ['path'],
+    },
+  },
 ];

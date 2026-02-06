@@ -11,6 +11,7 @@ import { getUndocumentedSummary } from './undocumented.js';
 import { getDeadCode } from './dead-code.js';
 import { generateJSDoc, generateJSDocFor } from './jsdoc-generator.js';
 import { getSimilarFunctions } from './similar-functions.js';
+import { getComplexity } from './complexity.js';
 
 /**
  * Create MCP server instance
@@ -147,6 +148,12 @@ export function createServer() {
 
         case 'get_similar_functions':
           return await getSimilarFunctions(args.path, { threshold: args.threshold });
+
+        case 'get_complexity':
+          return await getComplexity(args.path, {
+            minComplexity: args.minComplexity,
+            onlyProblematic: args.onlyProblematic,
+          });
 
         default:
           throw new Error(`Unknown tool: ${name}`);

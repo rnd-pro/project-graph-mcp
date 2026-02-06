@@ -10,6 +10,7 @@ import { getUndocumentedSummary } from './undocumented.js';
 import { getDeadCode } from './dead-code.js';
 import { generateJSDoc } from './jsdoc-generator.js';
 import { getSimilarFunctions } from './similar-functions.js';
+import { getComplexity } from './complexity.js';
 
 /**
  * Print CLI help
@@ -33,6 +34,7 @@ Commands:
   deadcode <path>        Find unused functions/classes
   jsdoc <file>           Generate JSDoc for file
   similar <path>         Find similar functions (--threshold=60)
+  complexity <path>      Analyze cyclomatic complexity (--min=1)
   filters                Show current filter configuration
   instructions           Show agent guidelines (JSDoc, Arch)
   help                   Show this help
@@ -114,6 +116,13 @@ export async function runCLI(command, args) {
         const simPath = args.find(a => !a.startsWith('--')) || '.';
         const simThreshold = parseInt(args.find(a => a.startsWith('--threshold='))?.split('=')[1]) || 60;
         result = await getSimilarFunctions(simPath, { threshold: simThreshold });
+        break;
+
+      case 'complexity':
+        const cxPath = args.find(a => !a.startsWith('--')) || '.';
+        const cxMin = parseInt(args.find(a => a.startsWith('--min='))?.split('=')[1]) || 1;
+        const cxProblematic = args.includes('--problematic');
+        result = await getComplexity(cxPath, { minComplexity: cxMin, onlyProblematic: cxProblematic });
         break;
 
       case 'help':
