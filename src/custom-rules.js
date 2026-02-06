@@ -517,6 +517,7 @@ export async function checkCustomRules(dir, options = {}) {
   }
 
   return {
+    basePath: dir,
     total: filtered.length,
     bySeverity,
     byRule,

@@ -206,6 +206,15 @@ export function createSkeleton(graph) {
 
   return {
     v: graph.v,
+    _keys: {
+      L: 'Legend (symbol → full name)',
+      s: 'Stats (files, classes, functions)',
+      n: 'Nodes (class name → {m: methods count, $: properties count})',
+      e: 'Edges count (calls between symbols)',
+      o: 'Orphans count (unused non-exported functions)',
+      d: 'Duplicates count (same method name in multiple classes)',
+      F: 'Functions count (standalone)',
+    },
     L: classLegend, // Legend for classes only
     s: graph.stats,
     n: nodes,      // Class nodes only

@@ -104,7 +104,7 @@ export async function expand(symbol) {
   const fullName = graph.reverseLegend[nodeKey];
 
   if (!fullName) {
-    return { error: `Unknown symbol: ${symbol}` };
+    return { error: `Unknown symbol: ${symbol}. Run get_skeleton on your project first, then use symbols from the L (Legend) field.` };
   }
 
   // Find the source file
@@ -154,7 +154,7 @@ export async function deps(symbol) {
 
   const node = graph.nodes[symbol];
   if (!node) {
-    return { error: `Unknown symbol: ${symbol}` };
+    return { error: `Unknown symbol: ${symbol}. Run get_skeleton on your project first, then use symbols from the L (Legend) field.` };
   }
 
   // Find incoming edges (usedBy)
