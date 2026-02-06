@@ -84,6 +84,39 @@
       "severity": "warning",
       "filePattern": "*.js",
       "docs": "https://nodejs.org/api/fs.html#fspromisesapi"
+    },
+    {
+      "id": "node-no-or-fallback-data",
+      "name": "Avoid || fallback for data",
+      "description": "Using || for defaults can hide bugs (0, '', false become fallback). Use ?? or explicit checks.",
+      "pattern": "|| data.",
+      "patternType": "string",
+      "replacement": "?? or explicit null/undefined check",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "docs": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing"
+    },
+    {
+      "id": "node-no-or-fallback-response",
+      "name": "Avoid || fallback for response",
+      "description": "Using || for defaults can mask empty responses and cause silent failures",
+      "pattern": "|| response.",
+      "patternType": "string",
+      "replacement": "?? or explicit null/undefined check",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "docs": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing"
+    },
+    {
+      "id": "node-no-or-fallback-result",
+      "name": "Avoid || fallback for result",
+      "description": "Using || can hide zero values or empty strings. Use ?? for null/undefined only.",
+      "pattern": "|| result",
+      "patternType": "string",
+      "replacement": "?? or explicit null/undefined check",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "docs": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing"
     }
   ]
 }
