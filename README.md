@@ -15,6 +15,9 @@
 - `mark_test_passed` / `mark_test_failed` — Track progress
 - `get_test_summary` — Progress report
 
+### 📝 Documentation Analysis
+- `get_undocumented` — Find missing JSDoc annotations (levels: tests, params, all)
+
 ## Installation
 
 ```bash
@@ -42,6 +45,9 @@ node src/server.js pending src/
 
 # Get test progress summary
 node src/server.js summary src/
+
+# Find undocumented code
+node src/server.js undocumented src/ --level=tests
 
 # Show help
 node src/server.js help

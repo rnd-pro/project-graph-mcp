@@ -221,4 +221,25 @@ export const TOOLS = [
       properties: {},
     },
   },
+
+  // Documentation Analysis
+  {
+    name: 'get_undocumented',
+    description: 'Find classes/functions missing JSDoc annotations. Use for documentation generation.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Path to scan (e.g., "src/components")',
+        },
+        level: {
+          type: 'string',
+          enum: ['tests', 'params', 'all'],
+          description: 'Strictness: tests (default) = @test/@expect, params = +@param/@returns, all = +description',
+        },
+      },
+      required: ['path'],
+    },
+  },
 ];

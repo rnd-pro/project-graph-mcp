@@ -6,6 +6,7 @@ import { getSkeleton, getFocusZone, expand, deps, usages, invalidateCache } from
 import { getPendingTests, getTestSummary } from './test-annotations.js';
 import { getFilters, addExcludes, resetFilters } from './filters.js';
 import { getInstructions } from './instructions.js';
+import { getUndocumented } from './undocumented.js';
 
 /**
  * Print CLI help
@@ -25,6 +26,7 @@ Commands:
   usages <symbol>        Find all usages
   pending <path>         List pending @test/@expect tests
   summary <path>         Get test progress summary
+  undocumented <path>    Find missing JSDoc (--level=tests|params|all)
   filters                Show current filter configuration
   instructions           Show agent guidelines (JSDoc, Arch)
   help                   Show this help
@@ -81,6 +83,12 @@ export async function runCLI(command, args) {
       case 'instructions':
         console.log(getInstructions());
         return; // Early return as it's just text
+
+      case 'undocumented':
+        const level = args.find(a => a.startsWith('--level='))?.split('=')[1] || 'tests';
+        const uPath = args.find(a => !a.startsWith('--')) || '.';
+        result = await getUndocumented(uPath, { level });
+        break;
 
       case 'help':
       case '--help':

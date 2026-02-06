@@ -149,4 +149,23 @@ describe('MCP Server', () => {
     assert.ok(content.includes('@test'), 'Should contain annotations info');
   });
 
+  it('should execute get_undocumented tool', async () => {
+    const { createServer } = await import('../src/mcp-server.js');
+    const server = createServer();
+
+    const response = await server.handleRequest({
+      jsonrpc: '2.0',
+      method: 'tools/call',
+      params: {
+        name: 'get_undocumented',
+        arguments: { path: 'src', level: 'all' },
+      },
+      id: 7,
+    });
+
+    assert.ok(response.result, 'Should have result');
+    const content = JSON.parse(response.result.content[0].text);
+    assert.ok(Array.isArray(content), 'Should return array');
+  });
+
 });
