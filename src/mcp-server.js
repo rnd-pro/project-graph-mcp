@@ -18,6 +18,63 @@ import { getFullAnalysis } from './full-analysis.js';
 import { getCustomRules, setCustomRule, checkCustomRules } from './custom-rules.js';
 
 /**
+ * Tool handlers registry
+ * Maps tool names to their handler functions
+ */
+const TOOL_HANDLERS = {
+  // Graph Tools
+  get_skeleton: (args) => getSkeleton(args.path),
+  get_focus_zone: (args) => getFocusZone(args),
+  expand: (args) => expand(args.symbol),
+  deps: (args) => deps(args.symbol),
+  usages: (args) => usages(args.symbol),
+  invalidate_cache: () => { invalidateCache(); return { success: true }; },
+
+  // Test Checklist Tools
+  get_pending_tests: (args) => getPendingTests(args.path),
+  mark_test_passed: (args) => markTestPassed(args.testId),
+  mark_test_failed: (args) => markTestFailed(args.testId, args.reason),
+  get_test_summary: (args) => getTestSummary(args.path),
+  reset_test_state: () => resetTestState(),
+
+  // Filter Tools
+  get_filters: () => getFilters(),
+  set_filters: (args) => setFilters(args),
+  add_excludes: (args) => addExcludes(args.dirs),
+  remove_excludes: (args) => removeExcludes(args.dirs),
+  reset_filters: () => resetFilters(),
+
+  // Guidelines
+  get_agent_instructions: () => getInstructions(),
+
+  // Documentation
+  get_undocumented: (args) => getUndocumentedSummary(args.path, args.level || 'tests'),
+
+  // Code Quality
+  get_dead_code: (args) => getDeadCode(args.path),
+  generate_jsdoc: (args) => args.name ? generateJSDocFor(args.path, args.name) : generateJSDoc(args.path),
+  get_similar_functions: (args) => getSimilarFunctions(args.path, { threshold: args.threshold }),
+  get_complexity: (args) => getComplexity(args.path, {
+    minComplexity: args.minComplexity,
+    onlyProblematic: args.onlyProblematic,
+  }),
+  get_large_files: (args) => getLargeFiles(args.path, { onlyProblematic: args.onlyProblematic }),
+  get_outdated_patterns: (args) => getOutdatedPatterns(args.path, {
+    codeOnly: args.codeOnly,
+    depsOnly: args.depsOnly,
+  }),
+  get_full_analysis: (args) => getFullAnalysis(args.path, { includeItems: args.includeItems }),
+
+  // Custom Rules
+  get_custom_rules: () => getCustomRules(),
+  set_custom_rule: (args) => setCustomRule(args.ruleSet, args.rule),
+  check_custom_rules: (args) => checkCustomRules(args.path, {
+    ruleSet: args.ruleSet,
+    severity: args.severity,
+  }),
+};
+
+/**
  * Create MCP server instance
  * @returns {Object}
  */
@@ -33,7 +90,6 @@ export function createServer() {
 
       // Notifications (no id) should not receive a response per JSON-RPC 2.0
       if (id === undefined) {
-        // Just acknowledge internally, no response
         return null;
       }
 
@@ -46,19 +102,12 @@ export function createServer() {
               result: {
                 protocolVersion: '2024-11-05',
                 capabilities: { tools: {} },
-                serverInfo: {
-                  name: 'project-graph',
-                  version: '1.0.0',
-                },
+                serverInfo: { name: 'project-graph', version: '1.0.0' },
               },
             };
 
           case 'tools/list':
-            return {
-              jsonrpc: '2.0',
-              id,
-              result: { tools: TOOLS },
-            };
+            return { jsonrpc: '2.0', id, result: { tools: TOOLS } };
 
           case 'tools/call':
             const result = await this.executeTool(params.name, params.arguments);
@@ -66,12 +115,7 @@ export function createServer() {
               jsonrpc: '2.0',
               id,
               result: {
-                content: [
-                  {
-                    type: 'text',
-                    text: JSON.stringify(result, null, 2),
-                  },
-                ],
+                content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
               },
             };
 
@@ -83,11 +127,7 @@ export function createServer() {
             };
         }
       } catch (error) {
-        return {
-          jsonrpc: '2.0',
-          id,
-          error: { code: -32000, message: error.message },
-        };
+        return { jsonrpc: '2.0', id, error: { code: -32000, message: error.message } };
       }
     },
 
@@ -98,100 +138,11 @@ export function createServer() {
      * @returns {Promise<any>}
      */
     async executeTool(name, args) {
-      switch (name) {
-        // Graph Tools
-        case 'get_skeleton':
-          return await getSkeleton(args.path);
-        case 'get_focus_zone':
-          return await getFocusZone(args);
-        case 'expand':
-          return await expand(args.symbol);
-        case 'deps':
-          return await deps(args.symbol);
-        case 'usages':
-          return await usages(args.symbol);
-        case 'invalidate_cache':
-          invalidateCache();
-          return { success: true };
-
-        // Test Checklist Tools
-        case 'get_pending_tests':
-          return getPendingTests(args.path);
-        case 'mark_test_passed':
-          return markTestPassed(args.testId);
-        case 'mark_test_failed':
-          return markTestFailed(args.testId, args.reason);
-        case 'get_test_summary':
-          return getTestSummary(args.path);
-        case 'reset_test_state':
-          return resetTestState();
-
-        // Filter Tools
-        case 'get_filters':
-          return getFilters();
-        case 'set_filters':
-          return setFilters(args);
-        case 'add_excludes':
-          return addExcludes(args.dirs);
-        case 'remove_excludes':
-          return removeExcludes(args.dirs);
-        case 'reset_filters':
-          return resetFilters();
-
-        // Guidelines
-        case 'get_agent_instructions':
-          return getInstructions();
-
-        // Documentation
-        case 'get_undocumented':
-          return getUndocumentedSummary(args.path, args.level || 'tests');
-
-        // Code Quality
-        case 'get_dead_code':
-          return await getDeadCode(args.path);
-
-        case 'generate_jsdoc':
-          if (args.name) {
-            return generateJSDocFor(args.path, args.name);
-          }
-          return generateJSDoc(args.path);
-
-        case 'get_similar_functions':
-          return await getSimilarFunctions(args.path, { threshold: args.threshold });
-
-        case 'get_complexity':
-          return await getComplexity(args.path, {
-            minComplexity: args.minComplexity,
-            onlyProblematic: args.onlyProblematic,
-          });
-
-        case 'get_large_files':
-          return await getLargeFiles(args.path, { onlyProblematic: args.onlyProblematic });
-
-        case 'get_outdated_patterns':
-          return await getOutdatedPatterns(args.path, {
-            codeOnly: args.codeOnly,
-            depsOnly: args.depsOnly,
-          });
-
-        case 'get_full_analysis':
-          return await getFullAnalysis(args.path, { includeItems: args.includeItems });
-
-        case 'get_custom_rules':
-          return await getCustomRules();
-
-        case 'set_custom_rule':
-          return await setCustomRule(args.ruleSet, args.rule);
-
-        case 'check_custom_rules':
-          return await checkCustomRules(args.path, {
-            ruleSet: args.ruleSet,
-            severity: args.severity,
-          });
-
-        default:
-          throw new Error(`Unknown tool: ${name}`);
+      const handler = TOOL_HANDLERS[name];
+      if (!handler) {
+        throw new Error(`Unknown tool: ${name}`);
       }
+      return await handler(args);
     },
   };
 }
@@ -213,7 +164,6 @@ export async function startStdioServer() {
     try {
       const request = JSON.parse(line);
       const response = await server.handleRequest(request);
-      // Don't respond to notifications (response is null)
       if (response !== null) {
         console.log(JSON.stringify(response));
       }

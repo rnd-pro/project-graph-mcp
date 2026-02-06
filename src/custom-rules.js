@@ -120,6 +120,39 @@ function isExcluded(filePath, excludePatterns = []) {
 }
 
 /**
+ * Check if a position in a line is inside a string or comment
+ * @param {string} line - The line of code
+ * @param {number} matchIndex - Position of the match
+ * @returns {boolean}
+ */
+function isInStringOrComment(line, matchIndex) {
+  // Check if in single-line comment
+  const commentIndex = line.indexOf('//');
+  if (commentIndex !== -1 && matchIndex > commentIndex) {
+    return true;
+  }
+
+  // Check if in string literal (simplified - handles most cases)
+  let inString = false;
+  let stringChar = null;
+
+  for (let i = 0; i < matchIndex; i++) {
+    const char = line[i];
+    const prevChar = i > 0 ? line[i - 1] : '';
+
+    if (!inString && (char === '"' || char === "'" || char === '`')) {
+      inString = true;
+      stringChar = char;
+    } else if (inString && char === stringChar && prevChar !== '\\') {
+      inString = false;
+      stringChar = null;
+    }
+  }
+
+  return inString;
+}
+
+/**
  * Check file against rule
  * @param {string} filePath 
  * @param {Rule} rule 
@@ -140,15 +173,19 @@ function checkFileAgainstRule(filePath, rule) {
 
     if (rule.patternType === 'regex') {
       try {
-        const regex = new RegExp(rule.pattern);
-        const match = line.match(regex);
-        if (match) {
-          matches = true;
-          matchText = match[0];
+        const regex = new RegExp(rule.pattern, 'g');
+        let match;
+        while ((match = regex.exec(line)) !== null) {
+          if (!isInStringOrComment(line, match.index)) {
+            matches = true;
+            matchText = match[0];
+            break;
+          }
         }
       } catch (e) { }
     } else {
-      if (line.includes(rule.pattern)) {
+      const matchIndex = line.indexOf(rule.pattern);
+      if (matchIndex !== -1 && !isInStringOrComment(line, matchIndex)) {
         matches = true;
         matchText = rule.pattern;
       }
