@@ -8,12 +8,13 @@ Configuration examples for popular MCP clients (2026).
 
 ### Antigravity / Gemini CLI
 ```json
-// .gemini/settings.json
+// ~/.gemini/antigravity/mcp_config.json
 {
   "mcpServers": {
     "project-graph": {
       "command": "node",
-      "args": ["/path/to/project-graph-mcp/src/server.js"]
+      "args": ["/path/to/project-graph-mcp/src/server.js"],
+      "env": {}
     }
   }
 }
