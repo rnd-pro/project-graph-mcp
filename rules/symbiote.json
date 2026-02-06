@@ -2,6 +2,18 @@
   "name": "symbiote",
   "description": "Symbiote.js component standards",
   "docs": "https://rnd-pro.com/symbiote/",
+  "detect": {
+    "packageJson": [
+      "@symbiotejs/symbiote"
+    ],
+    "imports": [
+      "@symbiotejs/symbiote",
+      "from '@symbiotejs/symbiote'"
+    ],
+    "patterns": [
+      "extends Symbiote"
+    ]
+  },
   "rules": [
     {
       "id": "symbiote-no-host-setattribute",

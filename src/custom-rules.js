@@ -259,21 +259,116 @@ export async function deleteCustomRule(ruleSetName, ruleId) {
 }
 
 /**
+ * Detect which rulesets apply to a project
+ * @param {string} dir 
+ * @returns {{detected: string[], reasons: Object<string, string>}}
+ */
+function detectProjectRuleSets(dir) {
+  const ruleSets = loadRuleSets();
+  const detected = [];
+  const reasons = {};
+
+  // Check package.json
+  let packageDeps = [];
+  try {
+    const pkgPath = join(dir, 'package.json');
+    if (existsSync(pkgPath)) {
+      const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+      packageDeps = [
+        ...Object.keys(pkg.dependencies || {}),
+        ...Object.keys(pkg.devDependencies || {}),
+      ];
+    }
+  } catch (e) { }
+
+  for (const [name, ruleSet] of Object.entries(ruleSets)) {
+    if (!ruleSet.detect) continue;
+    const detect = ruleSet.detect;
+
+    // Check packageJson deps
+    if (detect.packageJson) {
+      for (const dep of detect.packageJson) {
+        if (packageDeps.includes(dep)) {
+          detected.push(name);
+          reasons[name] = `Found "${dep}" in package.json`;
+          break;
+        }
+      }
+    }
+
+    // Skip further checks if already detected
+    if (detected.includes(name)) continue;
+
+    // Check for import patterns in source files
+    if (detect.imports || detect.patterns) {
+      const jsFiles = findFiles(dir, '*.js');
+
+      fileLoop:
+      for (const file of jsFiles.slice(0, 50)) { // Limit for performance
+        try {
+          const content = readFileSync(file, 'utf-8');
+
+          if (detect.imports) {
+            for (const pattern of detect.imports) {
+              if (content.includes(pattern)) {
+                detected.push(name);
+                reasons[name] = `Found "${pattern}" in ${relative(dir, file)}`;
+                break fileLoop;
+              }
+            }
+          }
+
+          if (detect.patterns) {
+            for (const pattern of detect.patterns) {
+              if (content.includes(pattern)) {
+                detected.push(name);
+                reasons[name] = `Found "${pattern}" in ${relative(dir, file)}`;
+                break fileLoop;
+              }
+            }
+          }
+        } catch (e) { }
+      }
+    }
+  }
+
+  return { detected, reasons };
+}
+
+/**
  * Check directory against custom rules
  * @param {string} dir 
  * @param {Object} [options]
  * @param {string} [options.ruleSet] - Specific ruleset to use
  * @param {string} [options.severity] - Filter by severity
- * @returns {Promise<{total: number, bySeverity: Object, byRule: Object, violations: Violation[]}>}
+ * @param {boolean} [options.autoDetect] - Auto-detect applicable rulesets
+ * @returns {Promise<{total: number, bySeverity: Object, byRule: Object, violations: Violation[], detected?: Object}>}
  */
 export async function checkCustomRules(dir, options = {}) {
   const ruleSets = loadRuleSets();
   let allRules = [];
+  let detectionResult = null;
 
   // Collect rules
   if (options.ruleSet) {
     if (ruleSets[options.ruleSet]) {
       allRules = ruleSets[options.ruleSet].rules;
+    }
+  } else if (options.autoDetect !== false) {
+    // Auto-detect by default
+    detectionResult = detectProjectRuleSets(dir);
+
+    if (detectionResult.detected.length > 0) {
+      for (const name of detectionResult.detected) {
+        if (ruleSets[name]) {
+          allRules.push(...ruleSets[name].rules);
+        }
+      }
+    } else {
+      // No detection, use all rules
+      for (const ruleSet of Object.values(ruleSets)) {
+        allRules.push(...ruleSet.rules);
+      }
     }
   } else {
     for (const ruleSet of Object.values(ruleSets)) {
@@ -334,5 +429,6 @@ export async function checkCustomRules(dir, options = {}) {
     bySeverity,
     byRule,
     violations: filtered.slice(0, 50),
+    ...(detectionResult && { detected: detectionResult }),
   };
 }
