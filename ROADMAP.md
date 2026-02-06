@@ -20,8 +20,8 @@
   - Analyze AST structure patterns
   - Score similarity (0-100%)
 
-### Phase 4: Complexity Analysis
-- [ ] `get_complexity` — Cyclomatic complexity metrics
+### Phase 4: Complexity Analysis ✅
+- [x] `get_complexity` — Cyclomatic complexity metrics
   - Count decision points (if/for/while/switch)
   - Flag functions over threshold (e.g., >10)
   - Generate refactoring suggestions
