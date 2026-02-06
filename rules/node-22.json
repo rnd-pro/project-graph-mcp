@@ -128,6 +128,28 @@
       "severity": "info",
       "filePattern": "*.js",
       "docs": ""
+    },
+    {
+      "id": "node-no-html-comments",
+      "name": "No comments in HTML",
+      "description": "HTML comments are visible in source and increase file size",
+      "pattern": "<!--",
+      "patternType": "string",
+      "replacement": "Remove comment or use server-side templating",
+      "severity": "warning",
+      "filePattern": "*.html",
+      "docs": ""
+    },
+    {
+      "id": "node-no-public-js-comments",
+      "name": "No comments in public JS",
+      "description": "Comments in public JS expose implementation details and increase bundle size",
+      "pattern": "//",
+      "patternType": "string",
+      "replacement": "Remove comments or use build-time stripping",
+      "severity": "info",
+      "filePattern": "**/public/**/*.js",
+      "docs": ""
     }
   ]
 }
