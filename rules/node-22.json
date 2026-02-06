@@ -117,6 +117,17 @@
       "severity": "warning",
       "filePattern": "*.js",
       "docs": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing"
+    },
+    {
+      "id": "node-no-cyrillic-comments",
+      "name": "No Cyrillic in comments",
+      "description": "Comments should be in English for international collaboration",
+      "pattern": "//.*[а-яА-ЯёЁ]",
+      "patternType": "regex",
+      "replacement": "Translate comment to English",
+      "severity": "info",
+      "filePattern": "*.js",
+      "docs": ""
     }
   ]
 }
