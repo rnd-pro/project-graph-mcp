@@ -1,0 +1,69 @@
+{
+  "name": "typescript-5",
+  "description": "TypeScript 5.x best practices",
+  "docs": "https://www.typescriptlang.org/docs/",
+  "detect": {
+    "packageJson": [
+      "typescript"
+    ],
+    "imports": [],
+    "patterns": []
+  },
+  "rules": [
+    {
+      "id": "ts-no-any",
+      "name": "Avoid any type",
+      "description": "Use specific types instead of any",
+      "pattern": ": any",
+      "patternType": "string",
+      "replacement": "Use proper type or unknown",
+      "severity": "warning",
+      "filePattern": "*.ts",
+      "docs": "https://www.typescriptlang.org/docs/handbook/2/types-from-types.html"
+    },
+    {
+      "id": "ts-no-non-null-assertion",
+      "name": "Avoid non-null assertion",
+      "description": "Use optional chaining or proper null checks",
+      "pattern": "!.",
+      "patternType": "string",
+      "replacement": "?. or proper null check",
+      "severity": "warning",
+      "filePattern": "*.ts",
+      "docs": "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#non-null-assertion-operator-postfix-"
+    },
+    {
+      "id": "ts-satisfies-over-as",
+      "name": "Use satisfies over as",
+      "description": "satisfies preserves type inference while validating",
+      "pattern": " as {",
+      "patternType": "string",
+      "replacement": "satisfies Type",
+      "severity": "info",
+      "filePattern": "*.ts",
+      "docs": "https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html#the-satisfies-operator"
+    },
+    {
+      "id": "ts-const-assertion",
+      "name": "Use const assertion for literals",
+      "description": "as const makes literals readonly and narrowed",
+      "pattern": "readonly ",
+      "patternType": "string",
+      "replacement": "Consider as const for object literals",
+      "severity": "info",
+      "filePattern": "*.ts",
+      "docs": "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#literal-types"
+    },
+    {
+      "id": "ts-explicit-return",
+      "name": "Add explicit return types",
+      "description": "Public functions should have explicit return types",
+      "pattern": "export function [a-zA-Z]+\\([^)]*\\) {",
+      "patternType": "regex",
+      "replacement": "export function name(): ReturnType { }",
+      "severity": "info",
+      "filePattern": "*.ts",
+      "docs": "https://www.typescriptlang.org/docs/handbook/2/functions.html#return-type-annotations"
+    }
+  ]
+}

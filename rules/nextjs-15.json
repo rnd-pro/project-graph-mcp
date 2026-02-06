@@ -1,0 +1,87 @@
+{
+  "name": "nextjs-15",
+  "description": "Next.js 15 App Router standards",
+  "docs": "https://nextjs.org/docs",
+  "detect": {
+    "packageJson": [
+      "next"
+    ],
+    "imports": [
+      "from 'next'",
+      "next/"
+    ],
+    "patterns": [
+      "app/",
+      "page.tsx",
+      "layout.tsx"
+    ]
+  },
+  "rules": [
+    {
+      "id": "nextjs-use-app-router",
+      "name": "Prefer App Router over Pages",
+      "description": "App Router is the recommended approach in Next.js 13+",
+      "pattern": "pages/",
+      "patternType": "string",
+      "replacement": "Move to app/ directory with Server Components",
+      "severity": "info",
+      "filePattern": "*.tsx",
+      "docs": "https://nextjs.org/docs/app"
+    },
+    {
+      "id": "nextjs-server-actions",
+      "name": "Use Server Actions for mutations",
+      "description": "Prefer Server Actions over API routes for form handling",
+      "pattern": "fetch('/api/",
+      "patternType": "string",
+      "replacement": "async function action() { 'use server'; ... }",
+      "severity": "info",
+      "filePattern": "*.tsx",
+      "docs": "https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions"
+    },
+    {
+      "id": "nextjs-no-client-fetch",
+      "name": "Fetch data on server",
+      "description": "Server Components can fetch data directly without useEffect",
+      "pattern": "useEffect.*fetch",
+      "patternType": "regex",
+      "replacement": "async function Page() { const data = await fetch(...) }",
+      "severity": "warning",
+      "filePattern": "*.tsx",
+      "docs": "https://nextjs.org/docs/app/building-your-application/data-fetching"
+    },
+    {
+      "id": "nextjs-image-component",
+      "name": "Use next/image for images",
+      "description": "next/image provides automatic optimization",
+      "pattern": "<img src=",
+      "patternType": "string",
+      "replacement": "<Image src={...} alt={...} width={...} height={...} />",
+      "severity": "warning",
+      "filePattern": "*.tsx",
+      "docs": "https://nextjs.org/docs/app/api-reference/components/image"
+    },
+    {
+      "id": "nextjs-link-component",
+      "name": "Use next/link for navigation",
+      "description": "next/link enables client-side navigation",
+      "pattern": "<a href=\"/",
+      "patternType": "string",
+      "replacement": "<Link href=\"/...\">",
+      "severity": "warning",
+      "filePattern": "*.tsx",
+      "docs": "https://nextjs.org/docs/app/api-reference/components/link"
+    },
+    {
+      "id": "nextjs-metadata-export",
+      "name": "Export metadata for SEO",
+      "description": "Use metadata export for page SEO",
+      "pattern": "<title>",
+      "patternType": "string",
+      "replacement": "export const metadata = { title: '...' }",
+      "severity": "info",
+      "filePattern": "*.tsx",
+      "docs": "https://nextjs.org/docs/app/building-your-application/optimizing/metadata"
+    }
+  ]
+}

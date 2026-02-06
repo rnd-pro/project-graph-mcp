@@ -49,7 +49,7 @@ Supports: Browser, API, CLI, and Integration tests.
 - `set_custom_rule` — Add/update a rule (agent can configure)
 - `check_custom_rules` — Run custom rules analysis
 
-Includes 5 pre-built rulesets (35 rules): `symbiote-2x`, `react-18`, `vue-3`, `express-5`, `node-22`
+Includes 10 pre-built rulesets (62 rules): React 18/19, Vue 3, Next.js 15, Express 5, Fastify 5, NestJS 10, TypeScript 5, Node.js 22, Symbiote 2.x
 
 ### ⚙️ Filter Configuration
 - `get_filters` / `set_filters` — Configure excluded directories and patterns

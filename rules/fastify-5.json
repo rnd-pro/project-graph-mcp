@@ -1,0 +1,75 @@
+{
+  "name": "fastify-5",
+  "description": "Fastify 5.x server standards",
+  "docs": "https://fastify.dev/docs/latest/",
+  "detect": {
+    "packageJson": [
+      "fastify"
+    ],
+    "imports": [
+      "from 'fastify'",
+      "require('fastify')"
+    ],
+    "patterns": [
+      "fastify.get(",
+      "fastify.post("
+    ]
+  },
+  "rules": [
+    {
+      "id": "fastify-use-schema",
+      "name": "Define JSON Schema for routes",
+      "description": "Schema enables validation and serialization",
+      "pattern": "fastify.get('",
+      "patternType": "string",
+      "replacement": "fastify.get('/path', { schema: { ... } }, handler)",
+      "severity": "info",
+      "filePattern": "*.js",
+      "docs": "https://fastify.dev/docs/latest/Reference/Validation-and-Serialization/"
+    },
+    {
+      "id": "fastify-async-handlers",
+      "name": "Use async handlers",
+      "description": "Async handlers auto-handle promise rejections",
+      "pattern": "function(request, reply)",
+      "patternType": "string",
+      "replacement": "async function(request, reply)",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "docs": "https://fastify.dev/docs/latest/Reference/Routes/#async-await"
+    },
+    {
+      "id": "fastify-use-plugins",
+      "name": "Encapsulate with plugins",
+      "description": "Use plugins for modular architecture",
+      "pattern": "fastify.register(",
+      "patternType": "string",
+      "replacement": "fastify.register(plugin, { prefix: '/api' })",
+      "severity": "info",
+      "filePattern": "*.js",
+      "docs": "https://fastify.dev/docs/latest/Reference/Plugins/"
+    },
+    {
+      "id": "fastify-no-express-middleware",
+      "name": "Avoid Express middleware",
+      "description": "Use Fastify hooks instead of Express middleware",
+      "pattern": "express()",
+      "patternType": "string",
+      "replacement": "Use fastify.addHook() or @fastify/middie",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "docs": "https://fastify.dev/docs/latest/Reference/Hooks/"
+    },
+    {
+      "id": "fastify-use-logger",
+      "name": "Enable built-in logger",
+      "description": "Fastify has pino logger built-in",
+      "pattern": "console.log(",
+      "patternType": "string",
+      "replacement": "request.log.info() or fastify.log.info()",
+      "severity": "info",
+      "filePattern": "*.js",
+      "docs": "https://fastify.dev/docs/latest/Reference/Logging/"
+    }
+  ]
+}

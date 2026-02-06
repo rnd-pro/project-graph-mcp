@@ -1,0 +1,88 @@
+{
+  "name": "nestjs-10",
+  "description": "NestJS 10.x architecture standards",
+  "docs": "https://docs.nestjs.com/",
+  "detect": {
+    "packageJson": [
+      "@nestjs/core",
+      "@nestjs/common"
+    ],
+    "imports": [
+      "from '@nestjs/common'",
+      "from '@nestjs/core'"
+    ],
+    "patterns": [
+      "@Controller",
+      "@Injectable",
+      "@Module"
+    ]
+  },
+  "rules": [
+    {
+      "id": "nestjs-use-dto",
+      "name": "Use DTOs for validation",
+      "description": "Create DTO classes with class-validator decorators",
+      "pattern": "@Body() body:",
+      "patternType": "string",
+      "replacement": "@Body() dto: CreateItemDto",
+      "severity": "warning",
+      "filePattern": "*.ts",
+      "docs": "https://docs.nestjs.com/techniques/validation"
+    },
+    {
+      "id": "nestjs-no-any-injection",
+      "name": "Type all injected dependencies",
+      "description": "Avoid any type for constructor injection",
+      "pattern": "constructor.*: any",
+      "patternType": "regex",
+      "replacement": "constructor(private service: ServiceClass)",
+      "severity": "warning",
+      "filePattern": "*.ts",
+      "docs": "https://docs.nestjs.com/providers"
+    },
+    {
+      "id": "nestjs-use-interceptors",
+      "name": "Use interceptors for cross-cutting concerns",
+      "description": "Logging, caching, transform should use interceptors",
+      "pattern": "console.log.*request",
+      "patternType": "regex",
+      "replacement": "@UseInterceptors(LoggingInterceptor)",
+      "severity": "info",
+      "filePattern": "*.ts",
+      "docs": "https://docs.nestjs.com/interceptors"
+    },
+    {
+      "id": "nestjs-use-guards",
+      "name": "Use guards for authorization",
+      "description": "Auth checks should be in guards, not controllers",
+      "pattern": "if.*user.*throw",
+      "patternType": "regex",
+      "replacement": "@UseGuards(AuthGuard)",
+      "severity": "warning",
+      "filePattern": "*.controller.ts",
+      "docs": "https://docs.nestjs.com/guards"
+    },
+    {
+      "id": "nestjs-use-pipes",
+      "name": "Use pipes for validation",
+      "description": "Apply ValidationPipe globally or per-route",
+      "pattern": "@Body()",
+      "patternType": "string",
+      "replacement": "@Body(ValidationPipe) or app.useGlobalPipes()",
+      "severity": "info",
+      "filePattern": "*.ts",
+      "docs": "https://docs.nestjs.com/pipes"
+    },
+    {
+      "id": "nestjs-swagger-decorators",
+      "name": "Add Swagger decorators",
+      "description": "Document API with @ApiTags, @ApiOperation, etc.",
+      "pattern": "@Controller(",
+      "patternType": "string",
+      "replacement": "@ApiTags('...')\n@Controller('...')",
+      "severity": "info",
+      "filePattern": "*.controller.ts",
+      "docs": "https://docs.nestjs.com/openapi/introduction"
+    }
+  ]
+}

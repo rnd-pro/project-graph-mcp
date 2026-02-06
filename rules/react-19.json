@@ -1,0 +1,76 @@
+{
+  "name": "react-19",
+  "description": "React 19+ with Server Components and Actions",
+  "docs": "https://react.dev/",
+  "detect": {
+    "packageJson": [
+      "react"
+    ],
+    "imports": [
+      "from 'react'",
+      "from \"react\""
+    ],
+    "patterns": [
+      "use client",
+      "use server",
+      "useActionState"
+    ]
+  },
+  "rules": [
+    {
+      "id": "react19-use-action-state",
+      "name": "Use useActionState for forms",
+      "description": "Prefer useActionState over useState for form handling",
+      "pattern": "useState.*handleSubmit",
+      "patternType": "regex",
+      "replacement": "useActionState((prev, formData) => { ... })",
+      "severity": "info",
+      "filePattern": "*.jsx",
+      "docs": "https://react.dev/reference/react/useActionState"
+    },
+    {
+      "id": "react19-use-optimistic",
+      "name": "Consider useOptimistic for instant UI",
+      "description": "Use useOptimistic for optimistic updates",
+      "pattern": "setLoading(true)",
+      "patternType": "string",
+      "replacement": "useOptimistic() for instant feedback",
+      "severity": "info",
+      "filePattern": "*.jsx",
+      "docs": "https://react.dev/reference/react/useOptimistic"
+    },
+    {
+      "id": "react19-no-forwardref",
+      "name": "forwardRef is deprecated",
+      "description": "In React 19, ref is passed as a prop, forwardRef not needed",
+      "pattern": "forwardRef",
+      "patternType": "string",
+      "replacement": "function Component({ ref, ...props })",
+      "severity": "warning",
+      "filePattern": "*.jsx",
+      "docs": "https://react.dev/blog/2024/04/25/react-19"
+    },
+    {
+      "id": "react19-no-use-memo-everywhere",
+      "name": "React Compiler handles memoization",
+      "description": "With React Compiler, manual useMemo/useCallback often unnecessary",
+      "pattern": "useMemo(",
+      "patternType": "string",
+      "replacement": "Let React Compiler optimize, remove if not needed",
+      "severity": "info",
+      "filePattern": "*.jsx",
+      "docs": "https://react.dev/learn/react-compiler"
+    },
+    {
+      "id": "react19-use-form-status",
+      "name": "Use useFormStatus for pending state",
+      "description": "useFormStatus provides pending state for forms",
+      "pattern": "isSubmitting",
+      "patternType": "string",
+      "replacement": "const { pending } = useFormStatus()",
+      "severity": "info",
+      "filePattern": "*.jsx",
+      "docs": "https://react.dev/reference/react-dom/hooks/useFormStatus"
+    }
+  ]
+}
