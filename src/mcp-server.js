@@ -13,6 +13,7 @@ import { generateJSDoc, generateJSDocFor } from './jsdoc-generator.js';
 import { getSimilarFunctions } from './similar-functions.js';
 import { getComplexity } from './complexity.js';
 import { getLargeFiles } from './large-files.js';
+import { getOutdatedPatterns } from './outdated-patterns.js';
 
 /**
  * Create MCP server instance
@@ -158,6 +159,12 @@ export function createServer() {
 
         case 'get_large_files':
           return await getLargeFiles(args.path, { onlyProblematic: args.onlyProblematic });
+
+        case 'get_outdated_patterns':
+          return await getOutdatedPatterns(args.path, {
+            codeOnly: args.codeOnly,
+            depsOnly: args.depsOnly,
+          });
 
         default:
           throw new Error(`Unknown tool: ${name}`);

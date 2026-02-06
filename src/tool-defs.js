@@ -334,4 +334,26 @@ export const TOOLS = [
       required: ['path'],
     },
   },
+  {
+    name: 'get_outdated_patterns',
+    description: 'Find legacy code patterns and redundant npm dependencies (now built into Node.js 18+).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Path to scan (e.g., "src/" or ".")',
+        },
+        codeOnly: {
+          type: 'boolean',
+          description: 'Only check code patterns',
+        },
+        depsOnly: {
+          type: 'boolean',
+          description: 'Only check package.json dependencies',
+        },
+      },
+      required: ['path'],
+    },
+  },
 ];

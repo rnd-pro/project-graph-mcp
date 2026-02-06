@@ -12,6 +12,7 @@ import { generateJSDoc } from './jsdoc-generator.js';
 import { getSimilarFunctions } from './similar-functions.js';
 import { getComplexity } from './complexity.js';
 import { getLargeFiles } from './large-files.js';
+import { getOutdatedPatterns } from './outdated-patterns.js';
 
 /**
  * Print CLI help
@@ -37,6 +38,7 @@ Commands:
   similar <path>         Find similar functions (--threshold=60)
   complexity <path>      Analyze cyclomatic complexity (--min=1)
   largefiles <path>      Find files needing split (--problematic)
+  outdated <path>        Find legacy patterns & redundant deps
   filters                Show current filter configuration
   instructions           Show agent guidelines (JSDoc, Arch)
   help                   Show this help
@@ -131,6 +133,13 @@ export async function runCLI(command, args) {
         const lfPath = args.find(a => !a.startsWith('--')) || '.';
         const lfProblematic = args.includes('--problematic');
         result = await getLargeFiles(lfPath, { onlyProblematic: lfProblematic });
+        break;
+
+      case 'outdated':
+        const outPath = args.find(a => !a.startsWith('--')) || '.';
+        const codeOnly = args.includes('--code');
+        const depsOnly = args.includes('--deps');
+        result = await getOutdatedPatterns(outPath, { codeOnly, depsOnly });
         break;
 
       case 'help':
