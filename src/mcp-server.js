@@ -7,7 +7,7 @@ import { getSkeleton, getFocusZone, expand, deps, usages, invalidateCache } from
 import { getPendingTests, markTestPassed, markTestFailed, getTestSummary, resetTestState } from './test-annotations.js';
 import { getFilters, setFilters, addExcludes, removeExcludes, resetFilters } from './filters.js';
 import { getInstructions } from './instructions.js';
-import { getUndocumented } from './undocumented.js';
+import { getUndocumentedSummary } from './undocumented.js';
 
 /**
  * Create MCP server instance
@@ -130,7 +130,7 @@ export function createServer() {
 
         // Documentation
         case 'get_undocumented':
-          return await getUndocumented(args.path, { level: args.level });
+          return getUndocumentedSummary(args.path, args.level || 'tests');
 
         default:
           throw new Error(`Unknown tool: ${name}`);

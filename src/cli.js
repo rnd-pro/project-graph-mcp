@@ -6,7 +6,7 @@ import { getSkeleton, getFocusZone, expand, deps, usages, invalidateCache } from
 import { getPendingTests, getTestSummary } from './test-annotations.js';
 import { getFilters, addExcludes, resetFilters } from './filters.js';
 import { getInstructions } from './instructions.js';
-import { getUndocumented } from './undocumented.js';
+import { getUndocumentedSummary } from './undocumented.js';
 
 /**
  * Print CLI help
@@ -87,7 +87,7 @@ export async function runCLI(command, args) {
       case 'undocumented':
         const level = args.find(a => a.startsWith('--level='))?.split('=')[1] || 'tests';
         const uPath = args.find(a => !a.startsWith('--')) || '.';
-        result = await getUndocumented(uPath, { level });
+        result = getUndocumentedSummary(uPath, level);
         break;
 
       case 'help':
