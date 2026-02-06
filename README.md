@@ -66,6 +66,7 @@ node src/server.js help
 
 ## MCP Configuration
 
+### Antigravity / Gemini CLI
 Add to `.gemini/settings.json`:
 ```json
 {
@@ -77,6 +78,35 @@ Add to `.gemini/settings.json`:
   }
 }
 ```
+
+### Cursor
+Add to `.cursor/mcp.json`:
+```json
+{
+  "mcpServers": {
+    "project-graph": {
+      "command": "node",
+      "args": ["/path/to/project-graph-mcp/src/server.js"]
+    }
+  }
+}
+```
+
+### Claude Desktop
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "project-graph": {
+      "command": "node",
+      "args": ["/path/to/project-graph-mcp/src/server.js"]
+    }
+  }
+}
+```
+
+### Any MCP Client
+The server uses **stdio transport** — pass JSON-RPC messages via stdin/stdout.
 
 ## Test Annotations
 
