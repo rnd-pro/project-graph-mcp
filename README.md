@@ -18,6 +18,15 @@
 
 Supports: Browser, API, CLI, and Integration tests.
 
+### 🔍 Code Quality Analysis
+- `get_dead_code` — Find unused functions/classes (never called, not exported)
+- `generate_jsdoc` — Auto-generate JSDoc templates with @test/@expect
+- `get_similar_functions` — Detect duplicates (signature + structure similarity)
+- `get_complexity` — Cyclomatic complexity metrics (flags >10)
+- `get_large_files` — Files needing split (lines, functions, exports)
+- `get_outdated_patterns` — Legacy code patterns + redundant npm deps (Node 18+ built-ins)
+- `get_undocumented` — Find missing JSDoc (@test, @param, @returns)
+
 ### ⚙️ Filter Configuration
 - `get_filters` / `set_filters` — Configure excluded directories and patterns
 - `add_excludes` / `remove_excludes` — Modify exclude list
@@ -59,6 +68,14 @@ node src/server.js filters
 
 # Show agent instructions
 node src/server.js instructions
+
+# Code Quality Analysis
+node src/server.js deadcode src/       # Find unused code
+node src/server.js jsdoc src/file.js   # Generate JSDoc
+node src/server.js similar src/        # Find duplicates
+node src/server.js complexity src/     # Cyclomatic complexity
+node src/server.js largefiles src/     # Large files
+node src/server.js outdated .          # Legacy patterns
 
 # Show help
 node src/server.js help
