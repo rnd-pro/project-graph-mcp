@@ -276,4 +276,22 @@ export const TOOLS = [
       required: ['path'],
     },
   },
+  {
+    name: 'get_similar_functions',
+    description: 'Find functionally similar functions (potential duplicates). Returns pairs with similarity score.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Path to scan (e.g., "src/")',
+        },
+        threshold: {
+          type: 'number',
+          description: 'Minimum similarity percentage (default: 60)',
+        },
+      },
+      required: ['path'],
+    },
+  },
 ];

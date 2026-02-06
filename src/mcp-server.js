@@ -10,6 +10,7 @@ import { getInstructions } from './instructions.js';
 import { getUndocumentedSummary } from './undocumented.js';
 import { getDeadCode } from './dead-code.js';
 import { generateJSDoc, generateJSDocFor } from './jsdoc-generator.js';
+import { getSimilarFunctions } from './similar-functions.js';
 
 /**
  * Create MCP server instance
@@ -143,6 +144,9 @@ export function createServer() {
             return generateJSDocFor(args.path, args.name);
           }
           return generateJSDoc(args.path);
+
+        case 'get_similar_functions':
+          return await getSimilarFunctions(args.path, { threshold: args.threshold });
 
         default:
           throw new Error(`Unknown tool: ${name}`);

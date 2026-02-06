@@ -9,6 +9,7 @@ import { getInstructions } from './instructions.js';
 import { getUndocumentedSummary } from './undocumented.js';
 import { getDeadCode } from './dead-code.js';
 import { generateJSDoc } from './jsdoc-generator.js';
+import { getSimilarFunctions } from './similar-functions.js';
 
 /**
  * Print CLI help
@@ -31,6 +32,7 @@ Commands:
   undocumented <path>    Find missing JSDoc (--level=tests|params|all)
   deadcode <path>        Find unused functions/classes
   jsdoc <file>           Generate JSDoc for file
+  similar <path>         Find similar functions (--threshold=60)
   filters                Show current filter configuration
   instructions           Show agent guidelines (JSDoc, Arch)
   help                   Show this help
@@ -106,6 +108,12 @@ export async function runCLI(command, args) {
           process.exit(1);
         }
         result = generateJSDoc(jsPath);
+        break;
+
+      case 'similar':
+        const simPath = args.find(a => !a.startsWith('--')) || '.';
+        const simThreshold = parseInt(args.find(a => a.startsWith('--threshold='))?.split('=')[1]) || 60;
+        result = await getSimilarFunctions(simPath, { threshold: simThreshold });
         break;
 
       case 'help':
