@@ -2,8 +2,8 @@
 
 ## v1.1 — Code Analysis Tools
 
-### Phase 1: Dead Code Detection
-- [ ] `get_dead_code` — Find unused functions/classes
+### Phase 1: Dead Code Detection ✅
+- [x] `get_dead_code` — Find unused functions/classes
   - Leverage existing dependency graph
   - Detect orphan nodes (no incoming edges)
   - Exclude entry points (exports, event handlers)
