@@ -68,10 +68,12 @@ node src/server.js help
 
 See **[CONFIGURATION.md](CONFIGURATION.md)** for client-specific setup:
 - Antigravity / Gemini CLI
-- Cursor
-- Claude Desktop  
+- Cursor / Zed / Continue
+- VS Code + Copilot / CodeGPT
+- Claude Desktop
 - OpenCode / Crush
-- VS Code + Copilot
+- Jenova (mobile)
+- Firebase Genkit / NVIDIA AIQ
 
 ## Test Annotations
 
