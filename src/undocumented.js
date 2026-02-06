@@ -154,8 +154,12 @@ function parseUndocumented(content, filePath, level) {
   while ((match = classMethodRegex.exec(content)) !== null) {
     const methodName = match[3];
 
-    // Skip constructor and lifecycle methods
-    if (['constructor', 'connectedCallback', 'disconnectedCallback', 'attributeChangedCallback', 'renderCallback'].includes(methodName)) {
+    // Skip constructor, lifecycle methods, and JS keywords
+    const skipNames = [
+      'constructor', 'connectedCallback', 'disconnectedCallback', 'attributeChangedCallback', 'renderCallback',
+      'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'try', 'catch', 'finally', 'with',
+    ];
+    if (skipNames.includes(methodName)) {
       continue;
     }
 
