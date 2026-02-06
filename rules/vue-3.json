@@ -1,0 +1,79 @@
+{
+  "name": "vue-3",
+  "description": "Vue 3 Composition API standards",
+  "docs": "https://vuejs.org/",
+  "detect": {
+    "packageJson": [
+      "vue"
+    ],
+    "imports": [
+      "from 'vue'",
+      "from \"vue\""
+    ],
+    "patterns": [
+      "defineComponent",
+      "ref(",
+      "reactive("
+    ]
+  },
+  "rules": [
+    {
+      "id": "vue-no-options-api",
+      "name": "Use Composition API",
+      "description": "Prefer Composition API over Options API in Vue 3",
+      "pattern": "data() {",
+      "patternType": "string",
+      "replacement": "const state = reactive({ ... })",
+      "severity": "info",
+      "filePattern": "*.vue",
+      "docs": "https://vuejs.org/guide/extras/composition-api-faq.html"
+    },
+    {
+      "id": "vue-no-this-in-setup",
+      "name": "No this in setup()",
+      "description": "this is undefined in setup(), use refs and reactive objects",
+      "pattern": "this\\.",
+      "patternType": "regex",
+      "replacement": "Use reactive(), ref(), or inject()",
+      "severity": "error",
+      "filePattern": "*.vue",
+      "docs": "https://vuejs.org/api/composition-api-setup.html"
+    },
+    {
+      "id": "vue-no-v-html",
+      "name": "Avoid v-html directive",
+      "description": "Can lead to XSS vulnerabilities",
+      "pattern": "v-html",
+      "patternType": "string",
+      "replacement": "Use text interpolation or sanitize content",
+      "severity": "warning",
+      "filePattern": "*.vue",
+      "docs": "https://vuejs.org/api/built-in-directives.html#v-html"
+    },
+    {
+      "id": "vue-key-in-v-for",
+      "name": "v-for should have :key",
+      "description": "Always use :key with v-for for proper DOM patching",
+      "pattern": "v-for=\"[^\"]+\"[^>]*(?!:key)",
+      "patternType": "regex",
+      "replacement": "v-for=\"item in items\" :key=\"item.id\"",
+      "severity": "error",
+      "filePattern": "*.vue",
+      "docs": "https://vuejs.org/guide/essentials/list.html#maintaining-state-with-key"
+    },
+    {
+      "id": "vue-script-setup",
+      "name": "Use script setup",
+      "description": "Prefer <script setup> for cleaner component syntax",
+      "pattern": "<script>",
+      "patternType": "string",
+      "replacement": "<script setup>",
+      "severity": "info",
+      "filePattern": "*.vue",
+      "exclude": [
+        "*.js"
+      ],
+      "docs": "https://vuejs.org/api/sfc-script-setup.html"
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "name": "react-18",
+  "description": "React 18+ component standards",
+  "docs": "https://react.dev/",
+  "detect": {
+    "packageJson": [
+      "react",
+      "react-dom"
+    ],
+    "imports": [
+      "from 'react'",
+      "from \"react\""
+    ],
+    "patterns": [
+      "useState",
+      "useEffect"
+    ]
+  },
+  "rules": [
+    {
+      "id": "react-no-class-components",
+      "name": "Use functional components",
+      "description": "Prefer functional components over class components in React 18+",
+      "pattern": "extends Component",
+      "patternType": "string",
+      "replacement": "function Component() { ... } or const Component = () => { ... }",
+      "severity": "warning",
+      "filePattern": "*.jsx",
+      "docs": "https://react.dev/learn/your-first-component"
+    },
+    {
+      "id": "react-no-default-export",
+      "name": "Use named exports",
+      "description": "Prefer named exports for better refactoring support",
+      "pattern": "export default",
+      "patternType": "string",
+      "replacement": "export function/const ComponentName",
+      "severity": "info",
+      "filePattern": "*.jsx",
+      "docs": "https://react.dev/learn/importing-and-exporting-components"
+    },
+    {
+      "id": "react-useeffect-deps",
+      "name": "useEffect without deps array",
+      "description": "useEffect should have a dependency array to prevent infinite loops",
+      "pattern": "useEffect\\([^)]+\\)\\s*$",
+      "patternType": "regex",
+      "replacement": "useEffect(() => { ... }, [dependencies])",
+      "severity": "warning",
+      "filePattern": "*.jsx",
+      "docs": "https://react.dev/reference/react/useEffect"
+    },
+    {
+      "id": "react-no-inline-styles",
+      "name": "Avoid inline styles",
+      "description": "Use CSS modules or styled-components instead of inline styles",
+      "pattern": "style={{",
+      "patternType": "string",
+      "replacement": "className={styles.myClass}",
+      "severity": "info",
+      "filePattern": "*.jsx",
+      "docs": "https://react.dev/learn/passing-props-to-a-component"
+    },
+    {
+      "id": "react-no-dangerouslysetinnerhtml",
+      "name": "Avoid dangerouslySetInnerHTML",
+      "description": "Can lead to XSS vulnerabilities, use with caution",
+      "pattern": "dangerouslySetInnerHTML",
+      "patternType": "string",
+      "replacement": "Parse and render safe content",
+      "severity": "error",
+      "filePattern": "*.jsx",
+      "docs": "https://react.dev/reference/react-dom/components/common#dangerously-setting-the-inner-html"
+    },
+    {
+      "id": "react-key-prop",
+      "name": "Array key should not use index",
+      "description": "Using array index as key can cause issues with reordering",
+      "pattern": "key={index}",
+      "patternType": "string",
+      "replacement": "key={item.id} or unique identifier",
+      "severity": "warning",
+      "filePattern": "*.jsx",
+      "docs": "https://react.dev/learn/rendering-lists#keeping-list-items-in-order-with-key"
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "name": "node-22",
+  "description": "Node.js 22+ modern standards",
+  "docs": "https://nodejs.org/docs/latest/api/",
+  "detect": {
+    "packageJson": [],
+    "imports": [],
+    "patterns": []
+  },
+  "rules": [
+    {
+      "id": "node-no-require",
+      "name": "Use ESM imports",
+      "description": "Prefer ES modules over CommonJS require()",
+      "pattern": "require(",
+      "patternType": "string",
+      "replacement": "import ... from '...'",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "docs": "https://nodejs.org/api/esm.html"
+    },
+    {
+      "id": "node-no-callback-hell",
+      "name": "Avoid callback nesting",
+      "description": "Use async/await instead of nested callbacks",
+      "pattern": ", (err,",
+      "patternType": "string",
+      "replacement": "await promisify() or native async methods",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "docs": "https://nodejs.org/api/util.html#utilpromisifyoriginal"
+    },
+    {
+      "id": "node-no-process-exit",
+      "name": "Avoid process.exit()",
+      "description": "Let Node exit naturally, or use proper shutdown handlers",
+      "pattern": "process.exit(",
+      "patternType": "string",
+      "replacement": "Graceful shutdown with cleanup",
+      "severity": "info",
+      "filePattern": "*.js",
+      "docs": "https://nodejs.org/api/process.html#processexitcode"
+    },
+    {
+      "id": "node-use-fetch",
+      "name": "Use native fetch()",
+      "description": "Node 18+ has built-in fetch, no need for node-fetch",
+      "pattern": "node-fetch",
+      "patternType": "string",
+      "replacement": "Use globalThis.fetch()",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "docs": "https://nodejs.org/api/globals.html#fetch"
+    },
+    {
+      "id": "node-use-crypto-randomuuid",
+      "name": "Use crypto.randomUUID()",
+      "description": "Node 19+ has built-in UUID generation",
+      "pattern": "uuid",
+      "patternType": "string",
+      "replacement": "crypto.randomUUID()",
+      "severity": "info",
+      "filePattern": "*.js",
+      "docs": "https://nodejs.org/api/crypto.html#cryptorandomuuidoptions"
+    },
+    {
+      "id": "node-use-structuredclone",
+      "name": "Use structuredClone()",
+      "description": "Node 17+ has built-in deep cloning",
+      "pattern": "JSON.parse(JSON.stringify(",
+      "patternType": "string",
+      "replacement": "structuredClone(obj)",
+      "severity": "info",
+      "filePattern": "*.js",
+      "docs": "https://developer.mozilla.org/en-US/docs/Web/API/structuredClone"
+    },
+    {
+      "id": "node-no-sync-fs",
+      "name": "Avoid sync fs methods",
+      "description": "Synchronous methods block the event loop",
+      "pattern": "Sync(",
+      "patternType": "string",
+      "replacement": "Use fs/promises: readFile, writeFile, etc.",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "docs": "https://nodejs.org/api/fs.html#fspromisesapi"
+    }
+  ]
+}

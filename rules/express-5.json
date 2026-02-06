@@ -1,0 +1,76 @@
+{
+  "name": "express-5",
+  "description": "Express.js 5.x API standards",
+  "docs": "https://expressjs.com/",
+  "detect": {
+    "packageJson": [
+      "express"
+    ],
+    "imports": [
+      "from 'express'",
+      "require('express')"
+    ],
+    "patterns": [
+      "app.get(",
+      "app.post(",
+      "app.use("
+    ]
+  },
+  "rules": [
+    {
+      "id": "express-no-sync-methods",
+      "name": "Avoid sync file methods",
+      "description": "Synchronous methods block the event loop",
+      "pattern": "Sync(",
+      "patternType": "string",
+      "replacement": "Use async versions: readFile, writeFile, etc.",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "docs": "https://expressjs.com/en/advanced/best-practice-performance.html"
+    },
+    {
+      "id": "express-error-handler",
+      "name": "Missing error parameter",
+      "description": "Error handlers must have 4 parameters (err, req, res, next)",
+      "pattern": "app.use\\(\\(req, res\\)",
+      "patternType": "regex",
+      "replacement": "app.use((err, req, res, next) => { ... })",
+      "severity": "info",
+      "filePattern": "*.js",
+      "docs": "https://expressjs.com/en/guide/error-handling.html"
+    },
+    {
+      "id": "express-no-res-send-in-loop",
+      "name": "res.send() in loop",
+      "description": "Response can only be sent once per request",
+      "pattern": "forEach.*res\\.send",
+      "patternType": "regex",
+      "replacement": "Collect results, then send once",
+      "severity": "error",
+      "filePattern": "*.js",
+      "docs": "https://expressjs.com/en/api.html#res.send"
+    },
+    {
+      "id": "express-use-helmet",
+      "name": "Consider using Helmet",
+      "description": "Helmet helps secure Express apps with HTTP headers",
+      "pattern": "app.listen(",
+      "patternType": "string",
+      "replacement": "Add app.use(helmet()) for security headers",
+      "severity": "info",
+      "filePattern": "*.js",
+      "docs": "https://helmetjs.github.io/"
+    },
+    {
+      "id": "express-async-handler",
+      "name": "Async route without try-catch",
+      "description": "Unhandled promise rejections can crash the server",
+      "pattern": "async (req, res)",
+      "patternType": "string",
+      "replacement": "Wrap in try-catch or use express-async-handler",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "docs": "https://expressjs.com/en/guide/error-handling.html"
+    }
+  ]
+}
