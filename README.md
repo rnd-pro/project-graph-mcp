@@ -2,6 +2,8 @@
 
 **MCP server for AI agents** — provides minified project graph and universal test checklists.
 
+> Developed by [RND-PRO](https://rnd-pro.com)
+
 ## Features
 
 ### 🗺️ Project Graph (10-50x compression)
