@@ -1,6 +1,6 @@
 # project-graph-mcp
 
-**MCP server for AI agents** — provides minified project graph and universal test checklists.
+**MCP server for AI agents** — project graph, code quality analysis, and framework-specific lint rules.
 
 > Developed by [RND-PRO](https://rnd-pro.com)
 
