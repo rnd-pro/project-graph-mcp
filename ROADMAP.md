@@ -14,8 +14,8 @@
   - Infer return type from return statements
   - Generate template with @test/@expect placeholders
 
-### Phase 3: Similar Functions Detection
-- [ ] `get_similar_functions` — Find functional duplicates
+### Phase 3: Similar Functions Detection ✅
+- [x] `get_similar_functions` — Find functional duplicates
   - Compare function signatures (param count, names)
   - Analyze AST structure patterns
   - Score similarity (0-100%)
