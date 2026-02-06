@@ -37,12 +37,10 @@ Configuration examples for popular MCP clients (2026).
 ```json
 // ~/.config/zed/settings.json
 {
-  "language_models": {
-    "mcp_servers": {
-      "project-graph": {
-        "command": "node",
-        "args": ["/path/to/project-graph-mcp/src/server.js"]
-      }
+  "context_servers": {
+    "project-graph": {
+      "command": "node",
+      "args": ["/path/to/project-graph-mcp/src/server.js"]
     }
   }
 }
@@ -62,16 +60,20 @@ Configuration examples for popular MCP clients (2026).
 ```
 
 ### Continue
+```yaml
+# ~/.continue/mcpServers/project-graph.yaml
+name: project-graph
+command: node
+args:
+  - /path/to/project-graph-mcp/src/server.js
+```
+
+Or JSON format in `~/.continue/mcpServers/project-graph.json`:
 ```json
-// ~/.continue/config.json
 {
-  "mcpServers": [
-    {
-      "name": "project-graph",
-      "command": "node",
-      "args": ["/path/to/project-graph-mcp/src/server.js"]
-    }
-  ]
+  "name": "project-graph",
+  "command": "node",
+  "args": ["/path/to/project-graph-mcp/src/server.js"]
 }
 ```
 
