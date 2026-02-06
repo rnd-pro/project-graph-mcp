@@ -42,8 +42,14 @@ Rules are applied automatically based on:
 - Import patterns in source code
 - Code patterns (e.g., `extends Symbiote`)
 
-### Pre-built Rulesets
-- `symbiote-2x` — 12 rules for Symbiote.js 2.x components
+### Pre-built Rulesets (35 rules)
+| Ruleset | Rules | Framework |
+|---------|-------|-----------|
+| `symbiote-2x` | 12 | Symbiote.js 2.x |
+| `react-18` | 6 | React 18+ |
+| `vue-3` | 5 | Vue 3 Composition API |
+| `express-5` | 5 | Express.js 5.x |
+| `node-22` | 7 | Node.js 22+ |
 
 ### Creating New Rules
 Read project workflow docs (e.g., `.agent/workflows/symbiote-audit.md`) and use `set_custom_rule`:
