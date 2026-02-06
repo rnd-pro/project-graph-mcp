@@ -105,6 +105,21 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 }
 ```
 
+### OpenCode / Crush
+Add to `~/.config/opencode/config.json`:
+```json
+{
+  "mcp": {
+    "servers": {
+      "project-graph": {
+        "command": "node",
+        "args": ["/path/to/project-graph-mcp/src/server.js"]
+      }
+    }
+  }
+}
+```
+
 ### Any MCP Client
 The server uses **stdio transport** — pass JSON-RPC messages via stdin/stdout.
 
