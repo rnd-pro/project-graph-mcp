@@ -1,5 +1,9 @@
 /**
  * Core MCP Server Logic
+ * 
+ * Implements bidirectional JSON-RPC 2.0 over stdio:
+ * - Handles client→server requests (tools/list, tools/call)
+ * - Sends server→client requests (roots/list) to get workspace info
  */
 
 import { TOOLS } from './tool-defs.js';
@@ -79,28 +83,59 @@ const TOOL_HANDLERS = {
 
 /**
  * Create MCP server instance
+ * @param {Function} sendToClient - Function to send JSON-RPC messages to client
  * @returns {Object}
  */
-export function createServer() {
-  return {
-    /**
-     * Handle incoming MCP request
-     * @param {Object} request 
-     * @returns {Promise<Object>}
-     */
-    async handleRequest(request) {
-      const { method, params, id } = request;
+export function createServer(sendToClient) {
+  let nextRequestId = 1;
 
-      // Notifications (no id) should not receive a response per JSON-RPC 2.0
-      if (id === undefined) {
+  /** @type {Map<number, {resolve: Function, reject: Function}>} */
+  const pendingRequests = new Map();
+
+  /** @type {boolean} */
+  let clientSupportsRoots = false;
+
+  return {
+    pendingRequests,
+
+    /**
+     * Handle incoming JSON-RPC message (request, response, or notification)
+     * @param {Object} message
+     * @returns {Promise<Object|null>}
+     */
+    async handleMessage(message) {
+      // Check if this is a response to our server→client request
+      if (message.result !== undefined || message.error !== undefined) {
+        const pending = pendingRequests.get(message.id);
+        if (pending) {
+          pendingRequests.delete(message.id);
+          if (message.error) {
+            pending.reject(new Error(message.error.message));
+          } else {
+            pending.resolve(message.result);
+          }
+        }
         return null;
       }
 
+      const { method, params, id } = message;
+
+      // Notification (no id) — handle but don't respond
+      if (id === undefined) {
+        await this.handleNotification(method, params);
+        return null;
+      }
+
+      // Request — handle and respond
       try {
         switch (method) {
           case 'initialize':
-            // Extract workspace roots from client
-            if (params && params.roots) {
+            // Track client capabilities
+            if (params?.capabilities?.roots) {
+              clientSupportsRoots = true;
+            }
+            // Also check for inline roots
+            if (params?.roots) {
               setRoots(params.roots);
             }
             return {
@@ -109,14 +144,14 @@ export function createServer() {
               result: {
                 protocolVersion: '2024-11-05',
                 capabilities: { tools: {} },
-                serverInfo: { name: 'project-graph', version: '1.0.1' },
+                serverInfo: { name: 'project-graph', version: '1.1.0' },
               },
             };
 
           case 'tools/list':
             return { jsonrpc: '2.0', id, result: { tools: TOOLS } };
 
-          case 'tools/call':
+          case 'tools/call': {
             const result = await this.executeTool(params.name, params.arguments);
             return {
               jsonrpc: '2.0',
@@ -125,6 +160,7 @@ export function createServer() {
                 content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
               },
             };
+          }
 
           default:
             return {
@@ -139,9 +175,78 @@ export function createServer() {
     },
 
     /**
+     * Handle MCP notifications
+     * @param {string} method
+     * @param {Object} params
+     */
+    async handleNotification(method, params) {
+      switch (method) {
+        case 'notifications/initialized':
+          // Client is ready — request workspace roots if supported
+          if (clientSupportsRoots) {
+            try {
+              const roots = await this.requestRoots();
+              if (roots && roots.length > 0) {
+                setRoots(roots);
+              }
+            } catch (e) {
+              console.error(`[project-graph] Failed to get roots: ${e.message}`);
+            }
+          }
+          break;
+
+        case 'notifications/roots/list_changed':
+          // Workspace roots changed — re-request
+          if (clientSupportsRoots) {
+            try {
+              const roots = await this.requestRoots();
+              if (roots && roots.length > 0) {
+                setRoots(roots);
+                invalidateCache();
+              }
+            } catch (e) {
+              console.error(`[project-graph] Failed to refresh roots: ${e.message}`);
+            }
+          }
+          break;
+      }
+    },
+
+    /**
+     * Send roots/list request to client
+     * @returns {Promise<Array<{uri: string, name?: string}>>}
+     */
+    requestRoots() {
+      return new Promise((resolve, reject) => {
+        const id = nextRequestId++;
+        const timeout = setTimeout(() => {
+          pendingRequests.delete(id);
+          reject(new Error('roots/list request timed out'));
+        }, 5000);
+
+        pendingRequests.set(id, {
+          resolve: (result) => {
+            clearTimeout(timeout);
+            resolve(result.roots || []);
+          },
+          reject: (err) => {
+            clearTimeout(timeout);
+            reject(err);
+          },
+        });
+
+        sendToClient({
+          jsonrpc: '2.0',
+          id,
+          method: 'roots/list',
+        });
+      });
+    },
+
+    /**
      * Execute a tool by name
-     * @param {string} name 
-     * @param {Object} args 
+     * @param {string} name
+     * @param {Object} args
      * @returns {Promise<any>}
      */
     async executeTool(name, args) {
@@ -158,7 +263,15 @@ export function createServer() {
  * Start server with stdio transport
  */
 export async function startStdioServer() {
-  const server = createServer();
+  /**
+   * Send JSON-RPC message to client via stdout
+   * @param {Object} message
+   */
+  const sendToClient = (message) => {
+    console.log(JSON.stringify(message));
+  };
+
+  const server = createServer(sendToClient);
   const readline = await import('readline');
 
   const rl = readline.createInterface({
@@ -169,16 +282,16 @@ export async function startStdioServer() {
 
   rl.on('line', async (line) => {
     try {
-      const request = JSON.parse(line);
-      const response = await server.handleRequest(request);
+      const message = JSON.parse(line);
+      const response = await server.handleMessage(message);
       if (response !== null) {
-        console.log(JSON.stringify(response));
+        sendToClient(response);
       }
     } catch (e) {
-      console.log(JSON.stringify({
+      sendToClient({
         jsonrpc: '2.0',
         error: { code: -32700, message: 'Parse error' },
-      }));
+      });
     }
   });
 }

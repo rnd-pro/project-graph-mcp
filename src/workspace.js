@@ -2,13 +2,20 @@
  * Workspace Root Resolution
  * 
  * Resolves relative paths against the correct workspace root.
- * Priority: MCP initialize roots → PROJECT_ROOT env → process.cwd()
+ * Priority: MCP initialize roots → --workspace arg → PROJECT_ROOT env → process.cwd()
  */
 
 import { resolve, isAbsolute } from 'path';
 
 /** @type {string|null} */
 let workspaceRoot = null;
+
+// Auto-detect --workspace arg at module load
+const wsArg = process.argv.find(a => a.startsWith('--workspace='));
+if (wsArg) {
+  workspaceRoot = wsArg.split('=')[1];
+  console.error(`[project-graph] Workspace from arg: ${workspaceRoot}`);
+}
 
 /**
  * Set workspace root from MCP initialize roots

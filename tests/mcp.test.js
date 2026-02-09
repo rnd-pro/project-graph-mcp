@@ -54,9 +54,9 @@ describe('MCP Server', () => {
 
   it('should respond to list_tools', async () => {
     const { createServer } = await import('../src/mcp-server.js');
-    const server = createServer();
+    const server = createServer(() => { });
 
-    const response = await server.handleRequest({
+    const response = await server.handleMessage({
       jsonrpc: '2.0',
       method: 'tools/list',
       id: 1,
@@ -74,9 +74,9 @@ describe('MCP Server', () => {
 
   it('should execute get_skeleton tool', async () => {
     const { createServer } = await import('../src/mcp-server.js');
-    const server = createServer();
+    const server = createServer(() => { });
 
-    const response = await server.handleRequest({
+    const response = await server.handleMessage({
       jsonrpc: '2.0',
       method: 'tools/call',
       params: {
@@ -92,9 +92,9 @@ describe('MCP Server', () => {
 
   it('should execute get_pending_tests tool', async () => {
     const { createServer } = await import('../src/mcp-server.js');
-    const server = createServer();
+    const server = createServer(() => { });
 
-    const response = await server.handleRequest({
+    const response = await server.handleMessage({
       jsonrpc: '2.0',
       method: 'tools/call',
       params: {
@@ -110,9 +110,9 @@ describe('MCP Server', () => {
 
   it('should execute get_test_summary tool', async () => {
     const { createServer } = await import('../src/mcp-server.js');
-    const server = createServer();
+    const server = createServer(() => { });
 
-    const response = await server.handleRequest({
+    const response = await server.handleMessage({
       jsonrpc: '2.0',
       method: 'tools/call',
       params: {
@@ -129,9 +129,9 @@ describe('MCP Server', () => {
 
   it('should execute get_agent_instructions', async () => {
     const { createServer } = await import('../src/mcp-server.js');
-    const server = createServer();
+    const server = createServer(() => { });
 
-    const response = await server.handleRequest({
+    const response = await server.handleMessage({
       jsonrpc: '2.0',
       method: 'tools/call',
       params: {
@@ -151,9 +151,9 @@ describe('MCP Server', () => {
 
   it('should execute get_undocumented tool', async () => {
     const { createServer } = await import('../src/mcp-server.js');
-    const server = createServer();
+    const server = createServer(() => { });
 
-    const response = await server.handleRequest({
+    const response = await server.handleMessage({
       jsonrpc: '2.0',
       method: 'tools/call',
       params: {
@@ -171,9 +171,9 @@ describe('MCP Server', () => {
 
   it('should execute get_dead_code tool', async () => {
     const { createServer } = await import('../src/mcp-server.js');
-    const server = createServer();
+    const server = createServer(() => { });
 
-    const response = await server.handleRequest({
+    const response = await server.handleMessage({
       jsonrpc: '2.0',
       method: 'tools/call',
       params: {
