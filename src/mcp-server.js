@@ -16,6 +16,7 @@ import { getLargeFiles } from './large-files.js';
 import { getOutdatedPatterns } from './outdated-patterns.js';
 import { getFullAnalysis } from './full-analysis.js';
 import { getCustomRules, setCustomRule, checkCustomRules } from './custom-rules.js';
+import { setRoots, resolvePath } from './workspace.js';
 
 /**
  * Tool handlers registry
@@ -23,18 +24,18 @@ import { getCustomRules, setCustomRule, checkCustomRules } from './custom-rules.
  */
 const TOOL_HANDLERS = {
   // Graph Tools
-  get_skeleton: (args) => getSkeleton(args.path),
-  get_focus_zone: (args) => getFocusZone(args),
+  get_skeleton: (args) => getSkeleton(resolvePath(args.path)),
+  get_focus_zone: (args) => getFocusZone({ ...args, path: resolvePath(args.path) }),
   expand: (args) => expand(args.symbol),
   deps: (args) => deps(args.symbol),
   usages: (args) => usages(args.symbol),
   invalidate_cache: () => { invalidateCache(); return { success: true }; },
 
   // Test Checklist Tools
-  get_pending_tests: (args) => getPendingTests(args.path),
+  get_pending_tests: (args) => getPendingTests(resolvePath(args.path)),
   mark_test_passed: (args) => markTestPassed(args.testId),
   mark_test_failed: (args) => markTestFailed(args.testId, args.reason),
-  get_test_summary: (args) => getTestSummary(args.path),
+  get_test_summary: (args) => getTestSummary(resolvePath(args.path)),
   reset_test_state: () => resetTestState(),
 
   // Filter Tools
@@ -48,27 +49,29 @@ const TOOL_HANDLERS = {
   get_agent_instructions: () => getInstructions(),
 
   // Documentation
-  get_undocumented: (args) => getUndocumentedSummary(args.path, args.level || 'tests'),
+  get_undocumented: (args) => getUndocumentedSummary(resolvePath(args.path), args.level || 'tests'),
 
   // Code Quality
-  get_dead_code: (args) => getDeadCode(args.path),
-  generate_jsdoc: (args) => args.name ? generateJSDocFor(args.path, args.name) : generateJSDoc(args.path),
-  get_similar_functions: (args) => getSimilarFunctions(args.path, { threshold: args.threshold }),
-  get_complexity: (args) => getComplexity(args.path, {
+  get_dead_code: (args) => getDeadCode(resolvePath(args.path)),
+  generate_jsdoc: (args) => args.name
+    ? generateJSDocFor(resolvePath(args.path), args.name)
+    : generateJSDoc(resolvePath(args.path)),
+  get_similar_functions: (args) => getSimilarFunctions(resolvePath(args.path), { threshold: args.threshold }),
+  get_complexity: (args) => getComplexity(resolvePath(args.path), {
     minComplexity: args.minComplexity,
     onlyProblematic: args.onlyProblematic,
   }),
-  get_large_files: (args) => getLargeFiles(args.path, { onlyProblematic: args.onlyProblematic }),
-  get_outdated_patterns: (args) => getOutdatedPatterns(args.path, {
+  get_large_files: (args) => getLargeFiles(resolvePath(args.path), { onlyProblematic: args.onlyProblematic }),
+  get_outdated_patterns: (args) => getOutdatedPatterns(resolvePath(args.path), {
     codeOnly: args.codeOnly,
     depsOnly: args.depsOnly,
   }),
-  get_full_analysis: (args) => getFullAnalysis(args.path, { includeItems: args.includeItems }),
+  get_full_analysis: (args) => getFullAnalysis(resolvePath(args.path), { includeItems: args.includeItems }),
 
   // Custom Rules
   get_custom_rules: () => getCustomRules(),
   set_custom_rule: (args) => setCustomRule(args.ruleSet, args.rule),
-  check_custom_rules: (args) => checkCustomRules(args.path, {
+  check_custom_rules: (args) => checkCustomRules(resolvePath(args.path), {
     ruleSet: args.ruleSet,
     severity: args.severity,
   }),
@@ -96,13 +99,17 @@ export function createServer() {
       try {
         switch (method) {
           case 'initialize':
+            // Extract workspace roots from client
+            if (params && params.roots) {
+              setRoots(params.roots);
+            }
             return {
               jsonrpc: '2.0',
               id,
               result: {
                 protocolVersion: '2024-11-05',
                 capabilities: { tools: {} },
-                serverInfo: { name: 'project-graph', version: '1.0.0' },
+                serverInfo: { name: 'project-graph', version: '1.0.1' },
               },
             };
 

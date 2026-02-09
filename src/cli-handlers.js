@@ -15,6 +15,7 @@ import { getComplexity } from './complexity.js';
 import { getLargeFiles } from './large-files.js';
 import { getOutdatedPatterns } from './outdated-patterns.js';
 import { getFullAnalysis } from './full-analysis.js';
+import { resolvePath } from './workspace.js';
 
 /**
  * Parse named argument from args array
@@ -28,12 +29,13 @@ function getArg(args, name) {
 }
 
 /**
- * Get path argument (first non-flag arg)
+ * Get path argument (first non-flag arg), resolved against workspace root
  * @param {string[]} args 
  * @returns {string}
  */
 function getPath(args) {
-  return args.find(a => !a.startsWith('--')) || '.';
+  const raw = args.find(a => !a.startsWith('--')) || '.';
+  return resolvePath(raw);
 }
 
 /**
@@ -44,7 +46,7 @@ export const CLI_HANDLERS = {
   skeleton: {
     requiresArg: true,
     argError: 'Path required: skeleton <path>',
-    handler: async (args) => getSkeleton(args[0]),
+    handler: async (args) => getSkeleton(resolvePath(args[0])),
   },
 
   expand: {
@@ -96,7 +98,7 @@ export const CLI_HANDLERS = {
   jsdoc: {
     requiresArg: true,
     argError: 'Usage: jsdoc <file>',
-    handler: async (args) => generateJSDoc(args[0]),
+    handler: async (args) => generateJSDoc(resolvePath(args[0])),
   },
 
   similar: {
