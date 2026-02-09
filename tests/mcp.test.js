@@ -17,15 +17,16 @@ describe('MCP Tools', () => {
       assert.ok(skeleton.s.files > 0, 'Should have files');
     });
 
-    it('should fit in ~500 tokens', async () => {
+    it('should fit in reasonable token budget', async () => {
       const { getSkeleton } = await import('../src/tools.js');
 
       const skeleton = await getSkeleton('src');
       const json = JSON.stringify(skeleton);
 
       // Rough estimate: 4 chars per token
+      // New format includes file tree, exported fns, class-file mappings
       const estimatedTokens = json.length / 4;
-      assert.ok(estimatedTokens < 600, `Too many tokens: ${estimatedTokens}`);
+      assert.ok(estimatedTokens < 1500, `Too many tokens: ${estimatedTokens}`);
     });
 
   });

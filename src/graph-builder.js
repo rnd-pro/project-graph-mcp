@@ -11,6 +11,8 @@
  * @property {string[]} [i] - imports
  * @property {string[]} [→] - calls (outgoing)
  * @property {string[]} [←] - usedBy (incoming)
+ * @property {string} [f] - source file path
+ * @property {boolean} [e] - exported flag (functions)
  */
 
 /**
@@ -23,6 +25,7 @@
  * @property {Array<[string, string, string]>} edges - [from, type, to]
  * @property {string[]} orphans
  * @property {Object<string, string[]>} duplicates
+ * @property {string[]} files - list of parsed file paths
  */
 
 /**
@@ -108,6 +111,7 @@ export function buildGraph(parsed) {
     edges: [],
     orphans: [],
     duplicates: {},
+    files: parsed.files || [],
   };
 
   // Build class nodes
@@ -119,6 +123,7 @@ export function buildGraph(parsed) {
       m: (cls.methods || []).map(m => legend[m] || m),
       $: (cls.properties || []).length ? cls.properties : undefined,
       i: cls.imports?.length ? cls.imports : undefined,
+      f: cls.file || undefined,
     };
 
     // Build edges from calls
@@ -146,6 +151,7 @@ export function buildGraph(parsed) {
     graph.nodes[shortName] = {
       t: 'F',
       e: func.exported,
+      f: func.file || undefined,
     };
   }
 
@@ -188,39 +194,76 @@ export function buildGraph(parsed) {
  * @returns {Object}
  */
 export function createSkeleton(graph) {
-  // Only include class names in legend for compactness
-  const classLegend = {};
-  for (const [full, short] of Object.entries(graph.legend)) {
-    if (graph.nodes[short]?.t === 'C') {
-      classLegend[short] = full;
-    }
-  }
-
-  // Compact node representation
+  const legend = {};
   const nodes = {};
-  for (const [k, v] of Object.entries(graph.nodes)) {
-    if (v.t === 'C') {
-      nodes[k] = { m: v.m?.length || 0, $: v.$?.length || 0 };
+
+  // Build class nodes with file path
+  // graph.legend = {fullName → shortName}
+  for (const [full, short] of Object.entries(graph.legend)) {
+    const node = graph.nodes[short];
+    if (!node) continue;
+
+    if (node.t === 'C') {
+      // Skip empty classes (0 methods, 0 props)
+      const methodCount = node.m?.length || 0;
+      const propCount = node.$?.length || 0;
+      if (methodCount === 0 && propCount === 0) continue;
+
+      legend[short] = full;
+      const entry = { m: methodCount };
+      if (propCount > 0) entry.$ = propCount;
+      if (node.f) entry.f = node.f;
+      nodes[short] = entry;
     }
   }
 
-  return {
+  // Build exported functions grouped by file: { "file.js": ["shortName1", ...] }
+  // Also add function names to legend
+  const exportsByFile = {};
+  for (const [full, short] of Object.entries(graph.legend)) {
+    const node = graph.nodes[short];
+    if (node?.t === 'F' && node.e) {
+      legend[short] = full;
+      const file = node.f || '?';
+      if (!exportsByFile[file]) exportsByFile[file] = [];
+      exportsByFile[file].push(short);
+    }
+  }
+
+  // Build file tree grouped by directory (only files not covered by n/X)
+  const coveredFiles = new Set();
+  for (const v of Object.values(nodes)) {
+    if (v.f) coveredFiles.add(v.f);
+  }
+  for (const file of Object.keys(exportsByFile)) {
+    coveredFiles.add(file);
+  }
+
+  const fileTree = {};
+  for (const filePath of graph.files || []) {
+    if (coveredFiles.has(filePath)) continue;
+    const lastSlash = filePath.lastIndexOf('/');
+    const dir = lastSlash >= 0 ? filePath.slice(0, lastSlash + 1) : './';
+    const file = lastSlash >= 0 ? filePath.slice(lastSlash + 1) : filePath;
+    if (!fileTree[dir]) fileTree[dir] = [];
+    fileTree[dir].push(file);
+  }
+
+  const result = {
     v: graph.v,
-    _keys: {
-      L: 'Legend (symbol → full name)',
-      s: 'Stats (files, classes, functions)',
-      n: 'Nodes (class name → {m: methods count, $: properties count})',
-      e: 'Edges count (calls between symbols)',
-      o: 'Orphans count (unused non-exported functions)',
-      d: 'Duplicates count (same method name in multiple classes)',
-      F: 'Functions count (standalone)',
-    },
-    L: classLegend, // Legend for classes only
+    L: legend,
     s: graph.stats,
-    n: nodes,      // Class nodes only
+    n: nodes,
+    X: exportsByFile,
     e: graph.edges.length,
     o: graph.orphans.length,
     d: Object.keys(graph.duplicates).length,
-    F: Object.keys(graph.nodes).filter(k => graph.nodes[k].t === 'F').length, // Function count
   };
+
+  // Only add uncovered files if there are any
+  if (Object.keys(fileTree).length > 0) {
+    result.f = fileTree;
+  }
+
+  return result;
 }

@@ -4,7 +4,7 @@
  */
 
 import { readFileSync, readdirSync, statSync } from 'fs';
-import { join, relative } from 'path';
+import { join, relative, resolve } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import * as walk from '../vendor/walk.mjs';
 import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.js';
@@ -233,11 +233,12 @@ export async function parseProject(dir) {
     exports: [],
   };
 
+  const resolvedDir = resolve(dir);
   const files = findJSFiles(dir);
 
   for (const file of files) {
     const content = readFileSync(file, 'utf-8');
-    const relPath = relative(process.cwd(), file);
+    const relPath = relative(resolvedDir, file);
     const parsed = await parseFile(content, relPath);
 
     result.files.push(relPath);
