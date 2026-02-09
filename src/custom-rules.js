@@ -4,7 +4,7 @@
  */
 
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'fs';
-import { join, relative, dirname } from 'path';
+import { join, relative, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.js';
 
@@ -213,13 +213,13 @@ function isInStringOrComment(line, matchIndex) {
  * @param {Rule} rule 
  * @returns {Violation[]}
  */
-function checkFileAgainstRule(filePath, rule) {
+function checkFileAgainstRule(filePath, rule, rootDir) {
   if (isExcluded(filePath, rule.exclude)) return [];
 
   const violations = [];
   const content = readFileSync(filePath, 'utf-8');
   const lines = content.split('\n');
-  const relPath = relative(process.cwd(), filePath);
+  const relPath = relative(rootDir, filePath);
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -437,6 +437,7 @@ function detectProjectRuleSets(dir) {
  * @returns {Promise<{total: number, bySeverity: Object, byRule: Object, violations: Violation[], detected?: Object}>}
  */
 export async function checkCustomRules(dir, options = {}) {
+  const resolvedDir = resolve(dir);
   const ruleSets = loadRuleSets();
   let allRules = [];
   let detectionResult = null;
@@ -484,7 +485,7 @@ export async function checkCustomRules(dir, options = {}) {
 
     for (const file of files) {
       for (const rule of rules) {
-        const violations = checkFileAgainstRule(file, rule);
+        const violations = checkFileAgainstRule(file, rule, resolvedDir);
         allViolations.push(...violations);
       }
     }

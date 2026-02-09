@@ -4,7 +4,7 @@
  */
 
 import { readFileSync, readdirSync, statSync } from 'fs';
-import { join, relative } from 'path';
+import { join, relative, resolve } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import * as walk from '../vendor/walk.mjs';
 import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.js';
@@ -56,9 +56,9 @@ function findJSFiles(dir, rootDir = dir) {
  * @param {string} filePath 
  * @returns {LargeFileItem}
  */
-function analyzeFile(filePath) {
+function analyzeFile(filePath, rootDir) {
   const code = readFileSync(filePath, 'utf-8');
-  const relPath = relative(process.cwd(), filePath);
+  const relPath = relative(rootDir, filePath);
   const lines = code.split('\n').length;
 
   let functions = 0;
@@ -134,8 +134,9 @@ function analyzeFile(filePath) {
  */
 export async function getLargeFiles(dir, options = {}) {
   const onlyProblematic = options.onlyProblematic || false;
+  const resolvedDir = resolve(dir);
   const files = findJSFiles(dir);
-  let items = files.map(f => analyzeFile(f));
+  let items = files.map(f => analyzeFile(f, resolvedDir));
 
   if (onlyProblematic) {
     items = items.filter(i => i.rating !== 'ok');

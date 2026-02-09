@@ -4,7 +4,7 @@
  */
 
 import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
-import { join, relative } from 'path';
+import { join, relative, resolve } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import * as walk from '../vendor/walk.mjs';
 import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.js';
@@ -154,9 +154,9 @@ function findJSFiles(dir, rootDir = dir) {
  * @param {string} filePath 
  * @returns {PatternMatch[]}
  */
-function analyzeFilePatterns(filePath) {
+function analyzeFilePatterns(filePath, rootDir) {
   const code = readFileSync(filePath, 'utf-8');
-  const relPath = relative(process.cwd(), filePath);
+  const relPath = relative(rootDir, filePath);
   const matches = [];
 
   let ast;
@@ -252,6 +252,7 @@ function analyzePackageJson(dir) {
 export async function getOutdatedPatterns(dir, options = {}) {
   const codeOnly = options.codeOnly || false;
   const depsOnly = options.depsOnly || false;
+  const resolvedDir = resolve(dir);
 
   let codePatterns = [];
   let redundantDeps = [];
@@ -259,7 +260,7 @@ export async function getOutdatedPatterns(dir, options = {}) {
   if (!depsOnly) {
     const files = findJSFiles(dir);
     for (const file of files) {
-      codePatterns.push(...analyzeFilePatterns(file));
+      codePatterns.push(...analyzeFilePatterns(file, resolvedDir));
     }
     // Sort by severity
     const severityOrder = { error: 0, warning: 1, info: 2 };

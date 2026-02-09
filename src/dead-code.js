@@ -4,7 +4,7 @@
  */
 
 import { readFileSync, readdirSync, statSync } from 'fs';
-import { join, relative } from 'path';
+import { join, relative, resolve } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import * as walk from '../vendor/walk.mjs';
 import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.js';
@@ -134,6 +134,7 @@ function analyzeFile(code) {
  * @returns {Promise<{total: number, byType: Object, items: DeadCodeItem[]}>}
  */
 export async function getDeadCode(dir) {
+  const resolvedDir = resolve(dir);
   const files = findJSFiles(dir);
   const items = [];
 
@@ -144,7 +145,7 @@ export async function getDeadCode(dir) {
 
   for (const file of files) {
     const code = readFileSync(file, 'utf-8');
-    const relPath = relative(process.cwd(), file);
+    const relPath = relative(resolvedDir, file);
     const { definitions, calls, exports } = analyzeFile(code);
 
     // Add to global sets

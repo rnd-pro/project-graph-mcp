@@ -4,7 +4,7 @@
  */
 
 import { readFileSync, readdirSync, statSync } from 'fs';
-import { join, relative } from 'path';
+import { join, relative, resolve } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import * as walk from '../vendor/walk.mjs';
 import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.js';
@@ -218,12 +218,13 @@ function parseFile(code, filePath, level) {
  * @returns {UndocumentedItem[]}
  */
 export function getUndocumented(dir, level = 'tests') {
+  const resolvedDir = resolve(dir);
   const files = findJSFiles(dir);
   const results = [];
 
   for (const file of files) {
     const content = readFileSync(file, 'utf-8');
-    const items = parseFile(content, relative(process.cwd(), file), level);
+    const items = parseFile(content, relative(resolvedDir, file), level);
     results.push(...items);
   }
 

@@ -4,7 +4,7 @@
  */
 
 import { readFileSync, readdirSync, statSync } from 'fs';
-import { join, relative } from 'path';
+import { join, relative, resolve } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import * as walk from '../vendor/walk.mjs';
 import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.js';
@@ -65,9 +65,9 @@ function findJSFiles(dir, rootDir = dir) {
  * @param {string} filePath 
  * @returns {FunctionSignature[]}
  */
-function extractSignatures(filePath) {
+function extractSignatures(filePath, rootDir) {
   const code = readFileSync(filePath, 'utf-8');
-  const relPath = relative(process.cwd(), filePath);
+  const relPath = relative(rootDir, filePath);
   const signatures = [];
 
   let ast;
@@ -238,12 +238,13 @@ function calculateSimilarity(a, b) {
  */
 export async function getSimilarFunctions(dir, options = {}) {
   const threshold = options.threshold || 60;
+  const resolvedDir = resolve(dir);
   const files = findJSFiles(dir);
   const allSignatures = [];
 
   // Collect all signatures
   for (const file of files) {
-    allSignatures.push(...extractSignatures(file));
+    allSignatures.push(...extractSignatures(file, resolvedDir));
   }
 
   // Compare all pairs

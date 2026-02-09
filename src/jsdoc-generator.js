@@ -7,6 +7,7 @@ import { readFileSync } from 'fs';
 import { relative } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import * as walk from '../vendor/walk.mjs';
+import { getWorkspaceRoot } from './workspace.js';
 
 /**
  * @typedef {Object} JSDocTemplate
@@ -29,7 +30,7 @@ export function generateJSDoc(filePath, options = {}) {
   const results = [];
 
   const code = readFileSync(filePath, 'utf-8');
-  const relPath = relative(process.cwd(), filePath);
+  const relPath = relative(getWorkspaceRoot(), filePath);
 
   let ast;
   try {

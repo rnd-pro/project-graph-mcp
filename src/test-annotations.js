@@ -4,7 +4,7 @@
  */
 
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'fs';
-import { join, basename, relative } from 'path';
+import { join, basename, relative, resolve } from 'path';
 
 /**
  * @typedef {Object} TestStep
@@ -149,6 +149,7 @@ export function getAllFeatures(dir) {
  * @returns {TestStep[]}
  */
 export function getPendingTests(dir) {
+  const resolvedDir = resolve(dir);
   const features = getAllFeatures(dir);
   const pending = [];
 
@@ -159,7 +160,7 @@ export function getPendingTests(dir) {
         pending.push({
           ...test,
           feature: feature.name,
-          file: relative(process.cwd(), feature.file),
+          file: relative(resolvedDir, feature.file),
         });
       }
     }

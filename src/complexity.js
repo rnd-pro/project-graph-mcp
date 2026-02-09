@@ -4,7 +4,7 @@
  */
 
 import { readFileSync, readdirSync, statSync } from 'fs';
-import { join, relative } from 'path';
+import { join, relative, resolve } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import * as walk from '../vendor/walk.mjs';
 import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.js';
@@ -113,9 +113,9 @@ function getRating(complexity) {
  * @param {string} filePath 
  * @returns {ComplexityItem[]}
  */
-function analyzeFile(filePath) {
+function analyzeFile(filePath, rootDir) {
   const code = readFileSync(filePath, 'utf-8');
-  const relPath = relative(process.cwd(), filePath);
+  const relPath = relative(rootDir, filePath);
   const items = [];
 
   let ast;
@@ -185,12 +185,13 @@ function analyzeFile(filePath) {
 export async function getComplexity(dir, options = {}) {
   const minComplexity = options.minComplexity || 1;
   const onlyProblematic = options.onlyProblematic || false;
+  const resolvedDir = resolve(dir);
 
   const files = findJSFiles(dir);
   let allItems = [];
 
   for (const file of files) {
-    allItems.push(...analyzeFile(file));
+    allItems.push(...analyzeFile(file, resolvedDir));
   }
 
   // Filter
