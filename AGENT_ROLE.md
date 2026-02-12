@@ -11,11 +11,45 @@ You have access to **Project Graph MCP** — a suite of code analysis and projec
 | `get_agent_instructions` | Get project coding guidelines |
 
 ## 🧪 Testing System
+
 | Tool | Purpose |
 |------|---------|
 | `get_pending_tests` | List @test/@expect annotations needing verification |
 | `mark_test_passed` / `mark_test_failed` | Track test results |
 | `get_test_summary` | Progress report |
+
+### When to Write @test/@expect
+Add annotations to JSDoc when creating or modifying **interactive methods**:
+- `onclick` / `onchange` / `oninput` event handlers
+- Methods that change DOM state (show/hide, toggle classes/attributes)
+- Navigation and routing methods
+- Form submission and validation handlers
+- Any method with user-visible side effects
+
+### Browser Testing Workflow (VERIFICATION mode)
+After code changes, you MUST verify UI with this flow:
+
+```
+1. get_pending_tests(path)           → see what needs verification
+2. Open browser via browser_subagent → execute each test step
+3. mark_test_passed(testId)          → or mark_test_failed(testId, reason)
+4. get_test_summary(path)            → final report before completing task
+```
+
+**Rule**: If `get_pending_tests()` returns items, they MUST be executed in the browser before the task is marked complete. Never skip browser verification when @test annotations exist.
+
+### Example
+```javascript
+/**
+ * Delete selected persona
+ *
+ * @test click: Click delete button on persona card
+ * @test click: Confirm in dialog
+ * @expect element: Persona removed from list
+ * @expect visual: Toast notification appears
+ */
+async onDeletePersona() { ... }
+```
 
 ## 🔍 Code Quality Analysis
 | Tool | Purpose |
@@ -87,4 +121,4 @@ Read project workflow docs (e.g., `.agent/workflows/symbiote-audit.md`) and use 
 3. **Analyze**: `get_full_analysis` → find issues (Health Score)
 4. **Check Rules**: `check_custom_rules` → framework-specific violations
 5. **Fix**: Address issues by severity (error → warning → info)
-6. **Verify**: `get_pending_tests` → run verification checklist
+6. **Verify**: `get_pending_tests` → execute in browser → `mark_test_passed/failed` → `get_test_summary`
