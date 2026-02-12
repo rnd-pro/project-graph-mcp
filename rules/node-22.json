@@ -2,6 +2,7 @@
   "name": "node-22",
   "description": "Node.js 22+ modern standards",
   "docs": "https://nodejs.org/docs/latest/api/",
+  "alwaysApply": true,
   "detect": {
     "packageJson": [],
     "imports": [],

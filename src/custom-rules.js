@@ -74,6 +74,7 @@ function isGraphignored(relativePath) {
  * @property {string} severity - 'error' | 'warning' | 'info'
  * @property {string} filePattern - Glob pattern for files
  * @property {string[]} [exclude] - Patterns to exclude
+ * @property {string} [contextRequired] - HTML tag context required (e.g. '<template>')
  */
 
 /**
@@ -208,6 +209,42 @@ function isInStringOrComment(line, matchIndex) {
 }
 
 /**
+ * Check if a line index is within an HTML context block (e.g. <template>...</template>)
+ * @param {string[]} lines - All file lines
+ * @param {number} lineIndex - Current line index
+ * @param {string} contextTag - Tag to check (e.g. '<template>')
+ * @returns {boolean}
+ */
+function isWithinContext(lines, lineIndex, contextTag) {
+  const openTag = contextTag;
+  const tagName = openTag.replace(/[<>]/g, '');
+  const closeTag = `</${tagName}>`;
+  let depth = 0;
+
+  for (let i = 0; i <= lineIndex; i++) {
+    const line = lines[i];
+    // Count all opens/closes on this line
+    let pos = 0;
+    while (pos < line.length) {
+      const openIdx = line.indexOf(openTag, pos);
+      const closeIdx = line.indexOf(closeTag, pos);
+
+      if (openIdx === -1 && closeIdx === -1) break;
+
+      if (openIdx !== -1 && (closeIdx === -1 || openIdx < closeIdx)) {
+        depth++;
+        pos = openIdx + openTag.length;
+      } else {
+        depth--;
+        pos = closeIdx + closeTag.length;
+      }
+    }
+  }
+
+  return depth > 0;
+}
+
+/**
  * Check file against rule
  * @param {string} filePath 
  * @param {Rule} rule 
@@ -243,6 +280,13 @@ function checkFileAgainstRule(filePath, rule, rootDir) {
       if (matchIndex !== -1 && !isInStringOrComment(line, matchIndex)) {
         matches = true;
         matchText = rule.pattern;
+      }
+    }
+
+    // Skip if context required but not within that context
+    if (matches && rule.contextRequired) {
+      if (!isWithinContext(lines, i, rule.contextRequired)) {
+        continue;
       }
     }
 
@@ -457,10 +501,12 @@ export async function checkCustomRules(dir, options = {}) {
           allRules.push(...ruleSets[name].rules);
         }
       }
-    } else {
-      // No detection, use all rules
-      for (const ruleSet of Object.values(ruleSets)) {
-        allRules.push(...ruleSet.rules);
+    }
+
+    // Always add universal rulesets (alwaysApply: true)
+    for (const [name, rs] of Object.entries(ruleSets)) {
+      if (rs.alwaysApply && !detectionResult.detected.includes(name)) {
+        allRules.push(...rs.rules);
       }
     }
   } else {
@@ -491,10 +537,19 @@ export async function checkCustomRules(dir, options = {}) {
     }
   }
 
+  // Deduplicate violations across rulesets (same file:line:match)
+  const seen = new Set();
+  const deduped = allViolations.filter(v => {
+    const key = `${v.file}:${v.line}:${v.match}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
   // Filter by severity if specified
-  let filtered = allViolations;
+  let filtered = deduped;
   if (options.severity) {
-    filtered = allViolations.filter(v => v.severity === options.severity);
+    filtered = deduped.filter(v => v.severity === options.severity);
   }
 
   // Sort by severity, then file

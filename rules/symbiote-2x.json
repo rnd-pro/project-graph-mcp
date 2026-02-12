@@ -97,6 +97,7 @@
       "replacement": "onclick: '^handlerName'",
       "severity": "warning",
       "filePattern": "*.tpl.js",
+      "contextRequired": "<template>",
       "docs": "https://rnd-pro.com/symbiote/2x/features/itemize/"
     },
     {
