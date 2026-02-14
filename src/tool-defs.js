@@ -246,7 +246,7 @@ export const TOOLS = [
   // Code Quality
   {
     name: 'get_dead_code',
-    description: 'Find unused functions/classes (dead code). Use for cleanup.',
+    description: 'Find unused functions/classes and orphan exports (dead code). Use for cleanup.',
     inputSchema: {
       type: 'object',
       properties: {
