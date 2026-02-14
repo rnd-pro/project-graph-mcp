@@ -1,6 +1,6 @@
 /**
  * Dead Code Detector
- * Finds unused/orphan functions, classes, and exports
+ * Finds unused functions, classes, exports, variables, and imports
  */
 
 import { readFileSync, readdirSync, statSync } from 'fs';
@@ -12,7 +12,7 @@ import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.j
 /**
  * @typedef {Object} DeadCodeItem
  * @property {string} name
- * @property {string} type - 'function' | 'class' | 'export'
+ * @property {string} type - 'function' | 'class' | 'export' | 'variable' | 'import'
  * @property {string} file
  * @property {number} line
  * @property {string} reason
@@ -166,6 +166,120 @@ function analyzeFile(code) {
 }
 
 /**
+ * Analyze file for unused local variables and imports
+ * @param {string} code
+ * @returns {{unusedVars: Array<{name: string, line: number}>, unusedImports: Array<{name: string, local: string, source: string, line: number}>}}
+ */
+function analyzeFileLocals(code) {
+  const unusedVars = [];
+  const unusedImports = [];
+
+  let ast;
+  try {
+    ast = parse(code, { ecmaVersion: 'latest', sourceType: 'module', locations: true });
+  } catch (e) {
+    return { unusedVars, unusedImports };
+  }
+
+  // Collect all identifier references (non-declaration sites)
+  const refs = new Set();
+  // Collect variable declarations: { name, line, isExported }
+  const varDecls = [];
+  // Collect import specifiers: { name, local, source, line }
+  const importDecls = [];
+  // Track names at declaration sites to exclude
+  const declSites = new Set();
+
+  // First pass: collect declarations
+  walk.simple(ast, {
+    VariableDeclaration(node) {
+      const isExported = node.parent?.type === 'ExportNamedDeclaration';
+      for (const decl of node.declarations) {
+        if (decl.id.type === 'Identifier') {
+          varDecls.push({ name: decl.id.name, line: decl.loc.start.line, isExported });
+          declSites.add(decl.id);
+        }
+      }
+    },
+    ImportDeclaration(node) {
+      for (const spec of node.specifiers) {
+        const local = spec.local.name;
+        const imported = spec.type === 'ImportSpecifier'
+          ? spec.imported.name
+          : spec.type === 'ImportDefaultSpecifier'
+            ? 'default' : '*';
+        importDecls.push({
+          name: imported,
+          local,
+          source: node.source.value,
+          line: node.loc.start.line,
+        });
+        declSites.add(spec.local);
+      }
+    },
+  });
+
+  // Walk AST to find variable declaration sites more precisely
+  // (the walk.simple above doesn't set parents, so we need ancestor walk)
+  // Instead, use top-level statement analysis
+  const topLevelExportedNames = new Set();
+  for (const node of ast.body) {
+    if (node.type === 'ExportNamedDeclaration' && node.declaration) {
+      if (node.declaration.declarations) {
+        for (const decl of node.declaration.declarations) {
+          if (decl.id.type === 'Identifier') topLevelExportedNames.add(decl.id.name);
+        }
+      }
+      if (node.declaration.id) topLevelExportedNames.add(node.declaration.id.name);
+    }
+    if (node.type === 'ExportNamedDeclaration' && node.specifiers) {
+      for (const spec of node.specifiers) {
+        topLevelExportedNames.add(spec.local.name);
+      }
+    }
+  }
+
+  // Collect all identifier references across the AST
+  walk.simple(ast, {
+    Identifier(node) {
+      refs.add(node.name);
+    },
+  });
+
+  // Find unused variables (declared but never referenced beyond declaration)
+  // We count total references: if name appears only in declaration, it's unused
+  for (const v of varDecls) {
+    // Skip exported variables (handled by orphan exports)
+    if (topLevelExportedNames.has(v.name)) continue;
+    // Skip destructuring names and common patterns
+    if (v.name.startsWith('_')) continue;
+    // Check if name is referenced anywhere in the code beyond its declaration
+    // Simple heuristic: count occurrences in the source
+    const regex = new RegExp(`\\b${v.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g');
+    const matches = code.match(regex);
+    // If only 1 occurrence, it's the declaration itself
+    if (matches && matches.length <= 1) {
+      unusedVars.push({ name: v.name, line: v.line });
+    }
+  }
+
+  // Find unused imports
+  for (const imp of importDecls) {
+    // Skip namespace imports
+    if (imp.name === '*') continue;
+    // Check if local name is referenced beyond the import declaration
+    const regex = new RegExp(`\\b${imp.local.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g');
+    const matches = code.match(regex);
+    // If only 1 occurrence, it's the import declaration itself
+    if (matches && matches.length <= 1) {
+      unusedImports.push(imp);
+    }
+  }
+
+  return { unusedVars, unusedImports };
+}
+
+/**
  * Get dead code items
  * @param {string} dir 
  * @returns {Promise<{total: number, byType: Object, items: DeadCodeItem[]}>}
@@ -288,10 +402,40 @@ export async function getDeadCode(dir) {
     }
   }
 
+  // Find unused variables and imports per file
+  for (const { file, code } of fileData) {
+    if (file.includes('.test.') || file.includes('/tests/')) continue;
+    if (file.endsWith('.css.js') || file.endsWith('.tpl.js')) continue;
+
+    const { unusedVars, unusedImports } = analyzeFileLocals(code);
+
+    for (const v of unusedVars) {
+      items.push({
+        name: v.name,
+        type: 'variable',
+        file,
+        line: v.line,
+        reason: 'Declared but never used',
+      });
+    }
+
+    for (const imp of unusedImports) {
+      items.push({
+        name: imp.local,
+        type: 'import',
+        file,
+        line: imp.line,
+        reason: `Imported from '${imp.source}' but never used`,
+      });
+    }
+  }
+
   const byType = {
     function: items.filter(i => i.type === 'function').length,
     class: items.filter(i => i.type === 'class').length,
     export: items.filter(i => i.type === 'export').length,
+    variable: items.filter(i => i.type === 'variable').length,
+    import: items.filter(i => i.type === 'import').length,
   };
 
   return {
