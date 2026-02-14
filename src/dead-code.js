@@ -3,8 +3,8 @@
  * Finds unused functions, classes, exports, variables, and imports
  */
 
-import { readFileSync, readdirSync, statSync } from 'fs';
-import { join, relative, resolve } from 'path';
+import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
+import { join, relative, resolve, dirname } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import * as walk from '../vendor/walk.mjs';
 import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.js';
@@ -51,6 +51,20 @@ function findJSFiles(dir, rootDir = dir) {
   } catch (e) { }
 
   return files;
+}
+
+/**
+ * Find project root by walking up from dir to find package.json
+ * @param {string} dir
+ * @returns {string}
+ */
+function findProjectRoot(dir) {
+  let current = resolve(dir);
+  while (current !== dirname(current)) {
+    if (existsSync(join(current, 'package.json'))) return current;
+    current = dirname(current);
+  }
+  return resolve(dir);
 }
 
 /**
@@ -289,38 +303,46 @@ export async function getDeadCode(dir) {
   const files = findJSFiles(dir);
   const items = [];
 
-  // Collect all calls and exports across project
+  // Collect all calls and exports across target directory
   const allCalls = new Set();
   const allExports = new Set();
   const fileData = [];
 
-  // Track imports: key = "importedName@resolvedSourcePath", value = count
+  // Track imports project-wide: key = "importedName@resolvedSourcePath", value = consumer files
   /** @type {Map<string, Set<string>>} */
   const importConsumers = new Map();
 
-  for (const file of files) {
-    const code = readFileSync(file, 'utf-8');
+  // Scan entire project for import consumers (not just target dir)
+  const projectRoot = findProjectRoot(dir);
+  const projectFiles = findJSFiles(projectRoot);
+
+  for (const file of projectFiles) {
+    let code;
+    try { code = readFileSync(file, 'utf-8'); } catch { continue; }
     const relPath = relative(resolvedDir, file);
-    const { definitions, calls, exports, imports, namedExports } = analyzeFile(code);
+    const { imports } = analyzeFile(code);
 
-    // Add to global sets
-    for (const call of calls) allCalls.add(call);
-    for (const exp of exports) allExports.add(exp);
-
-    // Resolve import sources relative to the file
     for (const imp of imports) {
-      if (!imp.source.startsWith('.')) continue; // skip bare specifiers (npm packages)
-      const fileDir = join(resolvedDir, relPath, '..');
+      if (!imp.source.startsWith('.')) continue;
+      const fileDir = dirname(file);
       let resolvedSource = resolve(fileDir, imp.source);
-      // Normalize: add .js if missing
       if (!resolvedSource.endsWith('.js')) resolvedSource += '.js';
       const relSource = relative(resolvedDir, resolvedSource);
       const key = `${imp.name}@${relSource}`;
       if (!importConsumers.has(key)) importConsumers.set(key, new Set());
       importConsumers.get(key).add(relPath);
     }
+  }
 
-    // Store for later (include per-file calls for scoped orphan checks)
+  // Analyze target directory files for definitions, calls, exports
+  for (const file of files) {
+    const code = readFileSync(file, 'utf-8');
+    const relPath = relative(resolvedDir, file);
+    const { definitions, calls, exports, namedExports } = analyzeFile(code);
+
+    for (const call of calls) allCalls.add(call);
+    for (const exp of exports) allExports.add(exp);
+
     fileData.push({ file: relPath, code, definitions, calls, exports, namedExports });
   }
 
