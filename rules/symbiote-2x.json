@@ -101,15 +101,14 @@
       "docs": "https://rnd-pro.com/symbiote/2x/features/itemize/"
     },
     {
+      "description": "Property keys nesting not supported (e.g., recentProjects.length). Excludes valid $. child binding and style. property binding.",
+      "filePattern": "*.tpl.js",
       "id": "symbiote-no-nested-keys",
       "name": "No nested property keys",
-      "description": "Property keys nesting not supported (e.g., recentProjects.length)",
-      "pattern": "{{[^}]+\\.[^}]+}}",
+      "pattern": "{{(?![^}]*(?:'\\$\\.|'style\\.))([^}]+\\.[^}]+)}}",
       "patternType": "regex",
       "replacement": "Use flat property like recentProjectsLength",
-      "severity": "error",
-      "filePattern": "*.tpl.js",
-      "docs": "https://rnd-pro.com/symbiote/2x/core/template/"
+      "severity": "error"
     },
     {
       "id": "symbiote-esm-only",
