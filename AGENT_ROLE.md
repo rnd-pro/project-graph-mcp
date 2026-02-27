@@ -76,10 +76,11 @@ Rules are applied automatically based on:
 - Import patterns in source code
 - Code patterns (e.g., `extends Symbiote`)
 
-### Pre-built Rulesets (62 rules)
+### Pre-built Rulesets (85 rules)
 | Ruleset | Rules | Framework |
 |---------|-------|-----------|
 | `symbiote-2x` | 12 | Symbiote.js 2.x |
+| `symbiote-3x` | 17 | Symbiote.js 3.x |
 | `react-18` | 6 | React 18 |
 | `react-19` | 5 | React 19 (Server Components) |
 | `vue-3` | 5 | Vue 3 Composition API |

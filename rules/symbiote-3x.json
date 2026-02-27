@@ -1,0 +1,210 @@
+{
+  "name": "symbiote-3x",
+  "description": "Symbiote.js 3.x component standards and migration checks",
+  "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/AI_REFERENCE.md",
+  "detect": {
+    "packageJson": [
+      "@symbiotejs/symbiote"
+    ],
+    "imports": [
+      "@symbiotejs/symbiote",
+      "from '@symbiotejs/symbiote'"
+    ],
+    "patterns": [
+      "extends Symbiote"
+    ]
+  },
+  "rules": [
+    {
+      "id": "symbiote-3x-no-applyroute",
+      "name": "applyRoute() removed in 3.x",
+      "description": "Use AppRouter.navigate() instead of AppRouter.applyRoute()",
+      "pattern": "applyRoute(",
+      "patternType": "string",
+      "replacement": "AppRouter.navigate(route, options)",
+      "severity": "error",
+      "filePattern": "*.js",
+      "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/docs/migration-2x-to-3x.md"
+    },
+    {
+      "id": "symbiote-3x-no-tplprocessors",
+      "name": "tplProcessors renamed in 3.x",
+      "description": "Use templateProcessors (native Set) instead of tplProcessors",
+      "pattern": "tplProcessors",
+      "patternType": "string",
+      "replacement": "this.templateProcessors.add(processor)",
+      "severity": "error",
+      "filePattern": "*.js",
+      "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/docs/migration-2x-to-3x.md"
+    },
+    {
+      "id": "symbiote-3x-no-addtemplateprocessor",
+      "name": "addTemplateProcessor() removed in 3.x",
+      "description": "Use this.templateProcessors.add() instead of addTemplateProcessor()",
+      "pattern": "addTemplateProcessor(",
+      "patternType": "string",
+      "replacement": "this.templateProcessors.add(processor)",
+      "severity": "error",
+      "filePattern": "*.js",
+      "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/docs/migration-2x-to-3x.md"
+    },
+    {
+      "id": "symbiote-3x-no-ctxowner-attr",
+      "name": "ctx-owner attribute removed in 3.x",
+      "description": "ctx-owner HTML attribute is removed. First-registered value always wins for shared context",
+      "pattern": "ctx-owner",
+      "patternType": "string",
+      "replacement": "Remove ctx-owner, first-registered *prop value wins",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/docs/migration-2x-to-3x.md"
+    },
+    {
+      "id": "symbiote-3x-no-ctxowner-prop",
+      "name": "ctxOwner property removed in 3.x",
+      "description": "ctxOwner flag is removed. First-registered value always wins for shared context",
+      "pattern": "ctxOwner",
+      "patternType": "string",
+      "replacement": "Remove ctxOwner, first-registered *prop value wins",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/docs/migration-2x-to-3x.md"
+    },
+    {
+      "id": "symbiote-3x-approuter-import",
+      "name": "AppRouter removed from main entry point",
+      "description": "Import AppRouter from '@symbiotejs/symbiote/core/AppRouter.js' instead of main entry",
+      "pattern": "AppRouter.*from\\s+['\"]@symbiotejs/symbiote['\"]",
+      "patternType": "regex",
+      "replacement": "import { AppRouter } from '@symbiotejs/symbiote/core/AppRouter.js'",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/docs/migration-2x-to-3x.md"
+    },
+    {
+      "id": "symbiote-no-innerhtml",
+      "name": "No innerHTML manipulation",
+      "description": "Use Symbiote reactive bindings or Itemize API instead of innerHTML",
+      "pattern": ".innerHTML",
+      "patternType": "string",
+      "replacement": "Itemize API or template bindings",
+      "severity": "error",
+      "filePattern": "*.js",
+      "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/AI_REFERENCE.md"
+    },
+    {
+      "id": "symbiote-no-createelement",
+      "name": "No createElement for lists",
+      "description": "Use Itemize API instead of manual DOM creation",
+      "pattern": "document.createElement",
+      "patternType": "string",
+      "replacement": "itemize='items' in template",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/AI_REFERENCE.md"
+    },
+    {
+      "id": "symbiote-no-host-setattribute",
+      "name": "No direct setAttribute on host",
+      "description": "Use sub() + setAttribute for reactive host attributes",
+      "pattern": "this.setAttribute",
+      "patternType": "string",
+      "replacement": "sub('prop', v => this.setAttribute(...))",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "exclude": [
+        "*.test.js",
+        "*.spec.js"
+      ],
+      "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/AI_REFERENCE.md"
+    },
+    {
+      "id": "symbiote-no-host-style",
+      "name": "No direct style on host",
+      "description": "Use template binding ${{ 'style.x': 'prop' }}",
+      "pattern": "this.style.",
+      "patternType": "string",
+      "replacement": "${{ 'style.x': 'propName' }}",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/AI_REFERENCE.md"
+    },
+    {
+      "id": "symbiote-no-addeventlistener",
+      "name": "No addEventListener on this",
+      "description": "Use template binding ${{ onclick: 'handler' }} or class method fallback",
+      "pattern": "this.addEventListener",
+      "patternType": "string",
+      "replacement": "${{ onclick: 'handlerName' }} or class method",
+      "severity": "info",
+      "filePattern": "*.js",
+      "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/AI_REFERENCE.md"
+    },
+    {
+      "id": "symbiote-esm-only",
+      "name": "ESM only - no require()",
+      "description": "Use ESM imports, never CommonJS require()",
+      "pattern": "require(",
+      "patternType": "string",
+      "replacement": "import ... from '...'",
+      "severity": "error",
+      "filePattern": "*.js",
+      "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/AI_REFERENCE.md"
+    },
+    {
+      "id": "symbiote-no-tailwind",
+      "name": "No CSS frameworks",
+      "description": "Don't use Tailwind or other CSS frameworks — use native CSS with custom properties",
+      "pattern": "tailwind",
+      "patternType": "string",
+      "replacement": "Use native CSS with design tokens",
+      "severity": "error",
+      "filePattern": "*.css",
+      "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/AI_REFERENCE.md"
+    },
+    {
+      "id": "symbiote-no-nested-keys",
+      "name": "No nested property keys",
+      "description": "Property keys nesting not supported (e.g., obj.prop). Excludes valid $. child binding and style. property binding.",
+      "pattern": "{{(?![^}]*(?:'\\$\\.|'style\\.))([^}]+\\.[^}]+)}}",
+      "patternType": "regex",
+      "replacement": "Use flat property like objProp",
+      "severity": "error",
+      "filePattern": "*.tpl.js"
+    },
+    {
+      "id": "symbiote-static-template",
+      "name": "No static template inside class",
+      "description": "template is a static property SETTER — assign outside class: MyComp.template = html`...`",
+      "pattern": "static template",
+      "patternType": "string",
+      "replacement": "MyComponent.template = html`...` (outside class body)",
+      "severity": "error",
+      "filePattern": "*.js",
+      "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/AI_REFERENCE.md"
+    },
+    {
+      "id": "symbiote-no-this-in-template",
+      "name": "No this in template strings",
+      "description": "Templates are decoupled from component context — don't use ${this.x}",
+      "pattern": "${this.",
+      "patternType": "string",
+      "replacement": "Use {{propName}} or ${{ key: 'propName' }} bindings",
+      "severity": "error",
+      "filePattern": "*.tpl.js",
+      "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/AI_REFERENCE.md"
+    },
+    {
+      "id": "symbiote-itemize-parent-handler",
+      "name": "Use ^ prefix for parent handlers in Itemize",
+      "description": "Handlers in itemize items need ^ prefix to access parent scope",
+      "pattern": "onclick: '(?!\\^)",
+      "patternType": "regex",
+      "replacement": "onclick: '^handlerName'",
+      "severity": "warning",
+      "filePattern": "*.tpl.js",
+      "contextRequired": "<template>",
+      "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/AI_REFERENCE.md"
+    }
+  ]
+}
