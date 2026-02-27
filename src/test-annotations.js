@@ -46,8 +46,15 @@ export function parseAnnotations(content, filePath) {
     if (!block.includes('@test') && !block.includes('@expect')) continue;
 
     // Find method name after the block
+    // Supports: methodName(  |  propName: (  |  propName: async (
     const afterBlock = content.slice(match.index + match[0].length);
-    const methodMatch = afterBlock.match(/^\s*(?:async\s+)?(\w+)\s*\(/);
+    const methodMatch = afterBlock.match(
+      /^\s*(?:async\s+)?(\w+)\s*\(/ // class method: methodName(
+    ) || afterBlock.match(
+      /^\s*(\w+)\s*:\s*(?:async\s*)?\(/ // arrow in object: propName: (
+    ) || afterBlock.match(
+      /^\s*(\w+)\s*:\s*(?:async\s+)?\(/ // arrow in object: propName: async (
+    );
     if (!methodMatch) continue;
 
     const methodName = methodMatch[1];
