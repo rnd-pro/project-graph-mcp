@@ -9,6 +9,7 @@ You have access to **Project Graph MCP** — a suite of code analysis and projec
 | `get_skeleton` | Get code structure (classes, functions, exports) |
 | `expand` | Deep dive into a class or function |
 | `get_agent_instructions` | Get project coding guidelines |
+| `get_framework_reference` | Get framework AI reference (auto-detects or explicit) |
 
 ## 🧪 Testing System
 

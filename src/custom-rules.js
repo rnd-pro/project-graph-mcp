@@ -399,7 +399,7 @@ export async function deleteCustomRule(ruleSetName, ruleId) {
  * @param {string} dir 
  * @returns {{detected: string[], reasons: Object<string, string>}}
  */
-function detectProjectRuleSets(dir) {
+export function detectProjectRuleSets(dir) {
   const ruleSets = loadRuleSets();
   const detected = [];
   const reasons = {};

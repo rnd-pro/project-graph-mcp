@@ -422,4 +422,23 @@ export const TOOLS = [
       required: ['path'],
     },
   },
+
+  // Framework References
+  {
+    name: 'get_framework_reference',
+    description: 'Get framework-specific AI reference documentation. Auto-detects framework from project or accepts explicit name. Returns full API reference, patterns, and common mistakes as agent context.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        framework: {
+          type: 'string',
+          description: 'Framework reference name (e.g., "symbiote-3x"). If omitted, auto-detects from path.',
+        },
+        path: {
+          type: 'string',
+          description: 'Project path for auto-detection (e.g., "src/")',
+        },
+      },
+    },
+  },
 ];

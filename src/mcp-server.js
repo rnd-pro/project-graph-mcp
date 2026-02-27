@@ -20,6 +20,7 @@ import { getLargeFiles } from './large-files.js';
 import { getOutdatedPatterns } from './outdated-patterns.js';
 import { getFullAnalysis } from './full-analysis.js';
 import { getCustomRules, setCustomRule, checkCustomRules } from './custom-rules.js';
+import { getFrameworkReference } from './framework-references.js';
 import { setRoots, resolvePath } from './workspace.js';
 
 /**
@@ -78,6 +79,12 @@ const TOOL_HANDLERS = {
   check_custom_rules: (args) => checkCustomRules(resolvePath(args.path), {
     ruleSet: args.ruleSet,
     severity: args.severity,
+  }),
+
+  // Framework References
+  get_framework_reference: (args) => getFrameworkReference({
+    framework: args.framework,
+    path: args.path ? resolvePath(args.path) : undefined,
   }),
 };
 
