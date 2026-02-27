@@ -1,9 +1,9 @@
 /**
  * Framework Reference System
- * Loads framework-specific AI references for agent context
+ * Loads framework-specific AI references from GitHub (with caching) or local files
  */
 
-import { readFileSync, readdirSync, existsSync } from 'fs';
+import { readFileSync, readdirSync, existsSync, writeFileSync } from 'fs';
 import { join, basename, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { detectProjectRuleSets } from './custom-rules.js';
@@ -12,67 +12,122 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REFERENCES_DIR = join(__dirname, '..', 'references');
 
 /**
- * Reference metadata extracted from filename convention
- * @typedef {Object} ReferenceInfo
- * @property {string} name - Reference name (e.g., 'symbiote-3x')
- * @property {string} file - Full path to reference file
- * @property {number} lines - Number of lines
+ * Remote sources for framework references
+ * Maps reference name to raw GitHub URL
  */
+const REMOTE_SOURCES = {
+  'symbiote-3x': 'https://raw.githubusercontent.com/symbiotejs/symbiote.js/main/AI_REFERENCE.md',
+};
+
+/** @type {Map<string, {content: string, fetchedAt: number}>} */
+const cache = new Map();
+
+/** Cache TTL: 1 hour */
+const CACHE_TTL = 60 * 60 * 1000;
 
 /**
- * List available framework references
- * @returns {ReferenceInfo[]}
+ * Fetch reference from GitHub with caching
+ * Falls back to local file if fetch fails
+ * @param {string} name - Reference name
+ * @returns {Promise<{content: string, source: string}>}
  */
-function listReferences() {
-  if (!existsSync(REFERENCES_DIR)) return [];
+async function fetchReference(name) {
+  const url = REMOTE_SOURCES[name];
+  const localPath = join(REFERENCES_DIR, `${name}.md`);
 
-  return readdirSync(REFERENCES_DIR)
-    .filter(f => f.endsWith('.md'))
-    .map(f => {
-      const filePath = join(REFERENCES_DIR, f);
-      const content = readFileSync(filePath, 'utf-8');
-      const lines = content.split('\n').length;
-      return {
-        name: basename(f, '.md'),
-        file: filePath,
-        lines,
-      };
-    });
+  // Check in-memory cache
+  const cached = cache.get(name);
+  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL) {
+    return { content: cached.content, source: 'cache' };
+  }
+
+  // Try fetching from GitHub
+  if (url) {
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (response.ok) {
+        const content = await response.text();
+        cache.set(name, { content, fetchedAt: Date.now() });
+
+        // Update local file as backup
+        try {
+          writeFileSync(localPath, content, 'utf-8');
+        } catch (e) {
+          // Write failure is non-critical
+        }
+
+        return { content, source: `github (${url})` };
+      }
+    } catch (e) {
+      // Fetch failed — fall back to local
+    }
+  }
+
+  // Fall back to local file
+  if (existsSync(localPath)) {
+    const content = readFileSync(localPath, 'utf-8');
+    cache.set(name, { content, fetchedAt: Date.now() });
+    return { content, source: 'local' };
+  }
+
+  return { content: '', source: 'not_found' };
 }
 
 /**
  * Map ruleset names to reference names
- * Allows auto-detection to find the right reference
  */
 const RULESET_TO_REFERENCE = {
   'symbiote-3x': 'symbiote-3x',
-  'symbiote-2x': 'symbiote-3x', // migration: suggest 3.x reference for 2.x projects too
+  'symbiote-2x': 'symbiote-3x',
 };
+
+/**
+ * List available framework references (local + remote)
+ * @returns {string[]}
+ */
+function listAvailable() {
+  const names = new Set(Object.keys(REMOTE_SOURCES));
+
+  if (existsSync(REFERENCES_DIR)) {
+    for (const f of readdirSync(REFERENCES_DIR)) {
+      if (f.endsWith('.md')) {
+        names.add(basename(f, '.md'));
+      }
+    }
+  }
+
+  return [...names];
+}
 
 /**
  * Get framework reference content
  * @param {Object} options
- * @param {string} [options.framework] - Explicit framework name (e.g., 'symbiote-3x')
+ * @param {string} [options.framework] - Explicit framework name
  * @param {string} [options.path] - Project path for auto-detection
- * @returns {{content: string, framework: string, detected?: Object} | {error: string, available: string[]}}
+ * @returns {Promise<Object>}
  */
-export function getFrameworkReference(options = {}) {
-  const available = listReferences();
-  const availableNames = available.map(r => r.name);
+export async function getFrameworkReference(options = {}) {
+  const available = listAvailable();
 
   // Explicit framework requested
   if (options.framework) {
-    const ref = available.find(r => r.name === options.framework);
-    if (!ref) {
+    if (!available.includes(options.framework)) {
       return {
         error: `Framework reference '${options.framework}' not found`,
-        available: availableNames,
+        available,
       };
     }
+
+    const { content, source } = await fetchReference(options.framework);
+    if (!content) {
+      return { error: `Failed to load reference '${options.framework}'`, available };
+    }
+
     return {
-      framework: ref.name,
-      lines: ref.lines,
-      content: readFileSync(ref.file, 'utf-8'),
+      framework: options.framework,
+      source,
+      lines: content.split('\n').length,
+      content,
     };
   }
 
@@ -80,11 +135,10 @@ export function getFrameworkReference(options = {}) {
   if (options.path) {
     const { detected, reasons } = detectProjectRuleSets(options.path);
 
-    // Find matching references
     const matchedRefs = [];
     for (const ruleset of detected) {
       const refName = RULESET_TO_REFERENCE[ruleset];
-      if (refName && availableNames.includes(refName) && !matchedRefs.includes(refName)) {
+      if (refName && available.includes(refName) && !matchedRefs.includes(refName)) {
         matchedRefs.push(refName);
       }
     }
@@ -94,27 +148,30 @@ export function getFrameworkReference(options = {}) {
         error: 'No framework references found for this project',
         detected,
         reasons,
-        available: availableNames,
+        available,
       };
     }
 
-    // Return all matched references concatenated
-    const contents = matchedRefs.map(name => {
-      const ref = available.find(r => r.name === name);
-      return readFileSync(ref.file, 'utf-8');
-    });
+    const results = await Promise.all(matchedRefs.map(fetchReference));
+    const contents = results.map(r => r.content).filter(Boolean);
+    const sources = results.map(r => r.source);
 
     return {
       frameworks: matchedRefs,
+      sources,
       detected: { rulesets: detected, reasons },
       lines: contents.reduce((sum, c) => sum + c.split('\n').length, 0),
       content: contents.join('\n\n---\n\n'),
     };
   }
 
-  // No framework specified, no path — list available
+  // No framework specified — list available
   return {
     error: 'Specify framework name or path for auto-detection',
-    available: available.map(r => ({ name: r.name, lines: r.lines })),
+    available: available.map(name => ({
+      name,
+      remote: !!REMOTE_SOURCES[name],
+      url: REMOTE_SOURCES[name] ?? null,
+    })),
   };
 }
