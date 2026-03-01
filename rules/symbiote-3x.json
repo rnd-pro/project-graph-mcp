@@ -205,6 +205,17 @@
       "filePattern": "*.tpl.js",
       "contextRequired": "<template>",
       "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/AI_REFERENCE.md"
+    },
+    {
+      "id": "symbiote-3x-utils-import",
+      "name": "Utils moved to separate entry point in 3.2",
+      "description": "UID, create, applyStyles, applyAttributes, setNestedProp, kebabToCamel, reassignDictionary should be imported from '@symbiotejs/symbiote/utils'",
+      "pattern": "\\b(UID|setNestedProp|applyStyles|applyAttributes|create|kebabToCamel|reassignDictionary)\\b.*from\\s+['\"]@symbiotejs/symbiote['\"]",
+      "patternType": "regex",
+      "replacement": "import { ... } from '@symbiotejs/symbiote/utils'",
+      "severity": "warning",
+      "filePattern": "*.js",
+      "docs": "https://github.com/symbiotejs/symbiote.js/blob/main/CHANGELOG.md"
     }
   ]
 }

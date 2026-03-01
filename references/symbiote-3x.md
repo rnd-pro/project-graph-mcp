@@ -1,7 +1,7 @@
 # Symbiote.js — AI Context Reference (v3.x)
 
 > **Purpose**: Authoritative reference for AI code assistants. All information is derived from source code analysis of [symbiote.js](https://github.com/symbiotejs/symbiote.js).
-> Current version: **3.0.0-rc.1**. Zero dependencies. ~6 KB gzip.
+> Current version: **3.2.0**. Zero dependencies. ~6 KB gzip.
 
 ---
 
@@ -23,7 +23,16 @@ import { css } from '@symbiotejs/symbiote/core/css.js';
 ```
 
 ### Full export list (index.js)
-`Symbiote` (default), `html`, `css`, `PubSub`, `AppRouter`, `DICT`, `UID`, `setNestedProp`, `applyStyles`, `applyAttributes`, `create`, `kebabToCamel`, `reassignDictionary`
+`Symbiote` (default), `html`, `css`, `PubSub`, `DICT`
+
+> **v3.2 change**: `UID`, `setNestedProp`, `applyStyles`, `applyAttributes`, `create`, `kebabToCamel`, `reassignDictionary` moved to `@symbiotejs/symbiote/utils`.
+> `AppRouter` moved to `@symbiotejs/symbiote/core/AppRouter.js` since v3.0.
+
+### Utils entry point (`@symbiotejs/symbiote/utils`)
+```js
+import { UID, create, applyStyles, applyAttributes, setNestedProp, kebabToCamel, reassignDictionary } from '@symbiotejs/symbiote/utils';
+```
+Individual deep imports also work: `@symbiotejs/symbiote/utils/UID.js`, etc.
 
 ---
 
@@ -99,13 +108,14 @@ Binds `propName` from component state to the text content of a text node. Works 
 ```
 The `${{key: 'value'}}` interpolation creates a `bind="key:value;"` attribute. Keys are DOM element property names. Values are component state property names (strings).
 
-**Event handler resolution (3.x):** For `on*` bindings, Symbiote first looks for the key in `init$` (reactive state). If not found, it falls back to a **class method** with the same name. Both approaches work:
+**Class property fallback (v3.1+):** When a binding key is not found in `init$`, Symbiote falls back to own class properties (checked via `Object.hasOwn`). This works for ALL properties, not just `on*` handlers. Functions are auto-bound to the component instance. Inherited `HTMLElement` properties are never picked up.
 ```js
 class MyComp extends Symbiote {
   // Approach 1: state property (arrow function)
   init$ = { onClick: () => console.log('clicked') };
 
-  // Approach 2: class method (fallback)
+  // Approach 2: class property (fallback for any binding)
+  label = 'Click me';
   onSubmit() { console.log('submitted'); }
 }
 ```
@@ -474,6 +484,29 @@ Assign new array to trigger re-render:
 this.$.items = [...newItems]; // triggers update
 ```
 Existing items are updated in-place via `set$`, new items appended, excess removed.
+
+### Itemize class property fallback (v3.2)
+The `itemize` data source property supports class property fallback, consistent with other template processors:
+```js
+class MyList extends Symbiote {
+  items = [{ name: 'Alice' }, { name: 'Bob' }]; // no init$ needed
+}
+```
+
+### Keyed itemize processor (optional, v3.0+)
+Drop-in replacement with reference-equality fast paths and key-based reconciliation. Up to **3×** faster for appends, **32×** for no-ops:
+```js
+import { itemizeProcessor } from '@symbiotejs/symbiote/core/itemizeProcessor-keyed.js';
+import { itemizeProcessor as defaultProcessor } from '@symbiotejs/symbiote/core/itemizeProcessor.js';
+
+class BigList extends Symbiote {
+  constructor() {
+    super();
+    this.templateProcessors.delete(defaultProcessor);
+    this.templateProcessors = new Set([itemizeProcessor, ...this.templateProcessors]);
+  }
+}
+```
 
 ---
 
