@@ -57,10 +57,34 @@ Includes 10 pre-built rulesets (62 rules): React 18/19, Vue 3, Next.js 15, Expre
 - Automatic `.gitignore` parsing
 - **`.graphignore`** — Project-specific ignore file for custom rules (like .gitignore)
 
+### 📚 Framework References
+- `get_framework_reference` — Auto-detect project framework and return AI-optimized docs
+- Includes: React 18/19, Vue 3, Next.js, Express, Node.js, Symbiote.js
+
 ### 📘 Agent Instructions
 - `get_agent_instructions` — Get coding guidelines, JSDoc format, architecture standards
 - [AGENT_ROLE.md](AGENT_ROLE.md) — Full system prompt for agents
 - [AGENT_ROLE_MINIMAL.md](AGENT_ROLE_MINIMAL.md) — Minimal variant (agent self-discovers)
+
+### 💡 Response Hints
+Every tool response includes contextual coaching hints:
+- `get_skeleton` → "Use expand() to see code, deps() for architecture"
+- `invalidate_cache` → "Cache cleared. Run get_skeleton() to rebuild"
+- `get_dead_code` → "Review before removing — some may be used dynamically"
+- `get_undocumented` → "Use generate_jsdoc() for auto-generation"
+- Large classes auto-detected → "Run get_complexity() to find refactoring targets"
+
+### 🛡️ Security
+- **Path Traversal Protection** — all tool paths validated to stay within workspace root
+- **Workspace Isolation** — MCP roots set workspace boundary, tools cannot escape it
+
+### 🌐 MCP Ecosystem
+Works alongside [agent-pool-mcp](https://github.com/rnd-pro/agent-pool-mcp) for parallel agent orchestration:
+
+| Layer | project-graph-mcp | agent-pool-mcp |
+|-------|-------------------|----------------|
+| **Primary IDE agent** | Navigates codebase, runs analysis | Delegates tasks, consults peer |
+| **Gemini CLI workers** | Available as MCP tool inside Gemini CLI | Executes delegated tasks |
 
 ## Installation
 
@@ -171,22 +195,35 @@ Searches parent directories automatically (like .gitignore).
 ```
 project-graph-mcp/
 ├── src/
-│   ├── server.js           # Entry point (CLI/MCP mode switch)
-│   ├── mcp-server.js       # MCP server logic (stdio)
-│   ├── cli.js              # CLI command handling
-│   ├── tool-defs.js        # MCP tool definitions
-│   ├── tools.js            # Tool implementations
-│   ├── parser.js           # AST parser (Acorn)
-│   ├── graph-builder.js    # Minified graph + analysis
-│   ├── test-annotations.js # @test/@expect parsing
-│   ├── filters.js          # Exclude patterns, .gitignore
-│   └── instructions.js     # Agent guidelines
+│   ├── server.js             # Entry point (CLI/MCP mode switch)
+│   ├── mcp-server.js         # MCP server + response hints
+│   ├── cli.js / cli-handlers.js  # CLI commands
+│   ├── tool-defs.js          # MCP tool schemas
+│   ├── tools.js              # Graph tools (skeleton, expand, deps)
+│   ├── workspace.js          # Path resolution + traversal protection
+│   ├── parser.js             # AST parser (Acorn)
+│   ├── graph-builder.js      # Minified graph + legend
+│   ├── filters.js            # Exclude patterns, .gitignore
+│   ├── dead-code.js          # Unused code detection
+│   ├── complexity.js         # Cyclomatic complexity
+│   ├── similar-functions.js  # Duplicate detection
+│   ├── large-files.js        # File size analysis
+│   ├── outdated-patterns.js  # Legacy pattern detection
+│   ├── full-analysis.js      # Health Score (0-100)
+│   ├── undocumented.js       # Missing JSDoc finder
+│   ├── jsdoc-generator.js    # JSDoc template generation
+│   ├── custom-rules.js       # Configurable lint rules
+│   ├── framework-references.js # Framework-specific docs
+│   ├── test-annotations.js   # @test/@expect parsing
+│   └── instructions.js       # Agent guidelines
+├── rules/                    # Pre-built rule sets (JSON)
+├── references/               # Framework reference docs
 ├── vendor/
-│   ├── acorn.mjs           # AST parser (MIT, vendored)
-│   └── walk.mjs            # AST walker (MIT, vendored)
+│   ├── acorn.mjs             # AST parser (MIT, vendored)
+│   └── walk.mjs              # AST walker (MIT, vendored)
 └── tests/
-    ├── parser.test.js      # Parser tests
-    └── mcp.test.js         # Server tests
+    ├── parser.test.js
+    └── mcp.test.js
 ```
 
 ## Skeleton Example
