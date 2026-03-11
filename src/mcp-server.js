@@ -89,6 +89,68 @@ const TOOL_HANDLERS = {
 };
 
 /**
+ * Response hints — contextual coaching tips appended to tool responses.
+ * Maps tool names to hint generators. Each receives the result and returns
+ * an array of hint strings (or empty array for no hints).
+ *
+ * @type {Record<string, (result: any) => string[]>}
+ */
+const RESPONSE_HINTS = {
+  get_skeleton: () => [
+    '💡 Use expand("SYMBOL") to see code for a specific class.',
+    '💡 Use deps("SYMBOL") to see architecture dependencies.',
+    '💡 After code changes, run invalidate_cache() to refresh the graph.',
+  ],
+
+  expand: (result) => {
+    const hints = [];
+    if (result.methods?.length > 10) {
+      hints.push('💡 Large class detected. Run get_complexity() to find refactoring targets.');
+    }
+    hints.push('💡 Use deps() to see what depends on this symbol.');
+    return hints;
+  },
+
+  deps: () => [
+    '💡 Use usages() for cross-project reference search.',
+  ],
+
+  invalidate_cache: () => [
+    '✅ Cache cleared. Run get_skeleton() to rebuild the project graph.',
+  ],
+
+  get_dead_code: (result) => {
+    const hints = ['💡 Review each item before removing — some may be used dynamically.'];
+    if (result.unusedExports?.length > 20) {
+      hints.push('💡 Consider delegating cleanup to agent-pool: delegate_task({ prompt: "Remove dead code..." })');
+    }
+    return hints;
+  },
+
+  get_full_analysis: () => [
+    '💡 Focus on items with "critical" severity first.',
+    '💡 Run individual tools (get_complexity, get_dead_code) for detailed breakdowns.',
+  ],
+
+  get_complexity: () => [
+    '💡 Functions with complexity >10 are candidates for refactoring.',
+    '💡 Use expand() to read the function code before refactoring.',
+  ],
+
+  get_undocumented: () => [
+    '💡 Use generate_jsdoc() to auto-generate documentation templates.',
+  ],
+
+  get_similar_functions: () => [
+    '💡 Consider extracting duplicated logic into a shared utility.',
+  ],
+
+  get_pending_tests: () => [
+    '💡 Use mark_test_passed(testId) or mark_test_failed(testId, reason) to track progress.',
+  ],
+};
+
+/**
  * Create MCP server instance
  * @param {Function} sendToClient - Function to send JSON-RPC messages to client
  * @returns {Object}
@@ -160,12 +222,21 @@ export function createServer(sendToClient) {
 
           case 'tools/call': {
             const result = await this.executeTool(params.name, params.arguments);
+            const content = [{ type: 'text', text: JSON.stringify(result, null, 2) }];
+
+            // Inject contextual hints
+            const hintFn = RESPONSE_HINTS[params.name];
+            if (hintFn) {
+              const hints = hintFn(result);
+              if (hints.length > 0) {
+                content.push({ type: 'text', text: '\n' + hints.join('\n') });
+              }
+            }
+
             return {
               jsonrpc: '2.0',
               id,
-              result: {
-                content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-              },
+              result: { content },
             };
           }
 

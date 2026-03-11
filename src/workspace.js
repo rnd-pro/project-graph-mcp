@@ -54,12 +54,17 @@ export function getWorkspaceRoot() {
  * @param {string} path
  * @returns {string}
  */
-export function resolvePath(path) {
-  if (!path) {
+export function resolvePath(inputPath) {
+  if (!inputPath) {
     return getWorkspaceRoot();
   }
-  if (isAbsolute(path)) {
-    return path;
+  const root = getWorkspaceRoot();
+  const resolved = isAbsolute(inputPath) ? inputPath : resolve(root, inputPath);
+
+  // Prevent path traversal — resolved path must stay within workspace
+  if (!resolved.startsWith(root)) {
+    throw new Error(`Path traversal blocked: '${inputPath}' resolves outside workspace root '${root}'`);
   }
-  return resolve(getWorkspaceRoot(), path);
+
+  return resolved;
 }
