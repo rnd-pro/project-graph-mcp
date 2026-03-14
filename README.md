@@ -79,12 +79,29 @@ Every tool response includes contextual coaching hints:
 - **Workspace Isolation** — MCP roots set workspace boundary, tools cannot escape it
 
 ### 🌐 MCP Ecosystem
-Works alongside [agent-pool-mcp](https://github.com/rnd-pro/agent-pool-mcp) for parallel agent orchestration:
+Best used together with [**agent-pool-mcp**](https://www.npmjs.com/package/agent-pool-mcp) — multi-agent task delegation via Gemini CLI:
 
 | Layer | project-graph-mcp | agent-pool-mcp |
 |-------|-------------------|----------------|
 | **Primary IDE agent** | Navigates codebase, runs analysis | Delegates tasks, consults peer |
-| **Gemini CLI workers** | Available as MCP tool inside Gemini CLI | Executes delegated tasks |
+| **Gemini CLI workers** | Available as MCP tool inside workers | Executes delegated tasks |
+
+Combined config for both:
+
+```json
+{
+  "mcpServers": {
+    "project-graph": {
+      "command": "npx",
+      "args": ["-y", "project-graph-mcp"]
+    },
+    "agent-pool": {
+      "command": "npx",
+      "args": ["-y", "agent-pool-mcp"]
+    }
+  }
+}
+```
 
 ## Installation
 
