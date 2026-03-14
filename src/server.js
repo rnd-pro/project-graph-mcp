@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * Entry Point for Project Graph MCP
  * 

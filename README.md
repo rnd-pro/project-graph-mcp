@@ -88,13 +88,48 @@ Works alongside [agent-pool-mcp](https://github.com/rnd-pro/agent-pool-mcp) for 
 
 ## Installation
 
-```bash
-# Clone
-git clone https://github.com/RND-PRO/project-graph-mcp
-cd project-graph-mcp
+Add to your IDE's MCP configuration:
 
-# No npm install needed — zero dependencies
+```json
+{
+  "mcpServers": {
+    "project-graph": {
+      "command": "npx",
+      "args": ["-y", "project-graph-mcp"]
+    }
+  }
+}
 ```
+
+Restart your IDE — project-graph-mcp will be downloaded and started automatically.  
+**Zero dependencies** — only Node.js >= 18 required.
+
+<details>
+<summary>📍 Where is my MCP config file?</summary>
+
+| IDE | Config path |
+|-----|------------|
+| Antigravity | `~/.gemini/antigravity/mcp_config.json` |
+| Gemini CLI | `~/.gemini/settings.json` |
+| Cursor | `.cursor/mcp.json` |
+| Windsurf | `.windsurf/mcp.json` |
+| Claude Code | Run: `claude mcp add project-graph npx -y project-graph-mcp` |
+
+See **[CONFIGURATION.md](CONFIGURATION.md)** for all supported IDEs.
+
+</details>
+
+<details>
+<summary>📦 Alternative: from source</summary>
+
+```bash
+git clone https://github.com/rnd-pro/project-graph-mcp
+cd project-graph-mcp
+# No npm install needed — zero dependencies
+# Use "node /path/to/project-graph-mcp/src/server.js" as the command in MCP config
+```
+
+</details>
 
 ## CLI Usage
 

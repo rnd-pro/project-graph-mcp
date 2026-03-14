@@ -1,12 +1,23 @@
 {
   "name": "project-graph-mcp",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "type": "module",
-  "description": "MCP server for AI agents - minified project graph and browser test checklists",
+  "description": "MCP server for AI agents — AST-based project graph, code quality analysis, and framework-specific lint rules. Zero dependencies.",
   "main": "src/server.js",
   "bin": {
     "project-graph-mcp": "src/server.js"
   },
+  "files": [
+    "src/",
+    "vendor/",
+    "rules/",
+    "references/",
+    "AGENT_ROLE.md",
+    "AGENT_ROLE_MINIMAL.md",
+    "CONFIGURATION.md",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "start": "node src/server.js",
     "test": "node --test tests/*.test.js"
@@ -17,11 +28,15 @@
     "ast",
     "project-graph",
     "ai-agent",
-    "code-analysis"
+    "code-analysis",
+    "dead-code",
+    "complexity",
+    "lint",
+    "gemini"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/RND-PRO/project-graph-mcp"
+    "url": "https://github.com/rnd-pro/project-graph-mcp"
   },
   "author": "RND-PRO",
   "license": "MIT",
