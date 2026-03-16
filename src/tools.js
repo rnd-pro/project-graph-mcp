@@ -2,9 +2,9 @@
  * MCP Tools for Project Graph
  */
 
-import { parseProject, parseFile } from './parser.js';
+import { parseProject, parseFile, findJSFiles } from './parser.js';
 import { buildGraph, createSkeleton } from './graph-builder.js';
-import { readFileSync } from 'fs';
+import { readFileSync, statSync } from 'fs';
 import { execSync } from 'child_process';
 
 /** @type {import('./graph-builder.js').Graph|null} */
@@ -13,21 +13,94 @@ let cachedGraph = null;
 /** @type {string|null} */
 let cachedPath = null;
 
+/** @type {Map<string, number>} file path -> mtimeMs */
+let cachedMtimes = new Map();
+
 /**
- * Get or build graph with caching
+ * Get or build graph with smart mtime-based caching.
+ * On first call: full parse + build.
+ * On subsequent calls: check file mtimes, rebuild only if changes detected.
  * @param {string} path 
  * @returns {Promise<import('./graph-builder.js').Graph>}
  */
 async function getGraph(path) {
+  // Different path = full rebuild
   if (cachedGraph && cachedPath === path) {
-    return cachedGraph;
+    // Check for file changes via mtime
+    const changed = detectChanges(path);
+    if (!changed) {
+      return cachedGraph;
+    }
+    // Files changed - full rebuild (incremental would need graph-builder changes)
   }
 
   const parsed = await parseProject(path);
   cachedGraph = buildGraph(parsed);
   cachedPath = path;
 
+  // Snapshot mtimes for all parsed files
+  snapshotMtimes(path);
+
   return cachedGraph;
+}
+
+/**
+ * Detect if any JS files changed since last snapshot.
+ * Checks: new files, deleted files, modified files (via mtimeMs).
+ * @param {string} path
+ * @returns {boolean} true if changes detected
+ */
+function detectChanges(path) {
+  if (cachedMtimes.size === 0) return true;
+
+  try {
+    const currentFiles = findJSFiles(path);
+    const currentSet = new Set(currentFiles);
+    const cachedSet = new Set(cachedMtimes.keys());
+
+    // New or deleted files
+    if (currentFiles.length !== cachedMtimes.size) return true;
+    for (const f of currentFiles) {
+      if (!cachedSet.has(f)) return true;
+    }
+    for (const f of cachedSet) {
+      if (!currentSet.has(f)) return true;
+    }
+
+    // Check mtimes
+    for (const file of currentFiles) {
+      try {
+        const mtime = statSync(file).mtimeMs;
+        if (mtime !== cachedMtimes.get(file)) return true;
+      } catch {
+        return true; // File gone or unreadable
+      }
+    }
+
+    return false;
+  } catch {
+    return true; // Safety: rebuild on error
+  }
+}
+
+/**
+ * Snapshot current mtimes for all JS files in path.
+ * @param {string} path
+ */
+function snapshotMtimes(path) {
+  cachedMtimes.clear();
+  try {
+    const files = findJSFiles(path);
+    for (const file of files) {
+      try {
+        cachedMtimes.set(file, statSync(file).mtimeMs);
+      } catch {
+        // Skip unreadable files
+      }
+    }
+  } catch {
+    // Ignore errors
+  }
 }
 
 /**
@@ -237,4 +310,5 @@ function extractMethod(content, methodName) {
 export function invalidateCache() {
   cachedGraph = null;
   cachedPath = null;
+  cachedMtimes.clear();
 }

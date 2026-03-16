@@ -261,7 +261,7 @@ export async function parseProject(dir) {
  * @param {string} [rootDir] - Root directory for relative path calculation
  * @returns {string[]}
  */
-function findJSFiles(dir, rootDir = dir) {
+export function findJSFiles(dir, rootDir = dir) {
   // Parse gitignore on first call
   if (dir === rootDir) {
     parseGitignore(rootDir);
