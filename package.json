@@ -1,8 +1,8 @@
 {
   "name": "project-graph-mcp",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "type": "module",
-  "description": "MCP server for AI agents — AST-based project graph, code quality analysis, and framework-specific lint rules. Zero dependencies.",
+  "description": "MCP server for AI agents — multi-language project graph (JS, TS, Python, Go), code quality analysis, and framework-specific lint rules. Zero dependencies.",
   "main": "src/server.js",
   "bin": {
     "project-graph-mcp": "src/server.js"
@@ -32,7 +32,11 @@
     "dead-code",
     "complexity",
     "lint",
-    "gemini"
+    "gemini",
+    "typescript",
+    "python",
+    "golang",
+    "multi-language"
   ],
   "repository": {
     "type": "git",

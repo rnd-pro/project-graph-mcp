@@ -1,6 +1,6 @@
 # project-graph-mcp
 
-**MCP server for AI agents** — project graph, code quality analysis, and framework-specific lint rules.
+**MCP server for AI agents** — multi-language project graph, code quality analysis, and framework-specific lint rules.
 
 > Developed by [RND-PRO](https://rnd-pro.com)
 
@@ -14,6 +14,7 @@ AI agents struggle with large codebases:
 
 **Project Graph MCP solves this:**
 - 📦 **10-50x compression** — skeleton view fits in context window
+- 🌐 **Multi-language** — JavaScript, TypeScript, Python, Go
 - 🔍 **Code quality analysis** — dead code, complexity, duplicates
 - 🎯 **Framework-specific rules** — auto-detect and apply (React, Vue, Express, Node.js, Symbiote)
 - ✅ **Test checklists** — track @test/@expect annotations
@@ -26,6 +27,9 @@ AI agents struggle with large codebases:
 - `deps` — Dependency tree for any symbol
 - `usages` — Find all usages of a symbol
 - `get_focus_zone` — Auto-enriched context from git diff
+- `get_call_chain` — BFS call path analysis between symbols
+
+**Supported languages:** JavaScript (AST via Acorn), TypeScript/TSX, Python, Go — all with unified ParseResult API.
 
 ### 🧪 Test Checklists (Universal)
 - `get_pending_tests` — List tests from `@test/@expect` JSDoc annotations
@@ -253,7 +257,11 @@ project-graph-mcp/
 │   ├── tool-defs.js          # MCP tool schemas
 │   ├── tools.js              # Graph tools (skeleton, expand, deps)
 │   ├── workspace.js          # Path resolution + traversal protection
-│   ├── parser.js             # AST parser (Acorn)
+│   ├── parser.js             # AST parser (Acorn) + language routing
+│   ├── lang-typescript.js    # TypeScript/TSX regex parser
+│   ├── lang-python.js        # Python regex parser
+│   ├── lang-go.js            # Go regex parser
+│   ├── lang-utils.js         # Shared: stripStringsAndComments
 │   ├── graph-builder.js      # Minified graph + legend
 │   ├── filters.js            # Exclude patterns, .gitignore
 │   ├── dead-code.js          # Unused code detection
