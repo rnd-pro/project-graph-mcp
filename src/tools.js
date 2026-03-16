@@ -246,13 +246,26 @@ export async function expand(symbol) {
   // Find the source file
   const parsed = await parseProject(path);
   const cls = parsed.classes.find(c => c.name === fullName);
+  const fn = parsed.functions.find(f => f.name === fullName);
 
-  if (!cls) {
-    return { error: `Class not found: ${fullName}` };
+  if (!cls && !fn) {
+    return { error: `Symbol not found: ${fullName}` };
+  }
+
+  if (fn && !methodKey) {
+    return {
+      symbol,
+      fullName,
+      type: 'function',
+      file: fn.file,
+      line: fn.line,
+      exported: fn.exported,
+      calls: fn.calls,
+    };
   }
 
   // If method specified, extract method code
-  if (methodKey) {
+  if (methodKey && cls) {
     const methodName = graph.reverseLegend[methodKey] || methodKey;
     const content = readFileSync(cls.file, 'utf-8');
     const methodCode = extractMethod(content, methodName);

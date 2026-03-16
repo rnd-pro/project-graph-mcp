@@ -167,7 +167,7 @@ export function parsePython(code = '', filename = '') {
   }
 
   // Handle Exports (__all__)
-  const allMatch = cleanCode.match(/__all__\s*=\s*\[(.*?)\]/s);
+  const allMatch = code.match(/__all__\s*=\s*\[(.*?)\]/s);
   if (allMatch) {
     const exportsRaw = allMatch[1];
     const exportRegex = /['"]([^'"]+)['"]/g;

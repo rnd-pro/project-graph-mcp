@@ -169,7 +169,7 @@ export function buildGraph(parsed) {
   }
 
   // Detect duplicates (same method name in multiple classes)
-  const methodLocations = {};
+  const methodLocations = Object.create(null);
   for (const cls of classes) {
     for (const method of cls.methods || []) {
       if (!methodLocations[method]) {
