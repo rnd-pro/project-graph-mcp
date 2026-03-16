@@ -32,6 +32,7 @@ const DEFAULT_EXCLUDE_PATTERNS = [
   '*.min.js',
   '*.bundle.js',
   '*.d.ts',
+  '.project-graph-cache.json',
 ];
 
 // Current filter configuration (mutable via MCP)

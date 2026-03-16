@@ -74,6 +74,19 @@ export const TOOLS = [
     },
   },
   {
+    name: 'get_call_chain',
+    description: 'Find the shortest call chain from one function/class to another through the dependency graph.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        from: { type: 'string', description: 'Starting symbol (e.g., "authMiddleware")' },
+        to: { type: 'string', description: 'Target symbol (e.g., "renderDashboard")' },
+        path: { type: 'string', description: 'Path to scan (optional)' }
+      },
+      required: ['from', 'to'],
+    },
+  },
+  {
     name: 'invalidate_cache',
     description: 'Invalidate the cached graph. Use after making code changes.',
     inputSchema: {

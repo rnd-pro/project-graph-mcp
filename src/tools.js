@@ -4,8 +4,9 @@
 
 import { parseProject, parseFile, findJSFiles } from './parser.js';
 import { buildGraph, createSkeleton } from './graph-builder.js';
-import { readFileSync, statSync } from 'fs';
+import { readFileSync, statSync, writeFileSync, existsSync, unlinkSync } from 'fs';
 import { execSync } from 'child_process';
+import { join } from 'path';
 
 /** @type {import('./graph-builder.js').Graph|null} */
 let cachedGraph = null;
@@ -15,6 +16,63 @@ let cachedPath = null;
 
 /** @type {Map<string, number>} file path -> mtimeMs */
 let cachedMtimes = new Map();
+
+/**
+ * Save cache to disk
+ * @param {string} path 
+ * @param {import('./graph-builder.js').Graph} graph 
+ */
+function saveDiskCache(path, graph) {
+  try {
+    const cachePath = join(path, '.project-graph-cache.json');
+    const cacheData = {
+      version: 1,
+      path: path,
+      mtimes: Object.fromEntries(cachedMtimes),
+      graph: graph
+    };
+    writeFileSync(cachePath, JSON.stringify(cacheData), 'utf-8');
+  } catch (e) {
+    // Ignore cache save errors
+  }
+}
+
+/**
+ * Load cache from disk
+ * @param {string} path 
+ * @returns {boolean} true if cache was successfully loaded and is valid
+ */
+function loadDiskCache(path) {
+  try {
+    const cachePath = join(path, '.project-graph-cache.json');
+    if (!existsSync(cachePath)) return false;
+
+    const content = readFileSync(cachePath, 'utf-8');
+    const data = JSON.parse(content);
+
+    if (data.version !== 1 || data.path !== path) return false;
+
+    cachedMtimes.clear();
+    for (const [file, mtime] of Object.entries(data.mtimes)) {
+      cachedMtimes.set(file, mtime);
+    }
+
+    cachedGraph = data.graph;
+    cachedPath = path;
+
+    const changed = detectChanges(path);
+    if (changed) {
+      cachedGraph = null;
+      cachedPath = null;
+      cachedMtimes.clear();
+      return false;
+    }
+
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
 
 /**
  * Get or build graph with smart mtime-based caching.
@@ -32,6 +90,10 @@ async function getGraph(path) {
       return cachedGraph;
     }
     // Files changed - full rebuild (incremental would need graph-builder changes)
+  } else if (!cachedGraph) {
+    if (loadDiskCache(path)) {
+      return cachedGraph;
+    }
   }
 
   const parsed = await parseProject(path);
@@ -40,6 +102,7 @@ async function getGraph(path) {
 
   // Snapshot mtimes for all parsed files
   snapshotMtimes(path);
+  saveDiskCache(path, cachedGraph);
 
   return cachedGraph;
 }
@@ -305,9 +368,89 @@ function extractMethod(content, methodName) {
 }
 
 /**
+ * Find call chain from one symbol to another
+ * @param {Object} options 
+ * @param {string} options.from - Starting symbol (full or minified)
+ * @param {string} options.to - Target symbol (full or minified)
+ * @param {string} [options.path] - Project path
+ * @returns {Promise<string[]|Object>}
+ */
+export async function getCallChain(options = {}) {
+  const { from, to, path } = options;
+  if (!from || !to) {
+    return { error: 'Both "from" and "to" parameters are required' };
+  }
+
+  const projectPath = path || cachedPath || 'src/components';
+  const graph = await getGraph(projectPath);
+
+  const fromSym = graph.legend[from] || from;
+  const toSym = graph.legend[to] || to;
+
+  // Build adjacency list for fast lookup
+  const adj = {};
+  for (const [caller, _, target] of graph.edges) {
+    if (!adj[caller]) adj[caller] = [];
+    adj[caller].push(target);
+  }
+
+  // Queue stores { current: string, path: string[] }
+  const queue = [{ current: fromSym, path: [fromSym] }];
+  const visitedNodes = new Set();
+  const expandedBases = new Set();
+  visitedNodes.add(fromSym);
+
+  while (queue.length > 0) {
+    const { current, path: currentPath } = queue.shift();
+
+    const currentBase = current.split('.')[0];
+    const currentMethod = current.split('.')[1];
+
+    if (current === toSym || currentBase === toSym || currentMethod === toSym) {
+      const fullPath = currentPath.map(sym => {
+        const parts = sym.split('.');
+        const base = graph.reverseLegend[parts[0]] || parts[0];
+        if (parts.length === 2) {
+          const method = graph.reverseLegend[parts[1]] || parts[1];
+          return `${base}.${method}`;
+        }
+        return base;
+      });
+      return fullPath;
+    }
+
+    if (expandedBases.has(currentBase)) {
+      continue;
+    }
+    expandedBases.add(currentBase);
+
+    const neighbors = adj[currentBase] || [];
+    for (const neighbor of neighbors) {
+      if (!visitedNodes.has(neighbor)) {
+        visitedNodes.add(neighbor);
+        queue.push({
+          current: neighbor,
+          path: [...currentPath, neighbor]
+        });
+      }
+    }
+  }
+
+  return { error: `No call path found from "${from}" to "${to}"` };
+}
+
+/**
  * Invalidate cache
  */
 export function invalidateCache() {
+  if (cachedPath) {
+    try {
+      const cachePath = join(cachedPath, '.project-graph-cache.json');
+      if (existsSync(cachePath)) {
+        unlinkSync(cachePath);
+      }
+    } catch (e) {}
+  }
   cachedGraph = null;
   cachedPath = null;
   cachedMtimes.clear();

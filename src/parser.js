@@ -8,6 +8,12 @@ import { join, relative, resolve } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import * as walk from '../vendor/walk.mjs';
 import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.js';
+import { parseTypeScript } from './lang-typescript.js';
+import { parsePython } from './lang-python.js';
+import { parseGo } from './lang-go.js';
+
+/** Supported source file extensions */
+const SOURCE_EXTENSIONS = ['.js', '.ts', '.tsx', '.py', '.go'];
 
 /**
  * @typedef {Object} ClassInfo
@@ -239,7 +245,7 @@ export async function parseProject(dir) {
   for (const file of files) {
     const content = readFileSync(file, 'utf-8');
     const relPath = relative(resolvedDir, file);
-    const parsed = await parseFile(content, relPath);
+    const parsed = await parseFileByExtension(content, relPath);
 
     result.files.push(relPath);
     result.classes.push(...parsed.classes);
@@ -253,6 +259,39 @@ export async function parseProject(dir) {
   result.exports = [...new Set(result.exports)];
 
   return result;
+}
+
+/**
+ * Route file to appropriate parser based on extension.
+ * @param {string} code
+ * @param {string} filename
+ * @returns {Promise<ParseResult>}
+ */
+async function parseFileByExtension(code, filename) {
+  if (filename.endsWith('.py')) {
+    return parsePython(code, filename);
+  }
+  if (filename.endsWith('.go')) {
+    return parseGo(code, filename);
+  }
+  if (filename.endsWith('.ts') || filename.endsWith('.tsx')) {
+    return parseTypeScript(code, filename);
+  }
+  // Default: JS via Acorn
+  return parseFile(code, filename);
+}
+
+/**
+ * Check if file is a supported source file.
+ * @param {string} filename
+ * @returns {boolean}
+ */
+function isSourceFile(filename) {
+  // Exclude Symbiote.js presentation files
+  if (filename.endsWith('.css.js') || filename.endsWith('.tpl.js')) {
+    return false;
+  }
+  return SOURCE_EXTENSIONS.some(ext => filename.endsWith(ext));
 }
 
 /**
@@ -279,7 +318,7 @@ export function findJSFiles(dir, rootDir = dir) {
         if (!shouldExcludeDir(entry, relativePath)) {
           files.push(...findJSFiles(fullPath, rootDir));
         }
-      } else if (entry.endsWith('.js') && !entry.endsWith('.css.js') && !entry.endsWith('.tpl.js')) {
+      } else if (isSourceFile(entry)) {
         if (!shouldExcludeFile(entry, relativePath)) {
           files.push(fullPath);
         }

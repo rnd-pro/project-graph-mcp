@@ -7,7 +7,7 @@
  */
 
 import { TOOLS } from './tool-defs.js';
-import { getSkeleton, getFocusZone, expand, deps, usages, invalidateCache } from './tools.js';
+import { getSkeleton, getFocusZone, expand, deps, usages, invalidateCache, getCallChain } from './tools.js';
 import { getPendingTests, markTestPassed, markTestFailed, getTestSummary, resetTestState } from './test-annotations.js';
 import { getFilters, setFilters, addExcludes, removeExcludes, resetFilters } from './filters.js';
 import { getInstructions } from './instructions.js';
@@ -34,6 +34,7 @@ const TOOL_HANDLERS = {
   expand: (args) => expand(args.symbol),
   deps: (args) => deps(args.symbol),
   usages: (args) => usages(args.symbol),
+  get_call_chain: (args) => getCallChain({ from: args.from, to: args.to, path: args.path ? resolvePath(args.path) : undefined }),
   invalidate_cache: () => { invalidateCache(); return { success: true }; },
 
   // Test Checklist Tools
@@ -114,6 +115,13 @@ const RESPONSE_HINTS = {
   deps: () => [
     '💡 Use usages() for cross-project reference search.',
   ],
+
+  get_call_chain: (result) => {
+    if (result.error) return [];
+    return [
+      '💡 Use expand() on intermediate steps to understand how data is passed along the chain.',
+    ];
+  },
 
   invalidate_cache: () => [
     '✅ Cache cleared. Run get_skeleton() to rebuild the project graph.',
