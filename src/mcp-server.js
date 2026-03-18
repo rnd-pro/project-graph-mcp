@@ -6,6 +6,9 @@
  * - Sends server→client requests (roots/list) to get workspace info
  */
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { TOOLS } from './tool-defs.js';
 import { getSkeleton, getFocusZone, expand, deps, usages, invalidateCache, getCallChain } from './tools.js';
 import { getPendingTests, markTestPassed, markTestFailed, getTestSummary, resetTestState } from './test-annotations.js';
@@ -22,6 +25,8 @@ import { getFullAnalysis } from './full-analysis.js';
 import { getCustomRules, setCustomRule, checkCustomRules } from './custom-rules.js';
 import { getFrameworkReference } from './framework-references.js';
 import { setRoots, resolvePath } from './workspace.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Tool handlers registry
@@ -52,6 +57,22 @@ const TOOL_HANDLERS = {
   reset_filters: () => resetFilters(),
 
   // Guidelines
+  get_usage_guide: (args) => {
+    try {
+      const guidePath = path.join(__dirname, '..', 'GUIDE.md');
+      const content = fs.readFileSync(guidePath, 'utf8');
+      if (!args.topic) return content;
+      const regex = new RegExp(`## ${args.topic}`, 'i');
+      const match = content.match(regex);
+      if (!match) return `Topic '${args.topic}' not found in guide.`;
+      const start = match.index;
+      let end = content.indexOf('\n## ', start + 1);
+      if (end === -1) end = content.length;
+      return content.substring(start, end).trim();
+    } catch (e) {
+      return `Failed to read usage guide: ${e.message}`;
+    }
+  },
   get_agent_instructions: () => getInstructions(),
 
   // Documentation
@@ -220,10 +241,46 @@ export function createServer(sendToClient) {
               id,
               result: {
                 protocolVersion: '2024-11-05',
-                capabilities: { tools: {} },
+                capabilities: { tools: {}, resources: {} },
                 serverInfo: { name: 'project-graph', version: '1.1.0' },
               },
             };
+
+          case 'resources/list':
+            return {
+              jsonrpc: '2.0',
+              id,
+              result: {
+                resources: [
+                  {
+                    uri: 'project-graph://guide',
+                    name: 'Project Graph Usage Guide',
+                    description: 'Comprehensive guide with workflows and examples',
+                    mimeType: 'text/markdown',
+                  },
+                ],
+              },
+            };
+
+          case 'resources/read': {
+            if (params.uri !== 'project-graph://guide') {
+              return { jsonrpc: '2.0', id, error: { code: -32602, message: `Resource not found: ${params.uri}` } };
+            }
+            const content = fs.readFileSync(path.join(__dirname, '..', 'GUIDE.md'), 'utf8');
+            return {
+              jsonrpc: '2.0',
+              id,
+              result: {
+                contents: [
+                  {
+                    uri: 'project-graph://guide',
+                    mimeType: 'text/markdown',
+                    text: content,
+                  },
+                ],
+              },
+            };
+          }
 
           case 'tools/list':
             return { jsonrpc: '2.0', id, result: { tools: TOOLS } };

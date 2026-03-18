@@ -227,6 +227,26 @@ export const TOOLS = [
 
   // Guidelines
   {
+    name: 'get_usage_guide',
+    description: [
+      'Get the comprehensive usage guide for project-graph with examples and best practices.',
+      'Call this FIRST when planning how to analyze, navigate, or audit a codebase.',
+      'Returns practical examples and recommended workflow for each feature area.',
+      '',
+      'Available topics: navigation, analysis, testing, documentation, rules, workflow.',
+      'Omit topic to get the full guide.',
+    ].join('\n'),
+    inputSchema: {
+      type: 'object',
+      properties: {
+        topic: {
+          type: 'string',
+          description: 'Optional topic filter: navigation, analysis, testing, documentation, rules, workflow',
+        },
+      },
+    },
+  },
+  {
     name: 'get_agent_instructions',
     description: 'Get coding guidelines, architectural standards, and JSDoc rules for this project.',
     inputSchema: {
