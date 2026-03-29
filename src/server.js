@@ -13,7 +13,7 @@ import { runCLI } from './cli.js';
 
 // Main execution logic
 // We check endsWith('server.js') to verify this is the main module being run
-if (process.argv[1] && process.argv[1].endsWith('server.js')) {
+if (process.argv[1] && (process.argv[1].endsWith('server.js') || process.argv[1].endsWith('project-graph-mcp'))) {
   const [, , command, ...args] = process.argv;
 
   if (command) {
