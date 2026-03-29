@@ -12,8 +12,8 @@ export function printHelp() {
 project-graph-mcp - MCP server for AI agents
 
 Usage:
-  node src/server.js                  Start MCP stdio server
-  node src/server.js <command> [args] Run CLI command
+  npx project-graph-mcp                  Start MCP stdio server
+  npx project-graph-mcp <command> [args] Run CLI command
 
 Commands:
   skeleton <path>        Get compact project overview
@@ -35,9 +35,9 @@ Commands:
   help                   Show this help
 
 Examples:
-  node src/server.js skeleton src/components
-  node src/server.js expand SN
-  node src/server.js pending src/
+  npx project-graph-mcp skeleton src/components
+  npx project-graph-mcp expand SN
+  npx project-graph-mcp pending src/
 `);
 }
 

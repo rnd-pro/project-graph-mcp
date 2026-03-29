@@ -4,8 +4,8 @@
  * 
  * Decides whether to run in CLI mode or MCP Server mode (stdio)
  * Usage:
- *   node src/server.js                  -> stdio server
- *   node src/server.js <cmd> [args]     -> CLI execution
+ *   npx project-graph-mcp                  -> stdio server
+ *   npx project-graph-mcp <cmd> [args]     -> CLI execution
  */
 
 import { startStdioServer } from './mcp-server.js';

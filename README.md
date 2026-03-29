@@ -123,14 +123,14 @@ cd project-graph-mcp
 ## CLI
 
 ```bash
-node src/server.js skeleton src/       # Project skeleton
-node src/server.js expand SN           # Expand minified symbol
-node src/server.js deps SNG            # Get dependencies
-node src/server.js deadcode src/       # Find unused code
-node src/server.js complexity src/     # Cyclomatic complexity
-node src/server.js similar src/        # Find duplicates
-node src/server.js pending src/        # List pending tests
-node src/server.js help                # All commands
+npx project-graph-mcp skeleton src/       # Project skeleton
+npx project-graph-mcp expand SN           # Expand minified symbol
+npx project-graph-mcp deps SNG            # Get dependencies
+npx project-graph-mcp deadcode src/       # Find unused code
+npx project-graph-mcp complexity src/     # Cyclomatic complexity
+npx project-graph-mcp similar src/        # Find duplicates
+npx project-graph-mcp pending src/        # List pending tests
+npx project-graph-mcp help                # All commands
 ```
 
 ## MCP Ecosystem
