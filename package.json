@@ -43,6 +43,7 @@
     "url": "https://github.com/rnd-pro/project-graph-mcp"
   },
   "author": "RND-PRO",
+  "homepage": "https://github.com/rnd-pro/project-graph-mcp",
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0"
