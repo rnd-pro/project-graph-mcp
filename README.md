@@ -5,10 +5,6 @@
 
 # project-graph-mcp
 
-**MCP server for AI agents** — multi-language project graph, code quality analysis, and framework-specific lint rules.
-
-> Developed by [RND-PRO](https://rnd-pro.com)
-
 An MCP server that parses your source code into a **10-50x compressed skeleton** — classes, functions, imports, and dependencies in a minified JSON. Agents navigate the graph using `expand`, `deps`, and `usages` without reading irrelevant files.
 
 > [!TIP]
