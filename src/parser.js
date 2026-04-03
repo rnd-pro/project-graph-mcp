@@ -137,8 +137,7 @@ export async function parseFile(code, filename) {
           classInfo.methods.push(element.key.name);
 
           // Extract calls and SQL from method body
-          extractCalls(element.value.body, classInfo.calls);
-          extractSQLQueries(element.value.body, classInfo.dbReads, classInfo.dbWrites);
+          extractCallsAndSQL(element.value.body, classInfo.calls, classInfo.dbReads, classInfo.dbWrites);
         } else if (element.type === 'PropertyDefinition') {
           const propName = element.key.name;
 
@@ -169,8 +168,7 @@ export async function parseFile(code, filename) {
           line: node.loc.start.line,
         };
 
-        extractCalls(node.body, funcInfo.calls);
-        extractSQLQueries(node.body, funcInfo.dbReads, funcInfo.dbWrites);
+        extractCallsAndSQL(node.body, funcInfo.calls, funcInfo.dbReads, funcInfo.dbWrites);
         result.functions.push(funcInfo);
       }
     },
@@ -187,113 +185,92 @@ export async function parseFile(code, filename) {
   return result;
 }
 
+/** DB client method names that accept SQL as first argument */
+const DB_METHODS = new Set(['query', 'execute', 'raw', 'exec', 'queryFile', 'none', 'one', 'many', 'any', 'oneOrNone', 'manyOrNone', 'result']);
+
 /**
- * Extract method calls from AST node
+ * Extract method calls AND SQL queries from AST node in a single walk.
+ * Combines what was previously two separate walk.simple() calls.
  * @param {Object} node 
  * @param {string[]} calls 
+ * @param {string[]} [dbReads]
+ * @param {string[]} [dbWrites]
  */
-function extractCalls(node, calls) {
+function extractCallsAndSQL(node, calls, dbReads, dbWrites) {
   if (!node) return;
 
   walk.simple(node, {
     CallExpression(callNode) {
       const callee = callNode.callee;
 
+      // === Call extraction ===
       if (callee.type === 'MemberExpression') {
-        // obj.method() or this.method()
         const object = callee.object;
         const property = callee.property;
 
         if (property.type === 'Identifier') {
           if (object.type === 'Identifier') {
-            // Class.method() or obj.method()
             const call = `${object.name}.${property.name}`;
-            if (!calls.includes(call)) {
-              calls.push(call);
-            }
+            if (!calls.includes(call)) calls.push(call);
           } else if (object.type === 'MemberExpression' && object.property.type === 'Identifier') {
-            // this.obj.method()
             const call = `${object.property.name}.${property.name}`;
-            if (!calls.includes(call)) {
-              calls.push(call);
-            }
+            if (!calls.includes(call)) calls.push(call);
           } else if (object.type === 'ThisExpression') {
-            // this.method() - internal call
             const call = property.name;
-            if (!calls.includes(call)) {
-              calls.push(call);
-            }
+            if (!calls.includes(call)) calls.push(call);
           }
         }
       } else if (callee.type === 'Identifier') {
-        // Direct function call: funcName()
         const call = callee.name;
-        if (!calls.includes(call)) {
-          calls.push(call);
+        if (!calls.includes(call)) calls.push(call);
+      }
+
+      // === SQL extraction from DB client calls ===
+      if (dbReads && dbWrites) {
+        const methodName = getCallMethodName(callNode);
+        if (methodName && DB_METHODS.has(methodName) && callNode.arguments.length > 0) {
+          const sqlStr = extractStringValue(callNode.arguments[0]);
+          if (sqlStr && isSQLString(sqlStr)) {
+            const ext = extractSQLFromString(sqlStr);
+            ext.reads.forEach(t => { if (!dbReads.includes(t)) dbReads.push(t); });
+            ext.writes.forEach(t => { if (!dbWrites.includes(t)) dbWrites.push(t); });
+          }
         }
       }
     },
-  });
-}
 
-/** DB client method names that accept SQL as first argument */
-const DB_METHODS = new Set(['query', 'execute', 'raw', 'exec', 'queryFile', 'none', 'one', 'many', 'any', 'oneOrNone', 'manyOrNone', 'result']);
-
-/**
- * Extract SQL queries from AST subtree.
- * Detects: TaggedTemplateExpression (sql`...`), CallExpression (.query/.execute/.raw),
- * and standalone string literals that look like SQL.
- * @param {Object} node - AST node
- * @param {string[]} reads - Table names read
- * @param {string[]} writes - Table names written
- */
-function extractSQLQueries(node, reads, writes) {
-  if (!node) return;
-
-  walk.simple(node, {
-    // Tagged templates: sql`SELECT * FROM users`
+    // === SQL: Tagged templates ===
     TaggedTemplateExpression(tagNode) {
+      if (!dbReads || !dbWrites) return;
       const tagName = getTagName(tagNode.tag);
       if (tagName && /sql/i.test(tagName)) {
         const sqlStr = templateToString(tagNode.quasi);
         if (sqlStr) {
           const ext = extractSQLFromString(sqlStr);
-          ext.reads.forEach(t => { if (!reads.includes(t)) reads.push(t); });
-          ext.writes.forEach(t => { if (!writes.includes(t)) writes.push(t); });
+          ext.reads.forEach(t => { if (!dbReads.includes(t)) dbReads.push(t); });
+          ext.writes.forEach(t => { if (!dbWrites.includes(t)) dbWrites.push(t); });
         }
       }
     },
 
-    // Call expressions: db.query('SELECT...'), pool.execute(`...`)
-    CallExpression(callNode) {
-      const methodName = getCallMethodName(callNode);
-      if (methodName && DB_METHODS.has(methodName) && callNode.arguments.length > 0) {
-        const sqlStr = extractStringValue(callNode.arguments[0]);
-        if (sqlStr && isSQLString(sqlStr)) {
-          const ext = extractSQLFromString(sqlStr);
-          ext.reads.forEach(t => { if (!reads.includes(t)) reads.push(t); });
-          ext.writes.forEach(t => { if (!writes.includes(t)) writes.push(t); });
-        }
-      }
-    },
-
-    // Standalone string literals that look like SQL
+    // === SQL: Standalone template literals ===
     TemplateLiteral(tplNode) {
-      // Skip if already handled by TaggedTemplateExpression
-      if (tplNode._sqlProcessed) return;
+      if (!dbReads || !dbWrites) return;
       const sqlStr = templateToString(tplNode);
       if (sqlStr && isSQLString(sqlStr)) {
         const ext = extractSQLFromString(sqlStr);
-        ext.reads.forEach(t => { if (!reads.includes(t)) reads.push(t); });
-        ext.writes.forEach(t => { if (!writes.includes(t)) writes.push(t); });
+        ext.reads.forEach(t => { if (!dbReads.includes(t)) dbReads.push(t); });
+        ext.writes.forEach(t => { if (!dbWrites.includes(t)) dbWrites.push(t); });
       }
     },
 
+    // === SQL: String literals ===
     Literal(litNode) {
+      if (!dbReads || !dbWrites) return;
       if (typeof litNode.value === 'string' && isSQLString(litNode.value)) {
         const ext = extractSQLFromString(litNode.value);
-        ext.reads.forEach(t => { if (!reads.includes(t)) reads.push(t); });
-        ext.writes.forEach(t => { if (!writes.includes(t)) writes.push(t); });
+        ext.reads.forEach(t => { if (!dbReads.includes(t)) dbReads.push(t); });
+        ext.writes.forEach(t => { if (!dbWrites.includes(t)) dbWrites.push(t); });
       }
     },
   });
