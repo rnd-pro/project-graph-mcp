@@ -474,4 +474,52 @@ export const TOOLS = [
       },
     },
   },
+
+  // Database Analysis
+  {
+    name: 'get_db_schema',
+    description: 'Get database schema from SQL files. Extracts tables, columns, and types from schema.sql or migration files in the project.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Path to scan (e.g., "." or "database/")',
+        },
+      },
+      required: ['path'],
+    },
+  },
+  {
+    name: 'get_table_usage',
+    description: 'Show which functions read/write database tables. Traces SQL queries in JS/TS/Python/Go code to table references.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Path to scan (e.g., "src/")',
+        },
+        table: {
+          type: 'string',
+          description: 'Optional: filter to a specific table name',
+        },
+      },
+      required: ['path'],
+    },
+  },
+  {
+    name: 'get_db_dead_tables',
+    description: 'Find tables and columns defined in schema but never referenced in code queries. Requires .sql schema files in the project.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Path to scan (e.g., ".")',
+        },
+      },
+      required: ['path'],
+    },
+  },
 ];

@@ -9,6 +9,7 @@ import { getSimilarFunctions } from './similar-functions.js';
 import { getComplexity } from './complexity.js';
 import { getLargeFiles } from './large-files.js';
 import { getOutdatedPatterns } from './outdated-patterns.js';
+import { getTableUsage } from './db-analysis.js';
 
 /**
  * @typedef {Object} AnalysisResult
@@ -102,13 +103,14 @@ export async function getFullAnalysis(dir, options = {}) {
   const includeItems = options.includeItems || false;
 
   // Run all analyses in parallel
-  const [deadCode, undocumented, similar, complexity, largeFiles, outdated] = await Promise.all([
+  const [deadCode, undocumented, similar, complexity, largeFiles, outdated, dbUsage] = await Promise.all([
     getDeadCode(dir),
     getUndocumentedSummary(dir, 'tests'),
     getSimilarFunctions(dir, { threshold: 70 }),
     getComplexity(dir, { minComplexity: 5 }),
     getLargeFiles(dir),
     getOutdatedPatterns(dir),
+    getTableUsage(dir).catch(() => ({ tables: [], totalTables: 0, totalQueries: 0 })),
   ]);
 
   // Calculate overall health
@@ -154,6 +156,19 @@ export async function getFullAnalysis(dir, options = {}) {
     },
     overall,
   };
+
+  // Add DB metrics if any SQL interactions found (non-scoring)
+  if (dbUsage.totalTables > 0) {
+    result.database = {
+      tablesUsed: dbUsage.totalTables,
+      totalQueries: dbUsage.totalQueries,
+      tables: dbUsage.tables.map(t => ({
+        name: t.table,
+        readers: t.totalReaders,
+        writers: t.totalWriters,
+      })),
+    };
+  }
 
   return result;
 }

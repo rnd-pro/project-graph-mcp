@@ -52,6 +52,25 @@ After code changes, you MUST verify UI with this flow:
 async onDeletePersona() { ... }
 ```
 
+## 🗄️ Database Analysis
+| Tool | Purpose |
+|------|---------|
+| `get_db_schema` | Extract tables, columns, types from .sql files |
+| `get_table_usage` | Show which functions read/write each table |
+| `get_db_dead_tables` | Find schema tables/columns never referenced in code |
+
+### How It Works
+The graph automatically detects SQL queries in your code:
+- **Tagged templates**: `` sql`SELECT * FROM users` ``
+- **DB client calls**: `.query('SELECT...')`, `.execute(...)`, `.raw(...)`
+- **String literals**: SQL-anchored strings (`SELECT`, `INSERT`, `UPDATE`, `DELETE`)
+- **Schema files**: `CREATE TABLE` statements from `.sql` files
+
+### Limitations
+- Regex-based (~80% accuracy). Dynamic SQL (string concatenation) may be missed.
+- Column-level dead code detection is best-effort.
+- ORM-specific patterns (Prisma, Sequelize, Knex) are not yet supported.
+
 ## 🔍 Code Quality Analysis
 | Tool | Purpose |
 |------|---------|

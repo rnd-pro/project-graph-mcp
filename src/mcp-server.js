@@ -25,6 +25,7 @@ import { getFullAnalysis } from './full-analysis.js';
 import { getCustomRules, setCustomRule, checkCustomRules } from './custom-rules.js';
 import { getFrameworkReference } from './framework-references.js';
 import { setRoots, resolvePath } from './workspace.js';
+import { getDBSchema, getTableUsage, getDBDeadTables } from './db-analysis.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -108,6 +109,11 @@ const TOOL_HANDLERS = {
     framework: args.framework,
     path: args.path ? resolvePath(args.path) : undefined,
   }),
+
+  // Database Analysis
+  get_db_schema: (args) => getDBSchema(resolvePath(args.path)),
+  get_table_usage: (args) => getTableUsage(resolvePath(args.path), args.table),
+  get_db_dead_tables: (args) => getDBDeadTables(resolvePath(args.path)),
 };
 
 /**
@@ -176,6 +182,28 @@ const RESPONSE_HINTS = {
 
   get_pending_tests: () => [
     '💡 Use mark_test_passed(testId) or mark_test_failed(testId, reason) to track progress.',
+  ],
+
+  get_db_schema: (result) => {
+    const hints = [];
+    if (result.totalTables > 0) {
+      hints.push(`💡 Found ${result.totalTables} tables. Use get_table_usage() to see which code reads/writes them.`);
+    } else {
+      hints.push('💡 No .sql schema files found. Add schema.sql or migrations/*.sql to your project.');
+    }
+    return hints;
+  },
+
+  get_table_usage: (result) => {
+    const hints = ['💡 Use get_db_dead_tables() to find tables defined in schema but never queried.'];
+    if (result.totalTables === 0) {
+      hints.push('💡 No SQL queries detected. This tool finds SQL in .query(), .execute(), sql`...` patterns.');
+    }
+    return hints;
+  },
+
+  get_db_dead_tables: () => [
+    '💡 Dead columns detection is best-effort — verify before removing.',
   ],
 };
 

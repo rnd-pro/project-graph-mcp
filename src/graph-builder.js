@@ -20,9 +20,9 @@
  * @property {number} v - version
  * @property {Object<string, string>} legend - minified name → full name
  * @property {Object<string, string>} reverseLegend - full name → minified
- * @property {Object} stats - { files, classes, functions }
+ * @property {Object} stats - { files, classes, functions, tables }
  * @property {Object<string, GraphNode>} nodes
- * @property {Array<[string, string, string]>} edges - [from, type, to]
+ * @property {Array<[string, string, string]>} edges - [from, type, to] where type is →, R→, or W→
  * @property {string[]} orphans
  * @property {Object<string, string[]>} duplicates
  * @property {string[]} files - list of parsed file paths
@@ -106,6 +106,7 @@ export function buildGraph(parsed) {
       files: (parsed.files || []).length,
       classes: classes.length,
       functions: functions.length,
+      tables: (parsed.tables || []).length,
     },
     nodes: {},
     edges: [],
@@ -152,6 +153,34 @@ export function buildGraph(parsed) {
       t: 'F',
       e: func.exported,
       f: func.file || undefined,
+    };
+
+    // Build DB edges from function SQL reads/writes
+    for (const table of func.dbReads || []) {
+      graph.edges.push([shortName, 'R→', table]);
+    }
+    for (const table of func.dbWrites || []) {
+      graph.edges.push([shortName, 'W→', table]);
+    }
+  }
+
+  // Build DB edges from class SQL reads/writes
+  for (const cls of classes) {
+    const shortName = legend[cls.name];
+    for (const table of cls.dbReads || []) {
+      graph.edges.push([shortName, 'R→', table]);
+    }
+    for (const table of cls.dbWrites || []) {
+      graph.edges.push([shortName, 'W→', table]);
+    }
+  }
+
+  // Build table nodes from parsed SQL files
+  for (const table of parsed.tables || []) {
+    graph.nodes[table.name] = {
+      t: 'T',
+      cols: table.columns.map(c => c.name),
+      f: table.file || undefined,
     };
   }
 
@@ -215,6 +244,7 @@ export function createSkeleton(graph) {
       if (node.f) entry.f = node.f;
       nodes[short] = entry;
     }
+    // Skip Table nodes (T) — they only appear in dedicated DB tools
   }
 
   // Build exported functions grouped by file: { "file.js": ["shortName1", ...] }

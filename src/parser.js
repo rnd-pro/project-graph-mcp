@@ -1,6 +1,6 @@
 /**
  * AST Parser for JavaScript files using Acorn
- * Extracts classes, functions, methods, properties, imports, and calls
+ * Extracts classes, functions, methods, properties, imports, calls, and SQL queries
  */
 
 import { readFileSync, readdirSync, statSync } from 'fs';
@@ -11,9 +11,10 @@ import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.j
 import { parseTypeScript } from './lang-typescript.js';
 import { parsePython } from './lang-python.js';
 import { parseGo } from './lang-go.js';
+import { parseSQL, extractSQLFromString, isSQLString } from './lang-sql.js';
 
 /** Supported source file extensions */
-const SOURCE_EXTENSIONS = ['.js', '.ts', '.tsx', '.py', '.go'];
+const SOURCE_EXTENSIONS = ['.js', '.ts', '.tsx', '.py', '.go', '.sql'];
 
 /**
  * @typedef {Object} ClassInfo
@@ -22,6 +23,8 @@ const SOURCE_EXTENSIONS = ['.js', '.ts', '.tsx', '.py', '.go'];
  * @property {string[]} methods
  * @property {string[]} properties
  * @property {string[]} calls
+ * @property {string[]} [dbReads] - Tables read by SQL queries
+ * @property {string[]} [dbWrites] - Tables written by SQL queries
  * @property {string} file
  * @property {number} line
  */
@@ -31,6 +34,8 @@ const SOURCE_EXTENSIONS = ['.js', '.ts', '.tsx', '.py', '.go'];
  * @property {string} name
  * @property {boolean} exported
  * @property {string[]} calls
+ * @property {string[]} [dbReads] - Tables read by SQL queries
+ * @property {string[]} [dbWrites] - Tables written by SQL queries
  * @property {string} file
  * @property {number} line
  */
@@ -120,6 +125,8 @@ export async function parseFile(code, filename) {
         methods: [],
         properties: [],
         calls: [],
+        dbReads: [],
+        dbWrites: [],
         file: filename,
         line: node.loc.start.line,
       };
@@ -129,8 +136,9 @@ export async function parseFile(code, filename) {
         if (element.type === 'MethodDefinition' && element.key.name !== 'constructor') {
           classInfo.methods.push(element.key.name);
 
-          // Extract calls from method body
+          // Extract calls and SQL from method body
           extractCalls(element.value.body, classInfo.calls);
+          extractSQLQueries(element.value.body, classInfo.dbReads, classInfo.dbWrites);
         } else if (element.type === 'PropertyDefinition') {
           const propName = element.key.name;
 
@@ -155,11 +163,14 @@ export async function parseFile(code, filename) {
           name: node.id.name,
           exported: false, // Will be updated later
           calls: [],
+          dbReads: [],
+          dbWrites: [],
           file: filename,
           line: node.loc.start.line,
         };
 
         extractCalls(node.body, funcInfo.calls);
+        extractSQLQueries(node.body, funcInfo.dbReads, funcInfo.dbWrites);
         result.functions.push(funcInfo);
       }
     },
@@ -225,6 +236,131 @@ function extractCalls(node, calls) {
   });
 }
 
+/** DB client method names that accept SQL as first argument */
+const DB_METHODS = new Set(['query', 'execute', 'raw', 'exec', 'queryFile', 'none', 'one', 'many', 'any', 'oneOrNone', 'manyOrNone', 'result']);
+
+/**
+ * Extract SQL queries from AST subtree.
+ * Detects: TaggedTemplateExpression (sql`...`), CallExpression (.query/.execute/.raw),
+ * and standalone string literals that look like SQL.
+ * @param {Object} node - AST node
+ * @param {string[]} reads - Table names read
+ * @param {string[]} writes - Table names written
+ */
+function extractSQLQueries(node, reads, writes) {
+  if (!node) return;
+
+  walk.simple(node, {
+    // Tagged templates: sql`SELECT * FROM users`
+    TaggedTemplateExpression(tagNode) {
+      const tagName = getTagName(tagNode.tag);
+      if (tagName && /sql/i.test(tagName)) {
+        const sqlStr = templateToString(tagNode.quasi);
+        if (sqlStr) {
+          const ext = extractSQLFromString(sqlStr);
+          ext.reads.forEach(t => { if (!reads.includes(t)) reads.push(t); });
+          ext.writes.forEach(t => { if (!writes.includes(t)) writes.push(t); });
+        }
+      }
+    },
+
+    // Call expressions: db.query('SELECT...'), pool.execute(`...`)
+    CallExpression(callNode) {
+      const methodName = getCallMethodName(callNode);
+      if (methodName && DB_METHODS.has(methodName) && callNode.arguments.length > 0) {
+        const sqlStr = extractStringValue(callNode.arguments[0]);
+        if (sqlStr && isSQLString(sqlStr)) {
+          const ext = extractSQLFromString(sqlStr);
+          ext.reads.forEach(t => { if (!reads.includes(t)) reads.push(t); });
+          ext.writes.forEach(t => { if (!writes.includes(t)) writes.push(t); });
+        }
+      }
+    },
+
+    // Standalone string literals that look like SQL
+    TemplateLiteral(tplNode) {
+      // Skip if already handled by TaggedTemplateExpression
+      if (tplNode._sqlProcessed) return;
+      const sqlStr = templateToString(tplNode);
+      if (sqlStr && isSQLString(sqlStr)) {
+        const ext = extractSQLFromString(sqlStr);
+        ext.reads.forEach(t => { if (!reads.includes(t)) reads.push(t); });
+        ext.writes.forEach(t => { if (!writes.includes(t)) writes.push(t); });
+      }
+    },
+
+    Literal(litNode) {
+      if (typeof litNode.value === 'string' && isSQLString(litNode.value)) {
+        const ext = extractSQLFromString(litNode.value);
+        ext.reads.forEach(t => { if (!reads.includes(t)) reads.push(t); });
+        ext.writes.forEach(t => { if (!writes.includes(t)) writes.push(t); });
+      }
+    },
+  });
+}
+
+/**
+ * Get tag name from tagged template expression.
+ * Handles: sql`...`, Prisma.sql`...`, db.sql`...`
+ * @param {Object} tag - AST node
+ * @returns {string|null}
+ */
+function getTagName(tag) {
+  if (tag.type === 'Identifier') return tag.name;
+  if (tag.type === 'MemberExpression' && tag.property.type === 'Identifier') {
+    return tag.property.name;
+  }
+  return null;
+}
+
+/**
+ * Get method name from a CallExpression callee.
+ * @param {Object} callNode
+ * @returns {string|null}
+ */
+function getCallMethodName(callNode) {
+  const callee = callNode.callee;
+  if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
+    return callee.property.name;
+  }
+  return null;
+}
+
+/**
+ * Extract string value from AST node (Literal or TemplateLiteral).
+ * For templates with expressions, substitutes $N placeholders.
+ * @param {Object} node
+ * @returns {string|null}
+ */
+function extractStringValue(node) {
+  if (!node) return null;
+  if (node.type === 'Literal' && typeof node.value === 'string') {
+    return node.value;
+  }
+  if (node.type === 'TemplateLiteral') {
+    return templateToString(node);
+  }
+  return null;
+}
+
+/**
+ * Convert TemplateLiteral AST node to string.
+ * Expressions are replaced with $N placeholders.
+ * @param {Object} tplNode
+ * @returns {string}
+ */
+function templateToString(tplNode) {
+  if (!tplNode || !tplNode.quasis) return '';
+  let result = '';
+  for (let i = 0; i < tplNode.quasis.length; i++) {
+    result += tplNode.quasis[i].value.cooked || tplNode.quasis[i].value.raw || '';
+    if (i < tplNode.expressions?.length) {
+      result += '$' + (i + 1);
+    }
+  }
+  return result;
+}
+
 /**
  * Parse all JS files in a directory
  * @param {string} dir 
@@ -237,6 +373,7 @@ export async function parseProject(dir) {
     functions: [],
     imports: [],
     exports: [],
+    tables: [],
   };
 
   const resolvedDir = resolve(dir);
@@ -252,6 +389,9 @@ export async function parseProject(dir) {
     result.functions.push(...parsed.functions);
     result.imports.push(...parsed.imports);
     result.exports.push(...parsed.exports);
+    if (parsed.tables?.length) {
+      result.tables.push(...parsed.tables);
+    }
   }
 
   // Dedupe imports/exports
@@ -268,6 +408,9 @@ export async function parseProject(dir) {
  * @returns {Promise<ParseResult>}
  */
 async function parseFileByExtension(code, filename) {
+  if (filename.endsWith('.sql')) {
+    return parseSQL(code, filename);
+  }
   if (filename.endsWith('.py')) {
     return parsePython(code, filename);
   }
