@@ -105,17 +105,22 @@ export function extractSQLFromString(sql) {
     .trim();
 
   // READ patterns
-  // FROM table [alias]
+  // FROM table [alias] — skip function calls: FROM func(...)
   const fromRegex = /\bFROM\s+([a-zA-Z_]\w*(?:\.[a-zA-Z_]\w*)?)/gi;
   let match;
   while ((match = fromRegex.exec(normalized)) !== null) {
+    // Skip if followed by ( — it's a function call, not a table
+    const afterMatch = normalized.slice(match.index + match[0].length).trimStart();
+    if (afterMatch.startsWith('(')) continue;
     const name = match[1].split('.').pop(); // handle schema.table
     if (isValidTableName(name)) reads.add(name);
   }
 
-  // JOIN table [alias]
+  // JOIN table [alias] — same check for safety
   const joinRegex = /\bJOIN\s+([a-zA-Z_]\w*(?:\.[a-zA-Z_]\w*)?)/gi;
   while ((match = joinRegex.exec(normalized)) !== null) {
+    const afterMatch = normalized.slice(match.index + match[0].length).trimStart();
+    if (afterMatch.startsWith('(')) continue;
     const name = match[1].split('.').pop();
     if (isValidTableName(name)) reads.add(name);
   }
@@ -140,6 +145,18 @@ export function extractSQLFromString(sql) {
   while ((match = deleteRegex.exec(normalized)) !== null) {
     const name = match[1].split('.').pop();
     if (isValidTableName(name)) writes.add(name);
+  }
+
+  // Per peer review: remove DELETE primary target from reads to avoid double-counting.
+  // Only the primary mutation target is removed — subquery reads are preserved.
+  for (const w of writes) {
+    if (/\bDELETE\s+FROM\s+/i.test(normalized)) {
+      const deleteTargetMatch = normalized.match(/\bDELETE\s+FROM\s+([a-zA-Z_]\w*)/i);
+      if (deleteTargetMatch) {
+        const primaryTarget = deleteTargetMatch[1].split('.').pop();
+        if (w === primaryTarget) reads.delete(primaryTarget);
+      }
+    }
   }
 
   return {
