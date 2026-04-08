@@ -147,7 +147,7 @@ describe('MCP Server', () => {
 
     // content should be the instruction string
     assert.ok(content.includes('Project Guidelines'), 'Should contain title');
-    assert.ok(content.includes('@test'), 'Should contain annotations info');
+    assert.ok(content.includes('JSDoc'), 'Should contain JSDoc standards');
   });
 
   it('should execute get_undocumented tool', async () => {

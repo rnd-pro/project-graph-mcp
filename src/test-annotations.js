@@ -1,6 +1,6 @@
 /**
- * Test Annotations Parser
- * Extracts @test/@expect JSDoc annotations for browser testing
+ * Test Checklists — .ctx.md based
+ * Reads/writes test checklists from ## Tests sections in .ctx.md files
  */
 
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'fs';
@@ -8,143 +8,151 @@ import { join, basename, relative, resolve } from 'path';
 
 /**
  * @typedef {Object} TestStep
- * @property {string} id - Unique ID (e.g., "togglePin.1")
- * @property {string} type - Action type (click, key, drag, etc.)
- * @property {string} description - What to do
- * @property {boolean} completed - Whether test passed
- * @property {string} [failReason] - Why it failed (if failed)
+ * @property {string} id - Unique ID (e.g., "togglePin.0")
+ * @property {string} action - What to do
+ * @property {string} [expected] - Expected result (after →)
+ * @property {string} status - 'pending' | 'passed' | 'failed'
+ * @property {string} [failReason] - Why it failed
  */
 
 /**
  * @typedef {Object} Feature
- * @property {string} name - Method name
- * @property {string} description - What the method does
+ * @property {string} name - Function/method name
  * @property {TestStep[]} tests - Test steps
- * @property {Array<{type: string, description: string}>} expects - Expected outcomes
- * @property {string} file - Source file
- * @property {number} line - Line number
+ * @property {string} file - Source .ctx.md file path
  */
 
-// In-memory state for test progress
-const testState = new Map();
-
 /**
- * Parse @test/@expect annotations from a file
- * @param {string} content 
- * @param {string} filePath 
- * @returns {Feature[]}
- */
-export function parseAnnotations(content, filePath) {
-  const results = [];
-  const blockRegex = /\/\*\*([^]*?)\*\//g;
-
-  let match;
-  while ((match = blockRegex.exec(content)) !== null) {
-    const block = match[1];
-
-    // Check if block has @test or @expect
-    if (!block.includes('@test') && !block.includes('@expect')) continue;
-
-    // Find method name after the block
-    // Supports: methodName(  |  propName: (  |  propName: async (
-    const afterBlock = content.slice(match.index + match[0].length);
-    const methodMatch = afterBlock.match(
-      /^\s*(?:async\s+)?(\w+)\s*\(/ // class method: methodName(
-    ) || afterBlock.match(
-      /^\s*(\w+)\s*:\s*(?:async\s*)?\(/ // arrow in object: propName: (
-    ) || afterBlock.match(
-      /^\s*(\w+)\s*:\s*(?:async\s+)?\(/ // arrow in object: propName: async (
-    );
-    if (!methodMatch) continue;
-
-    const methodName = methodMatch[1];
-
-    // Extract description (first line)
-    const descMatch = block.match(/^\s*\*\s*([^@\n][^\n]*)/m);
-    const description = descMatch ? descMatch[1].trim() : methodName;
-
-    // Extract @test annotations with unique IDs
-    const tests = [];
-    const testRegex = /@test\s+(\w+):\s*(.+)/g;
-    let testMatch;
-    let testIndex = 0;
-    while ((testMatch = testRegex.exec(block)) !== null) {
-      tests.push({
-        id: `${methodName}.${testIndex++}`,
-        type: testMatch[1],
-        description: testMatch[2].trim(),
-        completed: false,
-        failReason: null,
-      });
-    }
-
-    // Extract @expect annotations
-    const expects = [];
-    const expectRegex = /@expect\s+(\w+):\s*(.+)/g;
-    let expectMatch;
-    while ((expectMatch = expectRegex.exec(block)) !== null) {
-      expects.push({
-        type: expectMatch[1],
-        description: expectMatch[2].trim(),
-      });
-    }
-
-    if (tests.length || expects.length) {
-      const lineNumber = content.slice(0, match.index).split('\n').length;
-
-      results.push({
-        name: methodName,
-        description,
-        tests,
-        expects,
-        file: filePath,
-        line: lineNumber,
-      });
-    }
-  }
-
-  return results;
-}
-
-/**
- * Find all JS files in directory
- * @param {string} dir 
+ * Find all .ctx.md files in .context/ directory
+ * @param {string} dir - Context directory path
  * @returns {string[]}
  */
-function findJSFiles(dir) {
+function findCtxMdFiles(dir) {
   const files = [];
-
   try {
     for (const entry of readdirSync(dir)) {
       const fullPath = join(dir, entry);
       const stat = statSync(fullPath);
-
-      if (stat.isDirectory() && !entry.startsWith('.') && entry !== 'node_modules') {
-        files.push(...findJSFiles(fullPath));
-      } else if (entry.endsWith('.js') && !entry.endsWith('.css.js') && !entry.endsWith('.tpl.js')) {
+      if (stat.isDirectory() && !entry.startsWith('.')) {
+        files.push(...findCtxMdFiles(fullPath));
+      } else if (entry.endsWith('.ctx.md')) {
         files.push(fullPath);
       }
     }
   } catch (e) {
     // Directory not found
   }
-
   return files;
 }
 
 /**
- * Get all features from a directory
- * @param {string} dir 
+ * Parse ## Tests section from a .ctx.md file
+ * @param {string} content - File content
+ * @param {string} filePath - Path to .ctx.md file
+ * @returns {Feature[]}
+ */
+export function parseAnnotations(content, filePath) {
+  const lines = content.split('\n');
+  const features = [];
+
+  // Find ## Tests section
+  let inTests = false;
+  let currentTests = [];
+
+  for (const line of lines) {
+    // Detect section headers
+    if (line.startsWith('## ')) {
+      if (inTests && currentTests.length) {
+        // End of Tests section — flush
+        features.push(...groupByName(currentTests, filePath));
+        currentTests = [];
+      }
+      inTests = line.startsWith('## Tests');
+      continue;
+    }
+
+    if (!inTests) continue;
+
+    // Parse checklist lines: - [ ] name: action → expected
+    // States: [ ] = pending, [x] = passed, [!] = failed
+    const match = line.match(/^- \[([ x!])\] (\w+):\s*(.+)$/);
+    if (!match) continue;
+
+    const [, state, name, rest] = match;
+    const parts = rest.split('→').map(s => s.trim());
+    const action = parts[0];
+    const expected = parts[1] || null;
+
+    // Extract fail reason from: (FAILED: reason)
+    let failReason = null;
+    let status = 'pending';
+    if (state === 'x') status = 'passed';
+    if (state === '!') {
+      status = 'failed';
+      const failMatch = action.match(/\(FAILED:\s*(.+)\)$/);
+      if (failMatch) failReason = failMatch[1].trim();
+    }
+
+    currentTests.push({ name, action, expected, status, failReason });
+  }
+
+  // Flush remaining
+  if (inTests && currentTests.length) {
+    features.push(...groupByName(currentTests, filePath));
+  }
+
+  return features;
+}
+
+/**
+ * Group test steps by function name into Feature objects
+ * @param {Array} tests - Raw test entries
+ * @param {string} filePath - Source file
+ * @returns {Feature[]}
+ */
+function groupByName(tests, filePath) {
+  const map = {};
+  let indexMap = {};
+
+  for (const t of tests) {
+    if (!map[t.name]) {
+      map[t.name] = [];
+      indexMap[t.name] = 0;
+    }
+    map[t.name].push({
+      id: `${t.name}.${indexMap[t.name]++}`,
+      action: t.action,
+      expected: t.expected,
+      status: t.status,
+      failReason: t.failReason,
+    });
+  }
+
+  return Object.entries(map).map(([name, tests]) => ({
+    name,
+    tests,
+    file: filePath,
+  }));
+}
+
+/**
+ * Get all features from a project directory
+ * @param {string} dir - Project root
  * @returns {Feature[]}
  */
 export function getAllFeatures(dir) {
-  const files = findJSFiles(dir);
+  const contextDir = join(resolve(dir), '.context');
+  const files = findCtxMdFiles(contextDir);
   const features = [];
 
   for (const file of files) {
-    const content = readFileSync(file, 'utf-8');
-    const parsed = parseAnnotations(content, file);
-    features.push(...parsed);
+    try {
+      const content = readFileSync(file, 'utf-8');
+      const parsed = parseAnnotations(content, file);
+      features.push(...parsed);
+    } catch (e) {
+      // Skip unreadable files
+    }
   }
 
   return features;
@@ -152,7 +160,7 @@ export function getAllFeatures(dir) {
 
 /**
  * Get pending (uncompleted) tests
- * @param {string} dir 
+ * @param {string} dir - Project root
  * @returns {TestStep[]}
  */
 export function getPendingTests(dir) {
@@ -162,8 +170,7 @@ export function getPendingTests(dir) {
 
   for (const feature of features) {
     for (const test of feature.tests) {
-      const state = testState.get(test.id);
-      if (!state || !state.completed) {
+      if (test.status === 'pending') {
         pending.push({
           ...test,
           feature: feature.name,
@@ -177,29 +184,81 @@ export function getPendingTests(dir) {
 }
 
 /**
- * Mark a test as passed
- * @param {string} testId 
+ * Mark a test as passed — writes directly to .ctx.md file
+ * @param {string} testId - e.g. "togglePin.0"
  * @returns {{success: boolean, testId: string}}
  */
 export function markTestPassed(testId) {
-  testState.set(testId, { completed: true, passed: true });
-  return { success: true, testId };
+  const name = testId.split('.')[0];
+  return updateTestState(name, testId, 'x');
 }
 
 /**
- * Mark a test as failed
- * @param {string} testId 
- * @param {string} reason 
+ * Mark a test as failed — writes directly to .ctx.md file
+ * @param {string} testId - e.g. "togglePin.0"
+ * @param {string} reason - Why it failed
  * @returns {{success: boolean, testId: string, reason: string}}
  */
 export function markTestFailed(testId, reason) {
-  testState.set(testId, { completed: true, passed: false, reason });
-  return { success: true, testId, reason };
+  const name = testId.split('.')[0];
+  return updateTestState(name, testId, '!', reason);
 }
 
 /**
- * Get test summary
- * @param {string} dir 
+ * Update test state in .ctx.md files
+ * @param {string} name - Function name
+ * @param {string} testId - Full test ID
+ * @param {string} newState - 'x' | '!' | ' '
+ * @param {string} [reason] - Failure reason
+ * @returns {{success: boolean, testId: string, reason?: string}}
+ */
+function updateTestState(name, testId, newState, reason) {
+  // Need to find which .ctx.md file contains this test
+  // Walk all .ctx.md files in .context/
+  const cwd = process.cwd();
+  const contextDir = join(cwd, '.context');
+  const files = findCtxMdFiles(contextDir);
+  const testIndex = parseInt(testId.split('.')[1], 10);
+
+  for (const file of files) {
+    try {
+      const content = readFileSync(file, 'utf-8');
+      const lines = content.split('\n');
+      let inTests = false;
+      let nameIndex = 0;
+
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].startsWith('## ')) {
+          inTests = lines[i].startsWith('## Tests');
+          continue;
+        }
+        if (!inTests) continue;
+
+        const match = lines[i].match(/^- \[([ x!])\] (\w+):\s*(.+)$/);
+        if (!match) continue;
+        if (match[2] !== name) continue;
+
+        if (nameIndex === testIndex) {
+          // Found the line — update it
+          const desc = match[3].replace(/\s*\(FAILED:.*\)$/, '');
+          const suffix = reason ? ` (FAILED: ${reason})` : '';
+          lines[i] = `- [${newState}] ${name}: ${desc}${suffix}`;
+          writeFileSync(file, lines.join('\n'), 'utf-8');
+          return { success: true, testId, ...(reason ? { reason } : {}) };
+        }
+        nameIndex++;
+      }
+    } catch (e) {
+      // Skip
+    }
+  }
+
+  return { success: false, testId, error: 'Test not found' };
+}
+
+/**
+ * Get test summary across all .ctx.md files
+ * @param {string} dir - Project root
  * @returns {Object}
  */
 export function getTestSummary(dir) {
@@ -214,18 +273,13 @@ export function getTestSummary(dir) {
   for (const feature of features) {
     for (const test of feature.tests) {
       total++;
-      const state = testState.get(test.id);
-
-      if (!state || !state.completed) {
-        pending++;
-      } else if (state.passed) {
+      if (test.status === 'passed') {
         passed++;
-      } else {
+      } else if (test.status === 'failed') {
         failed++;
-        failures.push({
-          id: test.id,
-          reason: state.reason,
-        });
+        failures.push({ id: test.id, reason: test.failReason });
+      } else {
+        pending++;
       }
     }
   }
@@ -241,64 +295,29 @@ export function getTestSummary(dir) {
 }
 
 /**
- * Reset test state
+ * Reset all test states — changes [x] and [!] back to [ ] in all .ctx.md files
  * @returns {{success: boolean}}
  */
 export function resetTestState() {
-  testState.clear();
-  return { success: true };
-}
+  const cwd = process.cwd();
+  const contextDir = join(cwd, '.context');
+  const files = findCtxMdFiles(contextDir);
 
-/**
- * Generate markdown checklist
- * @param {Feature[]} features 
- * @returns {string}
- */
-export function generateMarkdown(features) {
-  const lines = [
-    '# Browser Test Checklist',
-    '',
-    `> Auto-generated from JSDoc @test/@expect annotations`,
-    `> Generated: ${new Date().toISOString().split('T')[0]}`,
-    '',
-  ];
-
-  // Group by file
-  const byFile = {};
-  for (const feature of features) {
-    const key = feature.file;
-    if (!byFile[key]) byFile[key] = [];
-    byFile[key].push(feature);
-  }
-
-  for (const [file, fileFeatures] of Object.entries(byFile)) {
-    lines.push(`## ${basename(file, '.js')}`);
-    lines.push('');
-
-    for (const feature of fileFeatures) {
-      lines.push(`### ${feature.name}()`);
-      lines.push(`${feature.description}`);
-      lines.push('');
-
-      if (feature.tests.length) {
-        lines.push('**Steps:**');
-        for (const test of feature.tests) {
-          const state = testState.get(test.id);
-          const check = state?.passed ? '[x]' : '[ ]';
-          lines.push(`- ${check} \`${test.type}\`: ${test.description}`);
-        }
-        lines.push('');
+  for (const file of files) {
+    try {
+      let content = readFileSync(file, 'utf-8');
+      // Replace [x] and [!] with [ ] in test lines, remove FAILED reasons
+      const updated = content.replace(
+        /^(- )\[([x!])\] (\w+:\s*.+?)(?:\s*\(FAILED:.*\))?$/gm,
+        '$1[ ] $3'
+      );
+      if (updated !== content) {
+        writeFileSync(file, updated, 'utf-8');
       }
-
-      if (feature.expects.length) {
-        lines.push('**Expected:**');
-        for (const expect of feature.expects) {
-          lines.push(`- ✅ \`${expect.type}\`: ${expect.description}`);
-        }
-        lines.push('');
-      }
+    } catch (e) {
+      // Skip
     }
   }
 
-  return lines.join('\n');
+  return { success: true };
 }

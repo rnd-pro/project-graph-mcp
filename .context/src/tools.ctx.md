@@ -13,5 +13,10 @@
 - Cache is saved to `.project-graph-cache.json` on disk to speed up subsequent MCP client restarts.
 - Used BFS for `getCallChain` to guarantee finding the shortest path between symbols.
 
+## Tests
+- [ ] getSkeleton: parse project → returns minified graph with legend
+- [ ] expand: expand minified symbol → returns full details with methods
+- [ ] getCallChain: find path A→B → returns shortest BFS chain
+
 ## TODO
 - Implement truly incremental graph updates instead of full rebuilds on single file changes.

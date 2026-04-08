@@ -98,7 +98,7 @@ export const TOOLS = [
   // Test Checklist Tools
   {
     name: 'get_pending_tests',
-    description: 'Get list of pending browser tests from @test/@expect annotations.',
+    description: 'Get list of pending tests from ## Tests sections in .ctx.md files.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -269,7 +269,7 @@ export const TOOLS = [
         level: {
           type: 'string',
           enum: ['tests', 'params', 'all'],
-          description: 'Strictness: tests (default) = @test/@expect, params = +@param/@returns, all = +description',
+          description: 'Strictness: tests (default) = .ctx.md checklists, params = +@param/@returns, all = +description',
         },
       },
       required: ['path'],

@@ -100,13 +100,7 @@ function checkMissing(jsdoc, level) {
   if (!jsdoc) {
     if (level === 'all') missing.push('description');
     if (level === 'params' || level === 'all') missing.push('@param', '@returns');
-    if (level === 'tests' || level === 'params' || level === 'all') missing.push('@test', '@expect');
     return missing;
-  }
-
-  if (level === 'tests' || level === 'params' || level === 'all') {
-    if (!jsdoc.includes('@test')) missing.push('@test');
-    if (!jsdoc.includes('@expect')) missing.push('@expect');
   }
 
   if (level === 'params' || level === 'all') {

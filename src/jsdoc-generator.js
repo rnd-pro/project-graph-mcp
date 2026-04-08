@@ -22,7 +22,6 @@ import { getWorkspaceRoot } from './workspace.js';
  * Generate JSDoc for a single file
  * @param {string} filePath - Absolute path to file
  * @param {Object} [options]
- * @param {boolean} [options.includeTests=true] - Include @test/@expect placeholders
  * @returns {JSDocTemplate[]}
  */
 export function generateJSDoc(filePath, options = {}) {
@@ -126,7 +125,6 @@ export function generateJSDoc(filePath, options = {}) {
  * @param {string} info.name
  * @param {Array} info.params
  * @param {boolean} info.async
- * @param {boolean} info.includeTests
  * @returns {string}
  */
 function buildJSDoc(info) {
@@ -144,12 +142,6 @@ function buildJSDoc(info) {
 
   // Return type
   lines.push(` * @returns {${info.async ? 'Promise<*>' : '*'}}`);
-
-  // Test annotations (Agentic Verification)
-  if (info.includeTests) {
-    lines.push(` * @test TODO: describe test scenario`);
-    lines.push(` * @expect TODO: expected result`);
-  }
 
   lines.push(' */');
   return lines.join('\n');

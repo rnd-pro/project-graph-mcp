@@ -20,7 +20,7 @@ Commands:
   expand <symbol>        Expand minified symbol (e.g., SN, SN.togglePin)
   deps <symbol>          Get dependency tree
   usages <symbol>        Find all usages
-  pending <path>         List pending @test/@expect tests
+  pending <path>         List pending .ctx.md test checklists
   summary <path>         Get test progress summary
   undocumented <path>    Find missing JSDoc (--level=tests|params|all)
   deadcode <path>        Find unused functions/classes
