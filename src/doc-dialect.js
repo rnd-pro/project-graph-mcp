@@ -601,70 +601,31 @@ export async function generateContextFiles(graph, projectPath, parsed, options =
   // scope === 'all' → scopeFilter stays null → process everything
 
   // Generate per-file .ctx in mirror structure (.context/src/parser.ctx)
-  for (const [file, nodes] of Object.entries(fileNodes)) {
+  const BATCH_SIZE = 5;
+  const fileEntries = Object.entries(fileNodes).filter(([file]) => {
     // Apply scope filter
-    if (scopeFilter && !scopeFilter.has(file)) continue;
-    const ctxName = basename(file, extname(file)) + '.ctx';
-    const fileDir = dirname(file);
-    // Mirror: .context/src/ for src/parser.js
-    const ctxDir = join(contextDir, fileDir);
-    const ctxPath = join(ctxDir, ctxName);
-    const ctxRelPath = join(fileDir, ctxName);
+    return !scopeFilter || scopeFilter.has(file);
+  });
 
-    // Check colocated override — skip if exists and not overwriting
-    const colocatedPath = join(projectPath, fileDir, ctxName);
-    if ((existsSync(ctxPath) || existsSync(colocatedPath)) && !overwrite) {
-      skipped.push(ctxRelPath);
-      continue;
-    }
+  // Process files in batches of BATCH_SIZE for concurrency
+  for (let i = 0; i < fileEntries.length; i += BATCH_SIZE) {
+    const batch = fileEntries.slice(i, i + BATCH_SIZE);
+    const results = await Promise.allSettled(
+      batch.map(([file, nodes]) =>
+        processFileCtx(file, nodes, graph, parsed, contextDir, projectPath, overwrite)
+      )
+    );
 
-    // Ensure mirror subdirectory exists
-    if (!existsSync(ctxDir)) {
-      mkdirSync(ctxDir, { recursive: true });
-    }
-
-    // Merge strategy: preserve existing descriptions
-    let existingDescriptions;
-    const existingCtxPath = existsSync(colocatedPath) ? colocatedPath : (existsSync(ctxPath) ? ctxPath : null);
-    if (existingCtxPath && overwrite) {
-      try {
-        const oldContent = readFileSync(existingCtxPath, 'utf-8');
-        existingDescriptions = parseCtxDescriptions(oldContent);
-      } catch { /* ignore */ }
-    }
-
-    let content = buildFileTemplate(file, nodes, graph, parsed, existingDescriptions);
-
-    writeFileSync(ctxPath, content + '\n', 'utf-8');
-    created.push(ctxRelPath);
-    templates[ctxRelPath] = content;
-
-    // Cache warm-up: pre-compute per-file analysis during AST pass
-    try {
-      const srcPath = join(projectPath, file);
-      if (existsSync(srcPath) && file.endsWith('.js')) {
-        const srcCode = readFileSync(srcPath, 'utf-8');
-        const contentHash = computeContentHash(srcCode);
-        const complexity = analyzeComplexityFile(srcCode, file);
-        const undocumented = checkUndocumentedFile(srcCode, file, 'tests');
-        const jsdocIssues = checkJSDocFile(srcCode, file);
-
-        writeCache(contextDir, file, {
-          sig: contentHash, // Will be refined when sig computation is integrated
-          contentHash,
-          complexity,
-          undocumented,
-          jsdocIssues,
-        });
+    for (const result of results) {
+      if (result.status === 'fulfilled' && result.value) {
+        const { action, path, template } = result.value;
+        if (action === 'created') {
+          created.push(path);
+          templates[path] = template;
+        } else {
+          skipped.push(path);
+        }
       }
-    } catch { /* warm-up failure is non-fatal */ }
-
-    // Two-tier: create companion .ctx.md for agent notes (never overwrite)
-    const ctxMdName = basename(file, extname(file)) + '.ctx.md';
-    const ctxMdPath = join(ctxDir, ctxMdName);
-    if (!existsSync(ctxMdPath)) {
-      const mdStub = `# ${basename(file)}\n\n## Notes\n\n## TODO\n\n## Decisions\n`;
-      writeFileSync(ctxMdPath, mdStub, 'utf-8');
     }
   }
 
@@ -676,4 +637,78 @@ export async function generateContextFiles(graph, projectPath, parsed, options =
   }
 
   return result;
+}
+
+/**
+ * Process a single file: generate .ctx, warm cache, create .ctx.md stub
+ * @param {string} file - Relative file path
+ * @param {Array} nodes - Graph nodes for this file
+ * @param {Object} graph - Project graph
+ * @param {Object} parsed - Parsed project data
+ * @param {string} contextDir - .context/ directory path
+ * @param {string} projectPath - Project root
+ * @param {boolean} overwrite - Whether to overwrite existing
+ * @returns {Promise<{action: string, path: string, template?: string}>}
+ */
+async function processFileCtx(file, nodes, graph, parsed, contextDir, projectPath, overwrite) {
+  const ctxName = basename(file, extname(file)) + '.ctx';
+  const fileDir = dirname(file);
+  const ctxDir = join(contextDir, fileDir);
+  const ctxPath = join(ctxDir, ctxName);
+  const ctxRelPath = join(fileDir, ctxName);
+
+  // Check colocated override — skip if exists and not overwriting
+  const colocatedPath = join(projectPath, fileDir, ctxName);
+  if ((existsSync(ctxPath) || existsSync(colocatedPath)) && !overwrite) {
+    return { action: 'skipped', path: ctxRelPath };
+  }
+
+  // Ensure mirror subdirectory exists
+  if (!existsSync(ctxDir)) {
+    mkdirSync(ctxDir, { recursive: true });
+  }
+
+  // Merge strategy: preserve existing descriptions
+  let existingDescriptions;
+  const existingCtxPath = existsSync(colocatedPath) ? colocatedPath : (existsSync(ctxPath) ? ctxPath : null);
+  if (existingCtxPath && overwrite) {
+    try {
+      const oldContent = readFileSync(existingCtxPath, 'utf-8');
+      existingDescriptions = parseCtxDescriptions(oldContent);
+    } catch { /* ignore */ }
+  }
+
+  let content = buildFileTemplate(file, nodes, graph, parsed, existingDescriptions);
+
+  writeFileSync(ctxPath, content + '\n', 'utf-8');
+
+  // Cache warm-up: pre-compute per-file analysis during AST pass
+  try {
+    const srcPath = join(projectPath, file);
+    if (existsSync(srcPath) && file.endsWith('.js')) {
+      const srcCode = readFileSync(srcPath, 'utf-8');
+      const contentHash = computeContentHash(srcCode);
+      const complexity = analyzeComplexityFile(srcCode, file);
+      const undocumented = checkUndocumentedFile(srcCode, file, 'tests');
+      const jsdocIssues = checkJSDocFile(srcCode, file);
+
+      writeCache(contextDir, file, {
+        sig: contentHash,
+        contentHash,
+        complexity,
+        undocumented,
+        jsdocIssues,
+      });
+    }
+  } catch { /* warm-up failure is non-fatal */ }
+
+  // Two-tier: create companion .ctx.md for agent notes (never overwrite)
+  const ctxMdName = basename(file, extname(file)) + '.ctx.md';
+  const ctxMdPath = join(ctxDir, ctxMdName);
+  if (!existsSync(ctxMdPath)) {
+    const mdStub = `# ${basename(file)}\n\n## Notes\n\n## TODO\n\n## Decisions\n`;
+    writeFileSync(ctxMdPath, mdStub, 'utf-8');
+  }
+
+  return { action: 'created', path: ctxRelPath, template: content };
 }

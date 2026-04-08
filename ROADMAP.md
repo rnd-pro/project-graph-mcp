@@ -12,7 +12,7 @@
 - [x] `generate_jsdoc` — Auto-generate JSDoc from AST
   - Extract parameter names and types (if available)
   - Infer return type from return statements
-  - Generate template with @test/@expect placeholders
+  - Generate template with @param/@returns from AST
 
 ### Phase 3: Similar Functions Detection ✅
 - [x] `get_similar_functions` — Find functional duplicates
@@ -85,7 +85,12 @@
   - **NOT cacheable** (cross-file): dead code, similarity
   - Result includes `cache: { hits, misses }` stats
 - [x] **Warm-up**: `generate_context_docs` pre-populates cache during per-file AST pass
-- [ ] Batch concurrency for `generate_context_docs` (queue of N)
+- [x] **Test migration**: `@test/@expect` → `## Tests` in `.ctx.md` files
+  - `test-annotations.js` rewritten: parses markdown checklists
+  - `markTestPassed`/`markTestFailed` write directly to `.ctx.md`
+  - State is file-based (no in-memory Map)
+  - Removed `@test/@expect` from: jsdoc-generator, undocumented, instructions, tool-defs
+- [x] **Batch concurrency** for `generate_context_docs` (batches of 5 files)
 - [ ] Recursive project support (monorepo scanning)
 - [ ] Streaming large codebase analysis
 

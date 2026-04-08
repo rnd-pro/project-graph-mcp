@@ -1,15 +1,17 @@
 --- src/test-annotations.js ---
-@sig acd9cd98
+@sig a9bd108b
 @enrich: Replace each {DESCRIBE} below. Read src/test-annotations.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-export parseAnnotations()→blockRegex.exec,block.includes,content.slice,afterBlock.match,block.match,testRegex.exec|{DESCRIBE}
-export getAllFeatures()→findJSFiles,readFileSync,parseAnnotations,features.push|{DESCRIBE}
-export getPendingTests()→resolve,getAllFeatures,testState.get,relative,pending.push|{DESCRIBE}
-export markTestPassed()→testState.set|{DESCRIBE}
-export markTestFailed()→testState.set|{DESCRIBE}
-export getTestSummary()→getAllFeatures,testState.get,failures.push,Math.round|{DESCRIBE}
-export resetTestState()→testState.clear|{DESCRIBE}
-export generateMarkdown()→key.push,Object.entries,basename,lines.push,testState.get,lines.join|{DESCRIBE}
+findCtxMdFiles()→readdirSync,join,statSync,stat.isDirectory,entry.startsWith,findCtxMdFiles|{DESCRIBE}
+export parseAnnotations()→content.split,line.startsWith,groupByName,features.push,line.match,rest.split|{DESCRIBE}
+groupByName()→Object.entries|{DESCRIBE}
+export getAllFeatures()→resolve,join,findCtxMdFiles,readFileSync,parseAnnotations,features.push|{DESCRIBE}
+export getPendingTests()→resolve,getAllFeatures,relative,pending.push|{DESCRIBE}
+export markTestPassed()→testId.split,updateTestState|{DESCRIBE}
+export markTestFailed()→testId.split,updateTestState|{DESCRIBE}
+updateTestState()→process.cwd,join,findCtxMdFiles,testId.split,parseInt,readFileSync|{DESCRIBE}
+export getTestSummary()→getAllFeatures,failures.push,Math.round|{DESCRIBE}
+export resetTestState()→process.cwd,join,findCtxMdFiles,readFileSync,content.replace,writeFileSync|{DESCRIBE}
 PATTERNS: {DESCRIBE}
 EDGE_CASES: {DESCRIBE}
