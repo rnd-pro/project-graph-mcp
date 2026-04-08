@@ -63,6 +63,7 @@ function findJSFiles(dir, rootDir = dir) {
 /**
  * Extract function signatures from a file
  * @param {string} filePath 
+ * @param {string} rootDir - Root directory for relative path calculation
  * @returns {FunctionSignature[]}
  */
 function extractSignatures(filePath, rootDir) {

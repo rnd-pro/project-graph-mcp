@@ -1,0 +1,15 @@
+--- src/doc-dialect.js ---
+@sig b2f71a75
+export generateDocDialect()→basename,lines.push,parts.push,parts.join,edges.filter,edgeParts.push|generate compact doc-dialect string from graph|includes project/file/function levels
+walkCtxFiles()→existsSync,readdirSync,join,statSync,stat.isDirectory,walkCtxFiles|recursively find .ctx files|returns relative and absolute paths
+resolveCtxPath()→extname,basename,dirname,join,existsSync|resolve .ctx path for source file|priority: colocated > mirror
+resolveCtxMdPath()→extname,basename,dirname,join,existsSync|resolve companion .ctx.md path|priority: colocated > mirror
+export readContextDocs()→join,walkCtxFiles,readFileSync,collected.set,relPath.startsWith,collected.keys|read manual docs (mirror + colocated)|colocated overrides mirror
+export getProjectDocs()→readContextDocs,resolveCtxPath,readFileSync,generateDocDialect,autoFull.indexOf,autoFull.slice|get project docs|merges manual .ctx and auto-generated dialect
+computeSignature()→params.join,parts.push,methods.sort,parts.sort,createHash,parts.join|compute structural signature hash from AST|used for staleness detection
+parseCtxDescriptions()→content.split,line.trim,trimmed.startsWith,trimmed.match,descriptions.set|extract user descriptions from existing .ctx|preserves data on overwrite
+export checkStaleness()→join,walkCtxFiles,readFileSync,content.match,computeSignature,stale.push|check .ctx files staleness vs current AST
+buildFileTemplate()→computeSignature,meta.push,desc.get,meta.join,lines.push,calls.slice|build rich AST template for single file|injects {DESCRIBE} markers
+export generateContextFiles()→join,existsSync,mkdirSync,basename,statParts.push,statParts.join|generate .context/ templates|supports focus scope and overwrite merge
+PATTERNS: two-tier doc resolution (colocated > mirror)|AST signature hashing
+EDGE_CASES: preserves existing {DESCRIBE} on overwrite|handles git diff for focus scope

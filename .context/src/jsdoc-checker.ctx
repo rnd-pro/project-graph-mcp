@@ -1,0 +1,10 @@
+--- src/jsdoc-checker.js ---
+@sig 5d444304
+extractJSDocComments()→regex.exec,code.slice,paramStartRegex.exec,text.slice,afterType.match,name.startsWith|extract JSDoc comments and params|handles nested braces and optional params
+inferTypeFromDefault()|infer param type from AST default value|supports primitive, Array, Object
+hasReturnValue()→walk.simple|check if function body has return value
+validateFunction()→issues.push,Math.min,extractParamName,hasReturnValue,inferTypeFromDefault,docType.includes|validate JSDoc vs AST for single function|checks count, names, returns, types
+export checkJSDocFile()→parse,extractJSDocComments,findJSDocBefore,validateFunction,issues.push,walk.simple|check JSDoc consistency in single file
+export checkJSDocConsistency()→resolve,findJSFiles,readFileSync,relative,checkJSDocFile,allIssues.push|check JSDoc consistency in directory|aggregates errors and warnings
+PATTERNS: AST parsing|regex for initial JSDoc extraction|AST type inference
+EDGE_CASES: handles optional param [] syntax|handles union types in JSDoc

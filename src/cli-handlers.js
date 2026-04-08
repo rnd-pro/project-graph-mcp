@@ -15,7 +15,13 @@ import { getComplexity } from './complexity.js';
 import { getLargeFiles } from './large-files.js';
 import { getOutdatedPatterns } from './outdated-patterns.js';
 import { getFullAnalysis } from './full-analysis.js';
+import { compressFile } from './compress.js';
+import { getProjectDocs, generateContextFiles } from './doc-dialect.js';
+import { getGraph } from './tools.js';
+import { parseProject } from './parser.js';
 import { resolvePath } from './workspace.js';
+import { checkJSDocConsistency } from './jsdoc-checker.js';
+import { checkTypes } from './type-checker.js';
 
 /**
  * Parse named argument from args array
@@ -135,6 +141,51 @@ export const CLI_HANDLERS = {
     handler: async (args) => {
       const includeItems = args.includes('--items');
       return getFullAnalysis(getPath(args), { includeItems });
+    },
+  },
+
+  'jsdoc-check': {
+    handler: async (args) => checkJSDocConsistency(getPath(args)),
+  },
+
+  types: {
+    handler: async (args) => {
+      const maxDiagnostics = parseInt(getArg(args, 'max')) || 50;
+      return checkTypes(getPath(args), { maxDiagnostics });
+    },
+  },
+
+  compress: {
+    requiresArg: true,
+    argError: 'Usage: compress <file> [--no-beautify] [--no-legend]',
+    handler: async (args) => {
+      const beautify = !args.includes('--no-beautify');
+      const legend = !args.includes('--no-legend');
+      return compressFile(resolvePath(args[0]), { beautify, legend });
+    },
+  },
+
+  docs: {
+    requiresArg: true,
+    argError: 'Usage: docs <path> [--file=<filename>]',
+    handler: async (args) => {
+      const projectPath = resolvePath(args[0]);
+      const graph = await getGraph(projectPath);
+      const file = args.find(a => a.startsWith('--file='))?.split('=')[1];
+      return getProjectDocs(graph, projectPath, { file });
+    },
+  },
+
+  'generate-ctx': {
+    requiresArg: true,
+    argError: 'Usage: generate-ctx <path> [--overwrite] [--scope=focus|all]',
+    handler: async (args) => {
+      const projectPath = resolvePath(args[0]);
+      const graph = await getGraph(projectPath);
+      const parsed = await parseProject(projectPath);
+      const overwrite = args.includes('--overwrite');
+      const scope = args.find(a => a.startsWith('--scope='))?.split('=')[1] || 'all';
+      return generateContextFiles(graph, projectPath, parsed, { overwrite, scope });
     },
   },
 };

@@ -1,0 +1,11 @@
+--- src/analysis-cache.js ---
+@sig bbc7005b
+export computeSig()→parts.push,createHash,parts.sort,hash.slice|compute interface signature hash|for staleness of docs
+export computeContentHash()→createHash|compute full source code hash|for body-dependent metrics
+export getCachePath()→relPath.replace,join|get cache file path for source file|.context/.cache/path.json
+export readCache()→getCachePath,existsSync,readFileSync,JSON.parse|read cached analysis file|returns CacheEntry or null
+export writeCache()→getCachePath,dirname,mkdirSync,JSON.stringify,writeFileSync|write analysis cache entry|includes timestamp
+export isCacheValid()|check if cache is valid|supports interface or content hash level
+export invalidateAllCaches()→join,existsSync,rmSync|delete entire cache directory
+PATTERNS: dual-hashing (sig vs content)|persistent file-based cache
+EDGE_CASES: ignores read/write cache errors|handles missing directories

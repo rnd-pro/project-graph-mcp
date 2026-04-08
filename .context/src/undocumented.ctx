@@ -1,0 +1,14 @@
+--- src/undocumented.js ---
+@sig e770b1d0
+@enrich: Replace each {DESCRIBE} below. Read src/undocumented.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+findJSFiles()→parseGitignore,readdirSync,join,relative,statSync,stat.isDirectory|{DESCRIBE}
+findJSDocBefore()|{DESCRIBE}
+extractComments()→regex.exec,code.slice,comments.push|{DESCRIBE}
+checkMissing()→missing.push,jsdoc.includes|{DESCRIBE}
+export checkUndocumentedFile()→parse,extractComments,findJSDocBefore,results.push,methodName.startsWith,SKIP_METHODS.includes|{DESCRIBE}
+export getUndocumented()→resolve,findJSFiles,readFileSync,relative,checkUndocumentedFile,results.push|{DESCRIBE}
+export getUndocumentedSummary()→getUndocumented,items.filter,items.slice|{DESCRIBE}
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

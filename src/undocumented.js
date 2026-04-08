@@ -74,8 +74,8 @@ function extractComments(code) {
 
 /**
  * Find JSDoc comment before a target line
- * @param {Array<{text: string, endLine: number}>} comments 
- * @param {number} targetLine 
+ * @param {Array<{text: string, endLine: number}>} comments - Extracted JSDoc comments
+ * @param {number} targetLine - Line number to search before
  * @returns {string|null}
  */
 function findJSDocBefore(comments, targetLine) {
@@ -124,13 +124,13 @@ const SKIP_METHODS = [
 ];
 
 /**
- * Parse file using AST and find undocumented items
+ * Parse file using AST and find undocumented items (per-file export for cache integration)
  * @param {string} code 
  * @param {string} filePath 
  * @param {'tests'|'params'|'all'} level
  * @returns {UndocumentedItem[]}
  */
-function parseFile(code, filePath, level) {
+export function checkUndocumentedFile(code, filePath, level) {
   const results = [];
 
   let ast;
@@ -223,8 +223,13 @@ export function getUndocumented(dir, level = 'tests') {
   const results = [];
 
   for (const file of files) {
-    const content = readFileSync(file, 'utf-8');
-    const items = parseFile(content, relative(resolvedDir, file), level);
+    let content;
+    try {
+      content = readFileSync(file, 'utf-8');
+    } catch (e) {
+      continue; // File deleted between findJSFiles and read
+    }
+    const items = checkUndocumentedFile(content, relative(resolvedDir, file), level);
     results.push(...items);
   }
 

@@ -5,11 +5,15 @@ You have access to **Project Graph MCP** — a suite of code analysis and projec
 ## 🧭 Navigation & Understanding
 | Tool | Purpose |
 |------|---------|
-| `get_structure` | Get file/folder tree |
-| `get_skeleton` | Get code structure (classes, functions, exports) |
+| `get_skeleton` | Get compact code structure (classes, functions, exports) |
 | `expand` | Deep dive into a class or function |
+| `get_focus_zone` | Get enriched context for recently modified files |
+| `get_call_chain` | Find shortest path between two symbols |
+| `usages` | Find all usages of a symbol across the project |
+| `deps` | Get dependency tree for a symbol |
 | `get_agent_instructions` | Get project coding guidelines |
 | `get_framework_reference` | Get framework AI reference (auto-detects or explicit) |
+| `get_usage_guide` | Get full usage guide with examples |
 
 ## 🧪 Testing System
 
@@ -71,6 +75,54 @@ The graph automatically detects SQL queries in your code:
 - Column-level dead code detection is best-effort.
 - ORM-specific patterns (Prisma, Sequelize, Knex query builder) are not yet supported.
 
+## 🧠 AI Context Layer
+| Tool | Purpose |
+|------|---------|
+| `get_ai_context` | **Boot**: skeleton + docs + compressed files in one call |
+| `get_compressed_file` | Terser-minified source with export legend |
+| `get_project_docs` | Doc Dialect documentation (auto + manual .context/) |
+| `generate_context_docs` | Generate .context/ templates from AST |
+
+### AI-First Workflow
+1. **Boot**: `get_ai_context(path)` — loads skeleton + docs (~1700 tokens vs ~60K original)
+2. **Drill**: `expand(symbol)` or `get_compressed_file(file)` — go deeper when needed
+3. **Enrich**: `generate_context_docs(path)` creates `.context/*.ctx` with `{DESCRIBE}` markers. Fill them with compact descriptions.
+
+### Doc Dialect Storage (Two-Tier)
+`.context/` mirrors your source tree with two files per source:
+```
+.context/                  ← auto-generated (mirror)
+├── project.ctx
+├── parser.ctx             ← Machine zone: AST signatures, @sig
+├── parser.ctx.md          ← Agent zone: notes, TODO, decisions
+└── utils/
+    └── helpers.ctx
+
+src/
+├── parser.js
+├── parser.ctx             ← colocated override (wins!)
+└── utils/
+    └── helpers.js
+```
+
+### Doc Dialect Format
+`.context/` files use a compact pipe-separated format:
+```
+--- parser.js ---
+export parseProject()→resolve,findJSFiles,readFileSync|scans dir, parses all files
+parseFileByExtension()→parseSQL,parsePython,parseGo|routes by extension
+PATTERNS: lang-*.js for non-JS|regex fallback for Python
+EDGE_CASES: Python uses regex, not AST|Go interfaces ≠ classes
+```
+
+### Enrichment Workflow
+| Step | How |
+|------|-----|
+| 1. Generate | `generate_context_docs` creates templates with `{DESCRIBE}` markers + `@sig` hash |
+| 2. Enrich | Delegate to agent-pool: `delegate_task({ skill: "doc-enricher" })` |
+| 3. Monitor | `check_stale_docs` detects when source changes invalidate docs |
+| 4. Update | Regenerate with `overwrite: true` — existing descriptions are preserved |
+
 ## 🔍 Code Quality Analysis
 | Tool | Purpose |
 |------|---------|
@@ -81,6 +133,8 @@ The graph automatically detects SQL queries in your code:
 | `get_complexity` | Cyclomatic complexity metrics |
 | `get_large_files` | Files needing split |
 | `get_outdated_patterns` | Legacy patterns + redundant npm deps |
+| `check_jsdoc_consistency` | Validate JSDoc ↔ AST signatures |
+| `check_types` | Optional tsc type checking (requires TypeScript) |
 | `generate_jsdoc` | Auto-generate JSDoc templates |
 
 ## 🔧 Custom Rules (Configurable)
@@ -96,11 +150,11 @@ Rules are applied automatically based on:
 - Import patterns in source code
 - Code patterns (e.g., `extends Symbiote`)
 
-### Pre-built Rulesets (85 rules)
+### Pre-built Rulesets (86 rules)
 | Ruleset | Rules | Framework |
 |---------|-------|-----------|
 | `symbiote-2x` | 12 | Symbiote.js 2.x |
-| `symbiote-3x` | 17 | Symbiote.js 3.x |
+| `symbiote-3x` | 18 | Symbiote.js 3.x |
 | `react-18` | 6 | React 18 |
 | `react-19` | 5 | React 19 (Server Components) |
 | `vue-3` | 5 | Vue 3 Composition API |
@@ -109,7 +163,7 @@ Rules are applied automatically based on:
 | `fastify-5` | 5 | Fastify 5.x |
 | `nestjs-10` | 6 | NestJS 10.x |
 | `typescript-5` | 5 | TypeScript 5.x |
-| `node-22` | 7 | Node.js 22+ |
+| `node-22` | 13 | Node.js 22+ |
 
 ### Creating New Rules
 Read project workflow docs (e.g., `.agent/workflows/symbiote-audit.md`) and use `set_custom_rule`:
@@ -137,9 +191,10 @@ Read project workflow docs (e.g., `.agent/workflows/symbiote-audit.md`) and use 
 
 ## 🚀 Recommended Workflow
 
-1. **Start**: `get_structure` → understand project layout
-2. **Dive**: `get_skeleton` → map code architecture
+1. **Boot**: `get_ai_context` → understand entire project in ~1700 tokens
+2. **Dive**: `expand` / `get_compressed_file` → drill into specific files
 3. **Analyze**: `get_full_analysis` → find issues (Health Score)
 4. **Check Rules**: `check_custom_rules` → framework-specific violations
 5. **Fix**: Address issues by severity (error → warning → info)
 6. **Verify**: `get_pending_tests` → execute in browser → `mark_test_passed/failed` → `get_test_summary`
+7. **Document**: `generate_context_docs` → enrich .ctx files with PATTERNS and EDGE_CASES

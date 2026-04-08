@@ -81,7 +81,7 @@ function loadDiskCache(path) {
  * @param {string} path 
  * @returns {Promise<import('./graph-builder.js').Graph>}
  */
-async function getGraph(path) {
+export async function getGraph(path) {
   // Different path = full rebuild
   if (cachedGraph && cachedPath === path) {
     // Check for file changes via mtime

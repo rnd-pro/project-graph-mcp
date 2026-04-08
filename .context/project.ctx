@@ -1,0 +1,9 @@
+=== PROJECT: project-graph-mcp ===
+ARCH: MCP stdio server|AST via Acorn|zero deps|multi-lang (JS/TS/Py/Go/SQL)
+FLOW: parseProject→buildGraph→skeleton|expand|deps|usages→AI context layer
+STATS: 34 files|172 functions
+LAYERS: parser→graph-builder→tools→mcp-server|cli
+ANALYSIS: dead-code|complexity|similar|large-files|outdated|jsdoc-checker→full-analysis(health 0-100)
+AI: compress(terser)|doc-dialect(.ctx/.ctx.md)|ai-context(boot aggregator)
+CACHE: analysis-cache(.context/.cache/)|dual-hash(sig+contentHash)
+SECURITY: path traversal protection via workspace.js resolve+startsWith

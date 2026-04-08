@@ -1,0 +1,10 @@
+--- src/full-analysis.js ---
+@sig 3a88fb1a
+calculateHealthScore()→Math.min,topIssues.push,Math.round,Math.max,topIssues.slice|calculate overall health score 0-100|applies penalties for dead code, complexity
+runCacheableAnalyses()→resolve,getWorkspaceRoot,findJSFiles,relative,readFileSync,computeContentHash|run per-file cacheable metrics|checks complexity, undocumented, jsdoc
+aggregateComplexity()→items.filter,filtered.sort,filtered.filter,filtered.reduce,Math.round,filtered.slice|aggregate complexity items to summary|groups by severity
+aggregateUndocumented()→items.filter,items.slice|aggregate undocumented items to summary|groups by class/function/method
+aggregateJSDoc()→issues.filter|aggregate JSDoc issues to summary|counts errors and warnings
+export getFullAnalysis()→resolve,getWorkspaceRoot,join,runCacheableAnalyses,aggregateComplexity,aggregateUndocumented|run full code health analysis|combines cached and dynamic cross-file metrics
+PATTERNS: incremental caching for per-file metrics|score aggregation with clamping
+EDGE_CASES: cross-file metrics always dynamic|handles missing cache gracefully

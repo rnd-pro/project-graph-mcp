@@ -5,7 +5,7 @@
 
 # project-graph-mcp
 
-An MCP server that parses your source code into a **10-50x compressed skeleton** — classes, functions, imports, and dependencies in a minified JSON. Agents navigate the graph using `expand`, `deps`, and `usages` without reading irrelevant files.
+An MCP server that parses your source code into a **10-50x compressed skeleton** — classes, functions, imports, and dependencies in a minified JSON. Agents navigate the graph using `expand`, `deps`, and `usages` without reading irrelevant files. The **AI Context Layer** compresses an entire codebase into ~1700 tokens (97% savings) with a single `get_ai_context` call.
 
 > [!TIP]
 > **132 kB, 47 files, zero external dependencies.** Add one line to your MCP config and the server downloads itself on the next IDE restart.
@@ -44,7 +44,38 @@ stripStringsAndComments(code, { backtick: true, templateInterpolation: false })
 - **Duplicate detection** — finds functionally similar functions by signature + structure similarity
 - **Large file analysis** — candidates for splitting by lines, functions, and exports count
 - **Legacy pattern finder** — outdated code patterns and redundant npm deps (built into Node.js 18+)
+- **JSDoc consistency** — validates `@param` count/names and `@returns` against AST signatures
+- **Type checking** — optional `tsc --checkJs` wrapper with graceful fallback
 - **Health Score (0-100)** — aggregated result from all checks in one call
+- **Incremental cache** — per-file analysis results cached in `.context/.cache/` with content hashing
+
+### AI Context Layer
+
+One call loads everything an agent needs to understand a project:
+
+```javascript
+get_ai_context({ path: "src/" })
+// → { skeleton, docs, totalTokens: 1742, savings: "97%" }
+```
+
+- **Code compression** — Terser-minified source with export legend headers (20-55% per file)
+- **Doc Dialect** — compact `.context/` documentation format, auto-generated from AST with `{DESCRIBE}` markers
+- **Two-tier `.ctx`** — `.ctx` (machine-generated, AST signatures) + `.ctx.md` (agent notes, TODO, decisions)
+- **Self-enriching** — `@enrich` instructions embedded in `.ctx` files guide any AI agent to fill descriptions
+- **Staleness detection** — `@sig` hashes track structural changes; `check_stale_docs` identifies outdated docs
+- **Merge strategy** — regenerating `.ctx` files preserves existing descriptions
+- **Boot aggregator** — `get_ai_context` combines skeleton + docs + compressed files in one response
+
+```
+# Generate .context/ documentation templates
+npx project-graph-mcp generate-ctx src/
+
+# View project docs in compact format
+npx project-graph-mcp docs src/
+
+# Compress a single file for AI
+npx project-graph-mcp compress src/parser.js
+```
 
 ### Test Checklists
 
@@ -64,7 +95,7 @@ The agent calls `get_pending_tests`, runs the test, then `mark_test_passed`. Sup
 
 ### Custom Rules & Framework References
 
-10 pre-built rulesets (62 rules) for React 18/19, Vue 3, Next.js 15, Express 5, Fastify 5, NestJS 10, TypeScript 5, Node.js 22, and [Symbiote.js](https://github.com/symbiotejs/symbiote.js). The server auto-detects your project type and returns adapted documentation via `get_framework_reference`.
+11 pre-built rulesets (86 rules) for React 18/19, Vue 3, Next.js 15, Express 5, Fastify 5, NestJS 10, TypeScript 5, Node.js 22, and [Symbiote.js](https://github.com/symbiotejs/symbiote.js). The server auto-detects your project type and returns adapted documentation via `get_framework_reference`.
 
 Custom project conventions can be added in the `rules/` directory or configured by the agent via `set_custom_rule`.
 
@@ -130,6 +161,9 @@ npx project-graph-mcp deadcode src/       # Find unused code
 npx project-graph-mcp complexity src/     # Cyclomatic complexity
 npx project-graph-mcp similar src/        # Find duplicates
 npx project-graph-mcp pending src/        # List pending tests
+npx project-graph-mcp compress src/f.js   # Compress file for AI
+npx project-graph-mcp docs src/           # Project docs (doc-dialect)
+npx project-graph-mcp generate-ctx src/   # Generate .context/ docs
 npx project-graph-mcp help                # All commands
 ```
 

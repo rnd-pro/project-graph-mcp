@@ -54,6 +54,7 @@ function findJSFiles(dir, rootDir = dir) {
 /**
  * Analyze a single file
  * @param {string} filePath 
+ * @param {string} rootDir - Root directory for relative path calculation
  * @returns {LargeFileItem}
  */
 function analyzeFile(filePath, rootDir) {

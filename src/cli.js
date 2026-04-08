@@ -30,6 +30,11 @@ Commands:
   largefiles <path>      Find files needing split (--problematic)
   outdated <path>        Find legacy patterns & redundant deps
   analyze <path>         Run ALL checks with Health Score
+  jsdoc-check <path>     Validate JSDoc ↔ function signatures
+  types <path>           Run tsc type checking (--max=50)
+  compress <file>        Compress JS file for AI (--no-beautify, --no-legend)
+  docs <path>            Get project docs in doc-dialect format (--file=<name>)
+  generate-ctx <path>    Generate .context/ docs (--overwrite --scope=focus)
   filters                Show current filter configuration
   instructions           Show agent guidelines (JSDoc, Arch)
   help                   Show this help

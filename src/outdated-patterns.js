@@ -152,6 +152,7 @@ function findJSFiles(dir, rootDir = dir) {
 /**
  * Analyze file for outdated patterns
  * @param {string} filePath 
+ * @param {string} rootDir - Root directory for relative path calculation
  * @returns {PatternMatch[]}
  */
 function analyzeFilePatterns(filePath, rootDir) {

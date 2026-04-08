@@ -1,0 +1,9 @@
+--- src/large-files.js ---
+@sig f315eb7d
+@enrich: Replace each {DESCRIBE} below. Read src/large-files.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+analyzeFile()→readFileSync,relative,code.split,parse,walk.simple,reasons.push|{DESCRIBE}
+export getLargeFiles()→resolve,findJSFiles,analyzeFile,files.map,items.filter,items.sort|{DESCRIBE}
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

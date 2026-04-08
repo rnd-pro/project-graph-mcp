@@ -248,6 +248,7 @@ function isWithinContext(lines, lineIndex, contextTag) {
  * Check file against rule
  * @param {string} filePath 
  * @param {Rule} rule 
+ * @param {string} rootDir - Root directory for relative path calculation
  * @returns {Violation[]}
  */
 function checkFileAgainstRule(filePath, rule, rootDir) {

@@ -1,0 +1,9 @@
+--- src/cli-handlers.js ---
+@sig f96c8655
+@enrich: Replace each {DESCRIBE} below. Read src/cli-handlers.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+getArg()→a.startsWith,args.find,arg.split|{DESCRIBE}
+getPath()→a.startsWith,args.find,resolvePath|{DESCRIBE}
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

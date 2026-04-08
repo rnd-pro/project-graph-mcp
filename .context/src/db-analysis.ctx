@@ -1,0 +1,11 @@
+--- src/db-analysis.js ---
+@sig 2a566433
+@enrich: Replace each {DESCRIBE} below. Read src/db-analysis.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+export getDBSchema()→parseProject,tables.map,tables.reduce|{DESCRIBE}
+export getTableUsage()→parseProject,buildGraph,readers.some,readers.push,writers.some,writers.push|{DESCRIBE}
+export getDBDeadTables()→parseProject,buildGraph,referencedTables.add,referencedTables.has,schemaTables.filter,collectReferencedColumns|{DESCRIBE}
+collectReferencedColumns()→columns.add|{DESCRIBE}
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

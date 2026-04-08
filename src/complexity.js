@@ -109,13 +109,12 @@ function getRating(complexity) {
 }
 
 /**
- * Analyze complexity of file
- * @param {string} filePath 
+ * Analyze complexity of a single file (per-file export for cache integration)
+ * @param {string} code - File source code
+ * @param {string} relPath - Relative path for reporting
  * @returns {ComplexityItem[]}
  */
-function analyzeFile(filePath, rootDir) {
-  const code = readFileSync(filePath, 'utf-8');
-  const relPath = relative(rootDir, filePath);
+export function analyzeComplexityFile(code, relPath) {
   const items = [];
 
   let ast;
@@ -140,11 +139,9 @@ function analyzeFile(filePath, rootDir) {
     },
 
     ArrowFunctionExpression(node) {
-      // Skip small arrow functions
       if (node.body.type !== 'BlockStatement') return;
       const complexity = calculateComplexity(node.body);
       if (complexity > 5) {
-        // Only report complex arrow functions
         items.push({
           name: '(arrow)',
           type: 'function',
@@ -172,6 +169,23 @@ function analyzeFile(filePath, rootDir) {
   });
 
   return items;
+}
+
+/**
+ * Analyze complexity of file (internal, reads from disk)
+ * @param {string} filePath 
+ * @param {string} rootDir
+ * @returns {ComplexityItem[]}
+ */
+function analyzeFile(filePath, rootDir) {
+  let code;
+  try {
+    code = readFileSync(filePath, 'utf-8');
+  } catch (e) {
+    return []; // File deleted between findJSFiles and read
+  }
+  const relPath = relative(rootDir, filePath);
+  return analyzeComplexityFile(code, relPath);
 }
 
 /**

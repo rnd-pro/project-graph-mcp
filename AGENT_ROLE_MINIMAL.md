@@ -25,6 +25,13 @@ You have **Project Graph MCP** tools available — code analysis, project naviga
 - `get_large_files` — Files needing split
 - `get_outdated_patterns` — Legacy patterns
 
+### AI Context
+- `get_ai_context` — **Boot**: skeleton + docs + compressed files (~97% savings)
+- `get_compressed_file` — Terser-minified source with export legend
+- `get_project_docs` — Doc Dialect documentation (.context/)
+- `generate_context_docs` — Generate .context/ templates with `@sig` staleness hashes
+- `check_stale_docs` — Check which .ctx files need updating
+
 ### Testing
 - `get_pending_tests` — List @test/@expect annotations
 - `mark_test_passed(testId)` / `mark_test_failed(testId, reason)`
@@ -40,11 +47,13 @@ You have **Project Graph MCP** tools available — code analysis, project naviga
 ## Workflow
 
 ```
-1. get_skeleton("src/")        → Understand structure
-2. get_full_analysis("src/")   → Find issues (Health Score)
-3. check_custom_rules("src/")  → Framework violations
-4. Fix by severity: error → warning → info
-5. get_pending_tests("src/")   → Verification checklist
+1. get_ai_context("src/")       → Boot: ~1700 tokens for entire project
+2. expand(symbol)               → Drill into specific class/function
+3. get_full_analysis("src/")    → Find issues (Health Score)
+4. check_custom_rules("src/")   → Framework violations
+5. Fix by severity: error → warning → info
+6. get_pending_tests("src/")    → Verification checklist
+7. generate_context_docs("src/")→ Enrich .ctx files
 ```
 
 ## Tips

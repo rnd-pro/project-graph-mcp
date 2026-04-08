@@ -1,0 +1,113 @@
+/**
+ * AI Context Boot — Single-call agent bootstrap
+ *
+ * Combines skeleton + doc-dialect + optional compressed files
+ * into one response for AI agent initialization.
+ */
+
+import { resolve, extname } from 'path';
+import { getSkeleton, getGraph } from './tools.js';
+import { getProjectDocs } from './doc-dialect.js';
+import { compressFile } from './compress.js';
+import { findJSFiles } from './parser.js';
+
+/** Supported extensions for compression */
+const COMPRESSIBLE = new Set(['.js', '.mjs', '.ts', '.tsx']);
+
+/**
+ * Estimate tokens for any value (string or object)
+ * @param {*} value
+ * @returns {number}
+ */
+function estimateTokens(value) {
+  const str = typeof value === 'string' ? value : JSON.stringify(value);
+  return Math.ceil(str.length / 4);
+}
+
+/**
+ * Load complete AI context for agent bootstrap
+ * @param {string} dirPath - Project directory
+ * @param {Object} [options]
+ * @param {string[]} [options.includeFiles] - Specific files to include compressed
+ * @param {boolean} [options.includeDocs=true] - Include doc-dialect
+ * @param {boolean} [options.includeSkeleton=true] - Include skeleton
+ * @returns {Promise<{skeleton?: Object, docs?: string, files?: Object, totalTokens: number, vsOriginal: number, savings: string}>}
+ */
+export async function getAiContext(dirPath, options = {}) {
+  const {
+    includeFiles = [],
+    includeDocs = true,
+    includeSkeleton = true,
+  } = options;
+
+  const projectPath = resolve(dirPath);
+  const result = {};
+  let totalTokens = 0;
+
+  // 1. Skeleton
+  if (includeSkeleton) {
+    result.skeleton = await getSkeleton(projectPath);
+    totalTokens += estimateTokens(result.skeleton);
+  }
+
+  // 2. Doc Dialect
+  if (includeDocs) {
+    const graph = await getGraph(projectPath);
+    result.docs = getProjectDocs(graph, projectPath);
+    totalTokens += estimateTokens(result.docs);
+  }
+
+  // 3. Compressed files
+  if (includeFiles.length > 0) {
+    result.files = {};
+    const allFiles = findJSFiles(projectPath);
+
+    for (const requestedFile of includeFiles) {
+      // Find matching file (by name or path)
+      const match = allFiles.find(f =>
+        f.endsWith(requestedFile) || f.endsWith('/' + requestedFile)
+      );
+
+      if (!match) {
+        result.files[requestedFile] = { error: `File not found: ${requestedFile}` };
+        continue;
+      }
+
+      const ext = extname(match).toLowerCase();
+      if (!COMPRESSIBLE.has(ext)) {
+        result.files[requestedFile] = { error: `Unsupported file type: ${ext}` };
+        continue;
+      }
+
+      try {
+        const compressed = await compressFile(match, { beautify: true, legend: true });
+        result.files[requestedFile] = compressed.code;
+        totalTokens += compressed.compressed;
+      } catch (e) {
+        result.files[requestedFile] = { error: e.message };
+      }
+    }
+  }
+
+  // Estimate original size for savings calculation
+  const allFiles = findJSFiles(projectPath);
+  let vsOriginal = 0;
+  for (const file of allFiles) {
+    try {
+      const { readFileSync } = await import('fs');
+      vsOriginal += estimateTokens(readFileSync(file, 'utf-8'));
+    } catch {
+      // skip unreadable
+    }
+  }
+
+  const savings = vsOriginal > 0
+    ? Math.round((1 - totalTokens / vsOriginal) * 100)
+    : 0;
+
+  result.totalTokens = totalTokens;
+  result.vsOriginal = vsOriginal;
+  result.savings = `${savings}%`;
+
+  return result;
+}

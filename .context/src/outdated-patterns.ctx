@@ -1,0 +1,10 @@
+--- src/outdated-patterns.js ---
+@sig f3a77324
+@enrich: Replace each {DESCRIBE} below. Read src/outdated-patterns.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+analyzeFilePatterns()→readFileSync,relative,parse,walk.simple,pattern.check,matches.push|{DESCRIBE}
+analyzePackageJson()→join,existsSync,readFileSync,JSON.parse,Object.keys,redundant.push|{DESCRIBE}
+export getOutdatedPatterns()→resolve,findJSFiles,analyzeFilePatterns,codePatterns.push,codePatterns.sort,analyzePackageJson|{DESCRIBE}
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

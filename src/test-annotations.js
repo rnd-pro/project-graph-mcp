@@ -179,6 +179,7 @@ export function getPendingTests(dir) {
 /**
  * Mark a test as passed
  * @param {string} testId 
+ * @returns {{success: boolean, testId: string}}
  */
 export function markTestPassed(testId) {
   testState.set(testId, { completed: true, passed: true });
@@ -189,6 +190,7 @@ export function markTestPassed(testId) {
  * Mark a test as failed
  * @param {string} testId 
  * @param {string} reason 
+ * @returns {{success: boolean, testId: string, reason: string}}
  */
 export function markTestFailed(testId, reason) {
   testState.set(testId, { completed: true, passed: false, reason });
@@ -240,6 +242,7 @@ export function getTestSummary(dir) {
 
 /**
  * Reset test state
+ * @returns {{success: boolean}}
  */
 export function resetTestState() {
   testState.clear();

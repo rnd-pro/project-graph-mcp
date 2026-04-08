@@ -26,6 +26,13 @@ import { getCustomRules, setCustomRule, checkCustomRules } from './custom-rules.
 import { getFrameworkReference } from './framework-references.js';
 import { setRoots, resolvePath } from './workspace.js';
 import { getDBSchema, getTableUsage, getDBDeadTables } from './db-analysis.js';
+import { compressFile } from './compress.js';
+import { getProjectDocs, generateContextFiles, checkStaleness } from './doc-dialect.js';
+import { getGraph } from './tools.js';
+import { parseProject } from './parser.js';
+import { getAiContext } from './ai-context.js';
+import { checkJSDocConsistency } from './jsdoc-checker.js';
+import { checkTypes } from './type-checker.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -114,6 +121,63 @@ const TOOL_HANDLERS = {
   get_db_schema: (args) => getDBSchema(resolvePath(args.path)),
   get_table_usage: (args) => getTableUsage(resolvePath(args.path), args.table),
   get_db_dead_tables: (args) => getDBDeadTables(resolvePath(args.path)),
+
+  // AI Context
+  get_compressed_file: (args) => compressFile(resolvePath(args.path), {
+    beautify: args.beautify,
+    legend: args.legend,
+  }),
+  get_project_docs: async (args) => {
+    const projectPath = resolvePath(args.path);
+    const graph = await getGraph(projectPath);
+    const docs = getProjectDocs(graph, projectPath, { file: args.file });
+    // Lazy staleness check
+    const parsed = await parseProject(projectPath);
+    const staleness = checkStaleness(projectPath, parsed);
+    return { docs, staleFiles: staleness.stale, freshCount: staleness.fresh };
+  },
+  generate_context_docs: async (args) => {
+    const projectPath = resolvePath(args.path);
+    const graph = await getGraph(projectPath);
+    const parsed = await parseProject(projectPath);
+    return generateContextFiles(graph, projectPath, parsed, {
+      overwrite: args.overwrite,
+      scope: args.scope,
+    });
+  },
+  check_stale_docs: async (args) => {
+    const projectPath = resolvePath(args.path);
+    const parsed = await parseProject(projectPath);
+    return checkStaleness(projectPath, parsed);
+  },
+  get_ai_context: async (args) => {
+    const projectPath = resolvePath(args.path);
+    const result = await getAiContext(projectPath, {
+      includeFiles: args.includeFiles,
+      includeDocs: args.includeDocs,
+      includeSkeleton: args.includeSkeleton,
+    });
+    // Add staleness info
+    try {
+      const parsed = await parseProject(projectPath);
+      const staleness = checkStaleness(projectPath, parsed);
+      result.staleFiles = staleness.stale;
+    } catch { /* parse error — skip staleness */ }
+    return result;
+  },
+
+  // JSDoc Consistency
+  check_jsdoc_consistency: (args) => {
+    return checkJSDocConsistency(resolvePath(args.path));
+  },
+
+  // Type Checker (optional tsc)
+  check_types: async (args) => {
+    return checkTypes(resolvePath(args.path), {
+      files: args.files,
+      maxDiagnostics: args.maxDiagnostics,
+    });
+  },
 };
 
 /**
@@ -136,6 +200,10 @@ const RESPONSE_HINTS = {
       hints.push('💡 Large class detected. Run get_complexity() to find refactoring targets.');
     }
     hints.push('💡 Use deps() to see what depends on this symbol.');
+    // Nudge: document if no .ctx exists
+    if (result.file) {
+      hints.push(`📝 No .ctx for ${result.file}? Run generate_context_docs({ scope: ["${result.file}"] }) to create documentation.`);
+    }
     return hints;
   },
 
@@ -205,6 +273,65 @@ const RESPONSE_HINTS = {
   get_db_dead_tables: () => [
     '💡 Dead columns detection is best-effort — verify before removing.',
   ],
+
+  get_compressed_file: (result) => {
+    const hints = [`💡 Saved ${result.savings} tokens (${result.original} → ${result.compressed}).`];
+    hints.push('💡 Use get_ai_context() for full project boot: skeleton + docs + compressed files.');
+    if (result.file) {
+      hints.push(`📝 Working on ${result.file}? Run generate_context_docs({ scope: ["${result.file}"] }) to document it.`);
+    }
+    return hints;
+  },
+
+  get_project_docs: (result) => {
+    const hints = [
+      '💡 Enrich docs by editing .context/*.ctx files — they are git-tracked.',
+      '💡 Use generate_context_docs() to create initial .ctx stubs.',
+    ];
+    if (result.staleFiles?.length > 0) {
+      hints.push(`⚠️ ${result.staleFiles.length} .ctx files are STALE: ${result.staleFiles.slice(0, 5).join(', ')}. Run generate_context_docs({ scope: ${JSON.stringify(result.staleFiles)}, overwrite: true }) to update (descriptions will be preserved).`);
+    }
+    return hints;
+  },
+
+  check_stale_docs: (result) => {
+    const hints = [];
+    if (result.stale?.length > 0) {
+      hints.push(`⚠️ ${result.stale.length} stale: ${result.stale.join(', ')}`);
+      hints.push(`💡 Run generate_context_docs({ scope: ${JSON.stringify(result.stale)}, overwrite: true }) — existing descriptions will be preserved.`);
+    } else {
+      hints.push('✅ All .ctx docs are up to date.');
+    }
+    if (result.unknown > 0) {
+      hints.push(`ℹ️ ${result.unknown} .ctx files without @sig header (pre-staleness format).`);
+    }
+    return hints;
+  },
+
+  generate_context_docs: (result) => {
+    const hints = [];
+    if (result.created?.length > 0) {
+      hints.push(`✅ Created ${result.created.length} .ctx files with @sig hashes.`);
+    }
+    if (result.skipped?.length > 0) {
+      hints.push(`ℹ️ Skipped ${result.skipped.length} existing files. Use overwrite=true to regenerate (descriptions are preserved via merge).`);
+    }
+    if (result.templates && Object.keys(result.templates).length > 0) {
+      hints.push(`📝 .ctx files have {DESCRIBE} markers. To enrich automatically:`);
+      hints.push(`   delegate_task({ prompt: "Enrich .context/*.ctx files — replace {DESCRIBE} with compact descriptions", skill: "doc-enricher" })`);
+      hints.push(`   Or enrich manually: read source files and replace {DESCRIBE} markers with pipe-separated descriptions (max 80 chars).`);
+    }
+    return hints;
+  },
+
+  get_ai_context: (result) => {
+    const hints = [`💡 Context loaded: ${result.totalTokens} tokens (${result.savings} savings vs ${result.vsOriginal} original).`];
+    hints.push('💡 Use expand() to drill into specific symbols. Use get_compressed_file() for additional files.');
+    if (result.staleFiles?.length > 0) {
+      hints.push(`⚠️ ${result.staleFiles.length} .ctx docs are stale. Run generate_context_docs({ scope: ${JSON.stringify(result.staleFiles)}, overwrite: true }) then delegate_task({ skill: "doc-enricher" }) to update.`);
+    }
+    return hints;
+  },
 };
 
 /**

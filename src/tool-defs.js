@@ -522,4 +522,153 @@ export const TOOLS = [
       required: ['path'],
     },
   },
+
+  // AI Context Tools
+  {
+    name: 'get_compressed_file',
+    description: 'Get AI-optimized compressed version of a JS source file. Terser-minified with export legend. Saves 20-55% tokens (more with heavy JSDoc).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Path to JS/MJS file',
+        },
+        beautify: {
+          type: 'boolean',
+          description: 'Readable multi-line output (default: true). Set false for maximum compression.',
+        },
+        legend: {
+          type: 'boolean',
+          description: 'Include compact export legend header (default: true)',
+        },
+      },
+      required: ['path'],
+    },
+  },
+  {
+    name: 'get_project_docs',
+    description: 'Get compact project documentation in doc-dialect format. Returns architecture, patterns, edge cases. Merges auto-generated docs with manual .context/ files.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Project root path',
+        },
+        file: {
+          type: 'string',
+          description: 'Optional: get docs for a specific file only',
+        },
+      },
+      required: ['path'],
+    },
+  },
+  {
+    name: 'generate_context_docs',
+    description: 'Generate .context/ doc-dialect files from AST. Creates rich templates with {DESCRIBE} markers. Use agent-pool with doc-enricher skill to auto-fill descriptions. Templates include function signatures, call graphs, and DB access patterns extracted from AST.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Project root path',
+        },
+        overwrite: {
+          type: 'boolean',
+          description: 'Overwrite existing .ctx files (default: false). Existing descriptions are preserved via merge.',
+        },
+        scope: {
+          description: 'Scope filter: "all" (default), "focus" (git diff — recently changed files only), or array of specific file paths.',
+          oneOf: [
+            { type: 'string', enum: ['all', 'focus'] },
+            { type: 'array', items: { type: 'string' } },
+          ],
+        },
+      },
+      required: ['path'],
+    },
+  },
+  {
+    name: 'check_stale_docs',
+    description: 'Check which .ctx documentation files are outdated. Compares AST signature hashes to detect structural changes (new functions, renamed exports). Use for CI/CD doc health audits.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Project root path',
+        },
+      },
+      required: ['path'],
+    },
+  },
+  {
+    name: 'get_ai_context',
+    description: 'Boot AI agent context: skeleton + doc-dialect + optional compressed files in one call. Call FIRST when starting work on a new project. Returns totalTokens and savings vs reading raw source.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Project root path',
+        },
+        includeFiles: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Specific files to include compressed (e.g., ["parser.js", "tools.js"])',
+        },
+        includeDocs: {
+          type: 'boolean',
+          description: 'Include doc-dialect documentation (default: true)',
+        },
+        includeSkeleton: {
+          type: 'boolean',
+          description: 'Include project skeleton (default: true)',
+        },
+      },
+      required: ['path'],
+    },
+  },
+
+  // JSDoc Consistency
+  {
+    name: 'check_jsdoc_consistency',
+    description: 'Validate JSDoc annotations against actual function signatures. Finds param count/name mismatches, missing @returns, type inconsistencies.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Path to scan (e.g., "src/")',
+        },
+      },
+      required: ['path'],
+    },
+  },
+
+  // Type Checker (optional tsc)
+  {
+    name: 'check_types',
+    description: 'Run TypeScript type checking on JS files with JSDoc types. Requires tsc in PATH (npm i -g typescript). Returns structured diagnostics or graceful fallback if tsc not available.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Directory to check',
+        },
+        files: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Specific files to check (optional)',
+        },
+        maxDiagnostics: {
+          type: 'number',
+          description: 'Max diagnostics to return (default: 50)',
+        },
+      },
+      required: ['path'],
+    },
+  },
 ];

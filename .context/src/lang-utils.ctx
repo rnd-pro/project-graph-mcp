@@ -1,0 +1,8 @@
+--- src/lang-utils.js ---
+@sig 541e8055
+@enrich: Replace each {DESCRIBE} below. Read src/lang-utils.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+export stripStringsAndComments()|{DESCRIBE}
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

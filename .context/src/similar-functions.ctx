@@ -1,0 +1,13 @@
+--- src/similar-functions.js ---
+@sig 61bd03c1
+@enrich: Replace each {DESCRIBE} below. Read src/similar-functions.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+extractParamName()|{DESCRIBE}
+extractSignatures()→readFileSync,relative,parse,buildSignature,signatures.push,name.startsWith|{DESCRIBE}
+buildSignature()→extractParamName,params.map,calls.push,walk.simple,hashBodyStructure|{DESCRIBE}
+hashBodyStructure()→structure.push,walk.simple,structure.join|{DESCRIBE}
+calculateSimilarity()→reasons.push,paramNames.includes,paramNames.filter,Math.max,Math.round,commonParams.join|{DESCRIBE}
+export getSimilarFunctions()→resolve,findJSFiles,extractSignatures,allSignatures.push,calculateSimilarity,pairs.push|{DESCRIBE}
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

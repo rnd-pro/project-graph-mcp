@@ -51,7 +51,7 @@ export function getWorkspaceRoot() {
  * Resolve a path argument against workspace root.
  * Absolute paths are returned as-is.
  * Relative paths are resolved against the workspace root.
- * @param {string} path
+ * @param {string} inputPath
  * @returns {string}
  */
 export function resolvePath(inputPath) {

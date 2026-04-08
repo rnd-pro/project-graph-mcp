@@ -1,0 +1,9 @@
+--- src/cli.js ---
+@sig f36f47cc
+@enrich: Replace each {DESCRIBE} below. Read src/cli.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+export printHelp()→console.log|{DESCRIBE}
+export runCLI()→printHelp,console.error,process.exit,def.handler,console.log,JSON.stringify|{DESCRIBE}
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}
