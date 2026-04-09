@@ -6,6 +6,7 @@ import { compactProject, expandProject } from '../src/compact.js';
 import { editCompressed } from '../src/compress.js';
 import { parseCtxFile, injectJSDoc, stripJSDoc, validateCtxContracts } from '../src/ctx-to-jsdoc.js';
 import { parseFile } from '../src/parser.js';
+import { getConfig, setConfig, getModeWorkflow } from '../src/mode-config.js';
 
 const TEST_DIR = join(import.meta.dirname, '__compact_test__');
 
@@ -524,6 +525,64 @@ function mul(x, y) {
         () => editCompressed(file, 'nonExistent', 'function nonExistent() {}'),
         /not found/
       );
+    });
+  });
+
+  // ============================
+  // Mode Configuration
+  // ============================
+
+  describe('Mode Config', () => {
+
+    it('should return defaults when no config exists', () => {
+      const dir = join(TEST_DIR, 'mode1');
+      mkdirSync(dir, { recursive: true });
+
+      const config = getConfig(dir);
+      assert.strictEqual(config.mode, 2);
+      assert.strictEqual(config.beautify, true);
+      assert.strictEqual(config.autoValidate, false);
+    });
+
+    it('should write and read config', () => {
+      const dir = join(TEST_DIR, 'mode2');
+      mkdirSync(dir, { recursive: true });
+
+      setConfig(dir, { mode: 1 });
+      const config = getConfig(dir);
+      assert.strictEqual(config.mode, 1);
+    });
+
+    it('should reject invalid mode', () => {
+      const dir = join(TEST_DIR, 'mode3');
+      mkdirSync(dir, { recursive: true });
+
+      assert.throws(
+        () => setConfig(dir, { mode: 5 }),
+        /Invalid mode/
+      );
+    });
+
+    it('should merge with existing config', () => {
+      const dir = join(TEST_DIR, 'mode4');
+      mkdirSync(dir, { recursive: true });
+
+      setConfig(dir, { mode: 2, beautify: false });
+      setConfig(dir, { autoValidate: true });
+
+      const config = getConfig(dir);
+      assert.strictEqual(config.mode, 2);
+      assert.strictEqual(config.beautify, false);
+      assert.strictEqual(config.autoValidate, true);
+    });
+
+    it('should return workflow recommendations', () => {
+      const workflow1 = getModeWorkflow(1);
+      assert.ok(workflow1.read.includes('directly'));
+
+      const workflow2 = getModeWorkflow(2);
+      assert.ok(workflow2.read.includes('get_compressed_file'));
+      assert.ok(workflow2.edit.includes('edit_compressed'));
     });
   });
 

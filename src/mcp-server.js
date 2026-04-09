@@ -35,6 +35,7 @@ import { checkJSDocConsistency } from './jsdoc-checker.js';
 import { checkTypes } from './type-checker.js';
 import { compactProject, expandProject } from './compact.js';
 import { validateCtxContracts } from './ctx-to-jsdoc.js';
+import { getConfig, setConfig, getModeDescription, getModeWorkflow } from './mode-config.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -202,6 +203,23 @@ const TOOL_HANDLERS = {
       beautify: args.beautify !== false,
       dryRun: args.dryRun || false,
     });
+  },
+  get_mode: (args) => {
+    const dir = resolvePath(args.path);
+    const config = getConfig(dir);
+    return {
+      ...config,
+      description: getModeDescription(config.mode),
+      workflow: getModeWorkflow(config.mode),
+    };
+  },
+  set_mode: (args) => {
+    const dir = resolvePath(args.path);
+    const updates = { mode: args.mode };
+    if (args.beautify !== undefined) updates.beautify = args.beautify;
+    if (args.autoValidate !== undefined) updates.autoValidate = args.autoValidate;
+    if (args.stripJSDoc !== undefined) updates.stripJSDoc = args.stripJSDoc;
+    return setConfig(dir, updates);
   },
 };
 

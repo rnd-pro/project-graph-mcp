@@ -764,4 +764,30 @@ export const TOOLS = [
       required: ['path', 'symbol', 'code'],
     },
   },
+  {
+    name: 'get_mode',
+    description: 'Get current compact code mode configuration. Returns mode (1=compact, 2=full, 3=IDE), preferences, and recommended workflow for agent.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Project root path' },
+      },
+      required: ['path'],
+    },
+  },
+  {
+    name: 'set_mode',
+    description: 'Set compact code mode for a project. Mode 1: store minified, edit directly. Mode 2: store full, use get_compressed_file + edit_compressed. Mode 3: IDE integration (future).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Project root path' },
+        mode: { type: 'number', description: 'Mode number: 1, 2, or 3' },
+        beautify: { type: 'boolean', description: 'Beautify code after edits (default: true)' },
+        autoValidate: { type: 'boolean', description: 'Auto-run .ctx validation after edits (default: false)' },
+        stripJSDoc: { type: 'boolean', description: 'Auto-strip JSDoc when compacting (default: false)' },
+      },
+      required: ['path', 'mode'],
+    },
+  },
 ];
