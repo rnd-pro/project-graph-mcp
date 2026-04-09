@@ -59,6 +59,42 @@ describe('Compact Code Mode', () => {
       const result = await parseFile(code, 'test.js');
       assert.strictEqual(result.functions[0].async, false);
     });
+
+    it('should extract JSDoc types into params', async () => {
+      const code = `/**
+ * @param {string} name
+ * @param {Object} [options]
+ */
+function greet(name, options = {}) {}`;
+      const result = await parseFile(code, 'test.js');
+      assert.deepStrictEqual(result.functions[0].params, ['name:string', 'options:Object=']);
+    });
+
+    it('should extract @returns type', async () => {
+      const code = `/**
+ * @param {string} x
+ * @returns {Promise<string>}
+ */
+function fetch(x) {}`;
+      const result = await parseFile(code, 'test.js');
+      assert.strictEqual(result.functions[0].returns, 'Promise<string>');
+    });
+
+    it('should handle rest param with JSDoc type', async () => {
+      const code = `/**
+ * @param {...number} args
+ */
+function sum(...args) {}`;
+      const result = await parseFile(code, 'test.js');
+      assert.deepStrictEqual(result.functions[0].params, ['...args:number']);
+    });
+
+    it('should leave params untyped when no JSDoc exists', async () => {
+      const code = 'function plain(a, b) {}';
+      const result = await parseFile(code, 'test.js');
+      assert.deepStrictEqual(result.functions[0].params, ['a', 'b']);
+      assert.strictEqual(result.functions[0].returns, null);
+    });
   });
 
   // ============================
@@ -220,6 +256,20 @@ export function mul(x, y) {
       const ctx = 'export parse(filePath:string,options:Object=)→ast|parse source file';
       const result = parseCtxFile(ctx);
       assert.strictEqual(result.functions[0].params, 'filePath:string,options:Object=');
+    });
+
+    it('should parse return type from ctx signature', () => {
+      const ctx = 'export compressFile(path:string)→Promise<CompressResult>→readFileSync,minify|compress file';
+      const result = parseCtxFile(ctx);
+      assert.strictEqual(result.functions[0].name, 'compressFile');
+      assert.strictEqual(result.functions[0].returns, 'Promise<CompressResult>');
+      assert.strictEqual(result.functions[0].description, 'compress file');
+    });
+
+    it('should handle functions without return type', () => {
+      const ctx = 'processItem(item)→validate,save|process a single item';
+      const result = parseCtxFile(ctx);
+      assert.strictEqual(result.functions[0].returns, '');
     });
   });
 

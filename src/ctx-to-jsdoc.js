@@ -33,10 +33,22 @@ export function parseCtxFile(ctxContent) {
       continue;
     }
 
-    // Function signature: [export] name(params)→calls|description
-    const funcMatch = line.match(/^(export\s+)?(\w+)\(([^)]*)\)(?:→[^|]*)?(?:\|(.*))?$/);
+    // Function signature: [export] name(params)[→ReturnType][→calls]|description
+    const funcMatch = line.match(/^(export\s+)?(\w+)\(([^)]*)\)((?:→[^→|]+)*)(?:\|(.*))?$/);
     if (funcMatch) {
-      const [, exp, name, params, desc] = funcMatch;
+      const [, exp, name, params, arrowParts, desc] = funcMatch;
+
+      // Parse arrow parts: →ReturnType→call1,call2 or just →call1,call2
+      let returns = '';
+      if (arrowParts) {
+        const parts = arrowParts.split('→').filter(Boolean);
+        // First part is return type if it doesn't contain commas (calls always have commas or known names)
+        // Heuristic: if first part looks like a type (capitalized or has <>), treat as return type
+        if (parts.length > 0 && /^[A-Z]|^Promise|^Array|^Object|^string|^number|^boolean|^void|^null/.test(parts[0])) {
+          returns = parts[0];
+        }
+      }
+
       // Skip {DESCRIBE} markers
       const description = (desc && desc !== '{DESCRIBE}') ? desc.trim() : '';
       result.functions.push({
@@ -44,6 +56,7 @@ export function parseCtxFile(ctxContent) {
         params: params || '',
         exported: !!exp,
         description,
+        returns,
       });
       continue;
     }
@@ -93,7 +106,10 @@ function buildJSDocBlock(funcInfo) {
     }
   }
 
-  lines.push(' * @returns {*}');
+  // Return type
+  if (funcInfo.returns) {
+    lines.push(` * @returns {${funcInfo.returns}}`);
+  }
   lines.push(' */');
   return lines.join('\n');
 }

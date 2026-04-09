@@ -64,18 +64,24 @@ export async function parseFile(code, filename) {
     exports: [],
   };
 
+  // Collect JSDoc comments for type extraction
+  const comments = [];
   let ast;
   try {
     ast = parse(code, {
       ecmaVersion: 'latest',
       sourceType: 'module',
       locations: true,
+      onComment: comments,
     });
   } catch (e) {
     // If parsing fails, return empty result
     console.warn(`Parse error in ${filename}:`, e.message);
     return result;
   }
+
+  // Build JSDoc type map: endLine → { params: [{name, type}], returns: string }
+  const jsdocMap = buildJSDocTypeMap(comments, code);
 
   // Track exported names
   const exportedNames = new Set();
@@ -158,17 +164,24 @@ export async function parseFile(code, filename) {
     // Standalone function declarations
     FunctionDeclaration(node) {
       if (node.id) {
+        const rawParams = node.params.map(p => {
+          if (p.type === 'Identifier') return p.name;
+          if (p.type === 'AssignmentPattern' && p.left.type === 'Identifier') return p.left.name + '=';
+          if (p.type === 'RestElement' && p.argument.type === 'Identifier') return '...' + p.argument.name;
+          if (p.type === 'ObjectPattern') return 'options';
+          return '?';
+        });
+
+        // Enrich params with JSDoc types
+        const jsdoc = findJSDocForNode(jsdocMap, node.loc.start.line);
+        const typedParams = enrichParamsWithTypes(rawParams, jsdoc);
+
         const funcInfo = {
           name: node.id.name,
           exported: false, // Will be updated later
-          params: node.params.map(p => {
-            if (p.type === 'Identifier') return p.name;
-            if (p.type === 'AssignmentPattern' && p.left.type === 'Identifier') return p.left.name + '=';
-            if (p.type === 'RestElement' && p.argument.type === 'Identifier') return '...' + p.argument.name;
-            if (p.type === 'ObjectPattern') return 'options';
-            return '?';
-          }),
+          params: typedParams,
           async: node.async || false,
+          returns: jsdoc?.returns || null,
           calls: [],
           dbReads: [],
           dbWrites: [],
@@ -529,4 +542,121 @@ export function findJSFiles(dir, rootDir = dir) {
   }
 
   return files;
+}
+
+// ============================
+// JSDoc Type Extraction
+// ============================
+
+/**
+ * Build a map of JSDoc comment end-lines to their extracted type info.
+ * @param {Array} comments - Acorn onComment array
+ * @param {string} code - Full source code
+ * @returns {Map<number, {params: Array<{name: string, type: string}>, returns: string|null}>}
+ */
+function buildJSDocTypeMap(comments, code) {
+  const map = new Map();
+
+  for (const comment of comments) {
+    // Only process JSDoc blocks (/** ... */)
+    if (comment.type !== 'Block' || !comment.value.startsWith('*')) continue;
+
+    const text = '/*' + comment.value + '*/';
+    const endLine = code.slice(0, comment.end).split('\n').length;
+
+    // Parse @param tags with balanced brace matching
+    const params = [];
+    const paramStartRegex = /@param\s+\{/g;
+    let paramStart;
+    while ((paramStart = paramStartRegex.exec(text)) !== null) {
+      // Find matching closing brace (balanced — handles {Array<{text: string}>})
+      let depth = 1;
+      let i = paramStart.index + paramStart[0].length;
+      while (i < text.length && depth > 0) {
+        if (text[i] === '{') depth++;
+        else if (text[i] === '}') depth--;
+        i++;
+      }
+      if (depth !== 0) continue;
+      const type = text.slice(paramStart.index + paramStart[0].length, i - 1);
+      // Extract param name after the closing brace
+      const afterType = text.slice(i);
+      const nameMatch = afterType.match(/^\s+(\[?\w+(?:\.\w+)*\]?)/);
+      if (!nameMatch) continue;
+      let name = nameMatch[1];
+      // Strip [] from optional params: [opts] → opts
+      if (name.startsWith('[')) name = name.slice(1);
+      if (name.endsWith(']')) name = name.slice(0, -1);
+      // Skip dotted paths (options.x)
+      if (name.includes('.')) continue;
+      params.push({ name, type });
+    }
+
+    // Parse @returns {Type}
+    let returns = null;
+    const returnsMatch = text.match(/@returns?\s+\{([^}]+)\}/);
+    if (returnsMatch) {
+      returns = returnsMatch[1];
+    }
+
+    if (params.length > 0 || returns) {
+      map.set(endLine, { params, returns });
+    }
+  }
+
+  return map;
+}
+
+/**
+ * Find the JSDoc entry that applies to a function at the given line.
+ * JSDoc must end within 2 lines above the function declaration.
+ * @param {Map} jsdocMap
+ * @param {number} funcLine - Function start line
+ * @returns {{ params: Array<{name: string, type: string}>, returns: string|null }|null}
+ */
+function findJSDocForNode(jsdocMap, funcLine) {
+  // JSDoc can end 1 or 2 lines above (direct or with blank line)
+  for (let offset = 1; offset <= 3; offset++) {
+    const entry = jsdocMap.get(funcLine - offset);
+    if (entry) return entry;
+  }
+  return null;
+}
+
+/**
+ * Enrich AST-extracted param names with types from JSDoc.
+ * Input:  ['filePath', 'options=']  + jsdoc.params: [{name:'filePath', type:'string'}, {name:'options', type:'Object'}]
+ * Output: ['filePath:string', 'options:Object=']
+ * @param {string[]} rawParams
+ * @param {Object|null} jsdoc
+ * @returns {string[]}
+ */
+function enrichParamsWithTypes(rawParams, jsdoc) {
+  if (!jsdoc || jsdoc.params.length === 0) return rawParams;
+
+  // Build name→type lookup from JSDoc
+  const typeMap = new Map();
+  for (const p of jsdoc.params) {
+    typeMap.set(p.name, p.type);
+  }
+
+  return rawParams.map(param => {
+    // Parse: '...name', 'name=', 'name', 'options'
+    const isRest = param.startsWith('...');
+    const hasDefault = param.endsWith('=');
+    let cleanName = param;
+    if (isRest) cleanName = cleanName.slice(3);
+    if (hasDefault) cleanName = cleanName.slice(0, -1);
+
+    let type = typeMap.get(cleanName);
+    if (!type) return param; // No JSDoc type found
+
+    // Strip JSDoc rest indicator {...Type} — rest is already from AST
+    if (type.startsWith('...')) type = type.slice(3);
+
+    // Reconstruct: ...name:Type, name:Type=, name:Type
+    const prefix = isRest ? '...' : '';
+    const suffix = hasDefault ? '=' : '';
+    return `${prefix}${cleanName}:${type}${suffix}`;
+  });
 }
