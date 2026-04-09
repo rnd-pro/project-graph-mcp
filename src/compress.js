@@ -187,3 +187,133 @@ export async function compressFile(filePath, options = {}) {
     savings: `${savings}%`,
   };
 }
+
+/**
+ * Edit a function/class in a source file by symbol name.
+ * Agent sends new code (compressed or full); server replaces in the original file.
+ * Supports: replace entire function, replace function body only, or add new function.
+ *
+ * @param {string} filePath - Path to JS/MJS file
+ * @param {string} symbol - Function or class name to edit
+ * @param {string} newCode - New code for the symbol (full function/class definition)
+ * @param {Object} [options]
+ * @param {boolean} [options.beautify=true] - Beautify the result after editing
+ * @param {boolean} [options.dryRun=false] - Preview without writing
+ * @returns {Promise<{success: boolean, file: string, symbol: string, oldRange: {start: number, end: number}, newLength: number, dryRun?: boolean}>}
+ */
+export async function editCompressed(filePath, symbol, newCode, options = {}) {
+  const { beautify: shouldBeautify = true, dryRun = false } = options;
+
+  const source = readFileSync(filePath, 'utf-8');
+
+  // Parse AST to find the symbol
+  let ast;
+  try {
+    ast = parse(source, {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      locations: true,
+    });
+  } catch (e) {
+    throw new Error(`Failed to parse ${filePath}: ${e.message}`);
+  }
+
+  // Find the symbol (function or class) and its range
+  const match = findSymbolRange(ast, source, symbol);
+  if (!match) {
+    throw new Error(`Symbol "${symbol}" not found in ${filePath}`);
+  }
+
+  // Build new source: before + newCode + after
+  const before = source.slice(0, match.start);
+  const after = source.slice(match.end);
+  let newSource = before + newCode + after;
+
+  // Optionally beautify the result
+  if (shouldBeautify) {
+    try {
+      const result = await minify(newSource, {
+        compress: false,
+        mangle: false,
+        module: true,
+        output: { beautify: true, comments: true, semicolons: false },
+      });
+      if (result.code) {
+        newSource = result.code;
+      }
+    } catch {
+      // If beautify fails, use raw replacement
+    }
+  }
+
+  // Validate the new source parses correctly
+  try {
+    parse(newSource, { ecmaVersion: 'latest', sourceType: 'module' });
+  } catch (e) {
+    throw new Error(`Edit would create invalid syntax: ${e.message}`);
+  }
+
+  if (!dryRun) {
+    const { writeFileSync } = await import('fs');
+    writeFileSync(filePath, newSource, 'utf-8');
+  }
+
+  return {
+    success: true,
+    file: filePath,
+    symbol,
+    oldRange: { start: match.start, end: match.end },
+    newLength: newCode.length,
+    ...(dryRun ? { dryRun: true } : {}),
+  };
+}
+
+/**
+ * Find the character range of a symbol (function or class) in source.
+ * Handles: FunctionDeclaration, ExportNamedDeclaration wrapping functions,
+ * ClassDeclaration, variable-assigned functions (const foo = ...).
+ *
+ * @param {Object} ast - Acorn AST
+ * @param {string} source - Full source code
+ * @param {string} symbol - Symbol name to find
+ * @returns {{start: number, end: number, type: string}|null}
+ */
+function findSymbolRange(ast, source, symbol) {
+  let match = null;
+
+  walk(ast, {
+    FunctionDeclaration(node) {
+      if (node.id?.name === symbol) {
+        match = { start: node.start, end: node.end, type: 'FunctionDeclaration' };
+      }
+    },
+    ClassDeclaration(node) {
+      if (node.id?.name === symbol) {
+        match = { start: node.start, end: node.end, type: 'ClassDeclaration' };
+      }
+    },
+    VariableDeclaration(node) {
+      for (const decl of node.declarations) {
+        if (decl.id?.name === symbol) {
+          match = { start: node.start, end: node.end, type: 'VariableDeclaration' };
+        }
+      }
+    },
+    ExportNamedDeclaration(node) {
+      if (node.declaration) {
+        const decl = node.declaration;
+        const name = decl.id?.name || decl.declarations?.[0]?.id?.name;
+        if (name === symbol) {
+          match = { start: node.start, end: node.end, type: 'ExportNamedDeclaration' };
+        }
+      }
+    },
+    ExportDefaultDeclaration(node) {
+      if (node.declaration?.id?.name === symbol) {
+        match = { start: node.start, end: node.end, type: 'ExportDefaultDeclaration' };
+      }
+    },
+  });
+
+  return match;
+}

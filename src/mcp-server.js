@@ -26,7 +26,7 @@ import { getCustomRules, setCustomRule, checkCustomRules } from './custom-rules.
 import { getFrameworkReference } from './framework-references.js';
 import { setRoots, resolvePath } from './workspace.js';
 import { getDBSchema, getTableUsage, getDBDeadTables } from './db-analysis.js';
-import { compressFile } from './compress.js';
+import { compressFile, editCompressed } from './compress.js';
 import { getProjectDocs, generateContextFiles, checkStaleness } from './doc-dialect.js';
 import { getGraph } from './tools.js';
 import { parseProject, discoverSubProjects } from './parser.js';
@@ -196,6 +196,12 @@ const TOOL_HANDLERS = {
   },
   validate_ctx_contracts: (args) => {
     return validateCtxContracts(resolvePath(args.path), { strict: args.strict || false });
+  },
+  edit_compressed: (args) => {
+    return editCompressed(resolvePath(args.path), args.symbol, args.code, {
+      beautify: args.beautify !== false,
+      dryRun: args.dryRun || false,
+    });
   },
 };
 

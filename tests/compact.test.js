@@ -3,6 +3,7 @@ import assert from 'node:assert';
 import { mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from 'fs';
 import { join } from 'path';
 import { compactProject, expandProject } from '../src/compact.js';
+import { editCompressed } from '../src/compress.js';
 import { parseCtxFile, injectJSDoc, stripJSDoc, validateCtxContracts } from '../src/ctx-to-jsdoc.js';
 import { parseFile } from '../src/parser.js';
 
@@ -455,6 +456,74 @@ removed()|was deleted
       const error = result.violations.find(v => v.message.includes('removed'));
       assert.ok(error, 'Should report missing function');
       assert.strictEqual(error.severity, 'error');
+    });
+  });
+
+  // ============================
+  // Edit Compressed (Mode 2)
+  // ============================
+
+  describe('editCompressed()', () => {
+
+    it('should replace a function by symbol name', async () => {
+      const dir = join(TEST_DIR, 'edit1');
+      mkdirSync(dir, { recursive: true });
+      const file = join(dir, 'math.js');
+      writeFileSync(file, `function add(a, b) {
+  return a + b;
+}
+
+function mul(x, y) {
+  return x * y;
+}
+`, 'utf-8');
+
+      await editCompressed(file, 'add', 'function add(a, b) { return a + b + 1; }');
+
+      const result = readFileSync(file, 'utf-8');
+      assert.ok(result.includes('a + b + 1'), 'Function body replaced');
+      assert.ok(result.includes('mul'), 'Other functions preserved');
+    });
+
+    it('should replace an exported function', async () => {
+      const dir = join(TEST_DIR, 'edit2');
+      mkdirSync(dir, { recursive: true });
+      const file = join(dir, 'api.js');
+      writeFileSync(file, `export function greet(name) {
+  return "Hello " + name;
+}
+`, 'utf-8');
+
+      await editCompressed(file, 'greet', 'export function greet(name) { return "Hi " + name; }');
+
+      const result = readFileSync(file, 'utf-8');
+      assert.ok(result.includes('Hi'), 'Exported function replaced');
+      assert.ok(result.includes('export'), 'Export keyword preserved');
+    });
+
+    it('should support dry run', async () => {
+      const dir = join(TEST_DIR, 'edit3');
+      mkdirSync(dir, { recursive: true });
+      const file = join(dir, 'dry.js');
+      const original = 'function test() { return 1; }\n';
+      writeFileSync(file, original, 'utf-8');
+
+      const result = await editCompressed(file, 'test', 'function test() { return 2; }', { dryRun: true });
+
+      assert.strictEqual(result.dryRun, true);
+      assert.strictEqual(readFileSync(file, 'utf-8'), original, 'File unchanged');
+    });
+
+    it('should throw on unknown symbol', async () => {
+      const dir = join(TEST_DIR, 'edit4');
+      mkdirSync(dir, { recursive: true });
+      const file = join(dir, 'miss.js');
+      writeFileSync(file, 'function existing() {}\n', 'utf-8');
+
+      await assert.rejects(
+        () => editCompressed(file, 'nonExistent', 'function nonExistent() {}'),
+        /not found/
+      );
     });
   });
 

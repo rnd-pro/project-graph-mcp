@@ -749,4 +749,19 @@ export const TOOLS = [
       required: ['path'],
     },
   },
+  {
+    name: 'edit_compressed',
+    description: 'Edit a function or class in source code by symbol name. Agent sends new code (compressed or formatted); server finds the symbol via AST, replaces it, validates syntax, and optionally beautifies. Use with get_compressed_file for token-efficient editing workflow.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Path to JS/MJS file' },
+        symbol: { type: 'string', description: 'Function or class name to replace' },
+        code: { type: 'string', description: 'New code for the symbol (full function/class definition)' },
+        beautify: { type: 'boolean', description: 'Beautify result after editing (default: true)' },
+        dryRun: { type: 'boolean', description: 'Preview without writing (default: false)' },
+      },
+      required: ['path', 'symbol', 'code'],
+    },
+  },
 ];
