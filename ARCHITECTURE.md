@@ -18,7 +18,9 @@ project-graph-mcp/
 │   ├── graph-builder.js      # Minified graph + legend
 │   ├── filters.js            # Exclude patterns, .gitignore
 │   ├── compress.js           # Terser minification + export legend
+│   ├── compact.js            # Project-wide compact/beautify (mangle: false)
 │   ├── doc-dialect.js        # Doc Dialect (.context/ format)
+│   ├── ctx-to-jsdoc.js       # .ctx → JSDoc injection + stripping
 │   ├── ai-context.js         # AI boot aggregator
 │   ├── dead-code.js          # Unused code detection
 │   ├── complexity.js         # Cyclomatic complexity
@@ -44,5 +46,6 @@ project-graph-mcp/
 │   └── terser.mjs            # JS minifier (BSD, vendored)
 └── tests/
     ├── parser.test.js
-    └── mcp.test.js
+    ├── mcp.test.js
+    └── compact.test.js        # Compact/beautify, ctx-to-jsdoc tests
 ```

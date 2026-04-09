@@ -1,0 +1,8 @@
+--- src/compact.js ---
+@sig 6b42ebae
+compactFile()→readFileSync,source.trim,minify,writeFileSync|minify single JS file via Terser (mangle:false)
+beautifyFile()→readFileSync,source.trim,minify,writeFileSync|format single JS file with proper indentation
+export compactProject()→walkJSFiles,relative,readFileSync,compactFile,minify,processed.push|compact all JS files in dir, per-file error handling, ret stats+savings%
+export expandProject()→walkJSFiles,relative,readFileSync,beautifyFile,minify,processed.push|beautify all JS files in dir, inverse of compactProject
+PATTERNS: Terser mangle:false preserves all names|per-file try/catch collects errors array|dryRun mode estimates without writing|skips node_modules,vendor,.git,.context
+EDGE_CASES: empty files return 0/0|syntax errors collected in errors[] not thrown|files with only comments become empty (correct behavior)

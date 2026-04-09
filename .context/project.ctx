@@ -1,4 +1,4 @@
 === PROJECT: project-graph-mcp ===
-ARCH: {DESCRIBE}
-FLOW: {DESCRIBE}
-STATS: 35 files|182 functions
+ARCH: MCP server providing 45 tools for AI-native codebase analysis|Acorn AST parser with multi-language support|Doc Dialect context system|Compact Code Mode
+FLOW: server.js→mcp-server.js(tool dispatch)|parser.js→graph-builder.js(AST→graph)|doc-dialect.js→.context/(doc generation)|compact.js↔ctx-to-jsdoc.js(code lifecycle)
+STATS: 36 files|189 functions
