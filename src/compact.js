@@ -1,13 +1,3 @@
-/**
- * Compact/Beautify — Project-wide code compression and expansion
- * 
- * Converts JS files between compact (minified, no comments) and 
- * beautified (formatted, readable) forms. Both preserve all names
- * (mangle: false) — only whitespace and comments are affected.
- * 
- * Types and documentation live in .ctx files, not in source code.
- */
-
 import { readFileSync, writeFileSync, readdirSync, statSync } from 'fs';
 import { join, extname, relative } from 'path';
 import { minify } from '../vendor/terser.mjs';
@@ -15,12 +5,6 @@ import { minify } from '../vendor/terser.mjs';
 const SUPPORTED = new Set(['.js', '.mjs']);
 const SKIP_DIRS = new Set(['node_modules', '.git', 'vendor', '.context', 'dev-docs', '.agent', '.agents']);
 
-/**
- * Walk directory for JS files
- * @param {string} dir
- * @param {string} rootDir
- * @returns {string[]} Absolute paths
- */
 function walkJSFiles(dir, rootDir = dir) {
   const results = [];
   try {
@@ -40,11 +24,6 @@ function walkJSFiles(dir, rootDir = dir) {
   return results;
 }
 
-/**
- * Compact a single file — minify with preserved names
- * @param {string} filePath
- * @returns {Promise<{original: number, compacted: number}>}
- */
 async function compactFile(filePath) {
   const source = readFileSync(filePath, 'utf-8');
   const original = source.length;
@@ -72,11 +51,6 @@ async function compactFile(filePath) {
   return { original, compacted: result.code.length };
 }
 
-/**
- * Beautify a single file — format with readable output
- * @param {string} filePath
- * @returns {Promise<{original: number, beautified: number}>}
- */
 async function beautifyFile(filePath) {
   const source = readFileSync(filePath, 'utf-8');
   const original = source.length;
@@ -101,13 +75,6 @@ async function beautifyFile(filePath) {
   return { original, beautified: result.code.length };
 }
 
-/**
- * Compact all JS files in a directory
- * @param {string} dir - Directory to compact
- * @param {Object} [options]
- * @param {boolean} [options.dryRun=false] - Preview without writing
- * @returns {Promise<{files: number, originalBytes: number, compactedBytes: number, savings: string}>}
- */
 export async function compactProject(dir, options = {}) {
   const { dryRun = false } = options;
   const files = walkJSFiles(dir);
@@ -156,13 +123,6 @@ export async function compactProject(dir, options = {}) {
   };
 }
 
-/**
- * Beautify all JS files in a directory
- * @param {string} dir - Directory to beautify
- * @param {Object} [options]
- * @param {boolean} [options.dryRun=false] - Preview without writing
- * @returns {Promise<{files: number, originalBytes: number, beautifiedBytes: number}>}
- */
 export async function expandProject(dir, options = {}) {
   const { dryRun = false } = options;
   const files = walkJSFiles(dir);

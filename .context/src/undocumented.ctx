@@ -1,14 +1,14 @@
 --- src/undocumented.js ---
-@sig 082e57df
+@sig fd17b822
 @enrich: Replace each {DESCRIBE} below. Read src/undocumented.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-findJSFiles(dir:string,rootDir:string=)→string[]→parseGitignore,readdirSync,join,relative,statSync,stat.isDirectory|{DESCRIBE}
-findJSDocBefore(comments:Array<{text: string, endLine: number}>,targetLine:number)→string|null|null|null|{DESCRIBE}
-extractComments(code:string)→Array<{text: string, endLine: number→regex.exec,code.slice,comments.push|{DESCRIBE}
-checkMissing(jsdoc:string|null,level:'tests'|'params'|'all')→string[]→missing.push,jsdoc.includes|{DESCRIBE}
-export checkUndocumentedFile(code:string,filePath:string,level:'tests'|'params'|'all')→UndocumentedItem[]→parse,extractComments,findJSDocBefore,results.push,methodName.startsWith,SKIP_METHODS.includes|{DESCRIBE}
-export getUndocumented(dir:string,level:'tests'|'params'|'all'=)→UndocumentedItem[]→resolve,findJSFiles,readFileSync,relative,checkUndocumentedFile,results.push|{DESCRIBE}
-export getUndocumentedSummary(dir:string,level:'tests'|'params'|'all'=)→Object→getUndocumented,items.filter,items.slice|{DESCRIBE}
+findJSFiles(dir,rootDir=)→parseGitignore,readdirSync,join,relative,statSync,stat.isDirectory|{DESCRIBE}
+findJSDocBefore(comments,targetLine)|null|null|null|{DESCRIBE}
+extractComments(code)→regex.exec,code.slice,comments.push|{DESCRIBE}
+checkMissing(jsdoc,level)→missing.push,jsdoc.includes|{DESCRIBE}
+export checkUndocumentedFile(code,filePath,level)→parse,extractComments,findJSDocBefore,results.push,methodName.startsWith,SKIP_METHODS.includes|{DESCRIBE}
+export getUndocumented(dir,level=)→resolve,findJSFiles,readFileSync,relative,checkUndocumentedFile,results.push|{DESCRIBE}
+export getUndocumentedSummary(dir,level=)→getUndocumented,items.filter,items.slice|{DESCRIBE}
 PATTERNS: {DESCRIBE}
 EDGE_CASES: {DESCRIBE}

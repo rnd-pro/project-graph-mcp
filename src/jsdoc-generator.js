@@ -1,29 +1,9 @@
-/**
- * JSDoc Generator
- * Auto-generates JSDoc templates from AST analysis
- */
-
 import { readFileSync } from 'fs';
 import { relative } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import * as walk from '../vendor/walk.mjs';
 import { getWorkspaceRoot } from './workspace.js';
 
-/**
- * @typedef {Object} JSDocTemplate
- * @property {string} name - Function/method name
- * @property {string} type - 'function' | 'method' | 'class'
- * @property {string} file
- * @property {number} line
- * @property {string} jsdoc - Generated JSDoc template
- */
-
-/**
- * Generate JSDoc for a single file
- * @param {string} filePath - Absolute path to file
- * @param {Object} [options]
- * @returns {JSDocTemplate[]}
- */
 export function generateJSDoc(filePath, options = {}) {
   const results = [];
 
@@ -116,14 +96,6 @@ export function generateJSDoc(filePath, options = {}) {
   return results;
 }
 
-/**
- * Build JSDoc string from function info
- * @param {Object} info
- * @param {string} info.name
- * @param {Array} info.params
- * @param {boolean} info.async
- * @returns {string}
- */
 function buildJSDoc(info) {
   const lines = ['/**'];
 
@@ -144,11 +116,6 @@ function buildJSDoc(info) {
   return lines.join('\n');
 }
 
-/**
- * Extract parameter name from AST node
- * @param {Object} param 
- * @returns {string}
- */
 function extractParamName(param) {
   if (param.type === 'Identifier') {
     return param.name;
@@ -168,11 +135,6 @@ function extractParamName(param) {
   return 'param';
 }
 
-/**
- * Infer parameter type from AST
- * @param {Object} param 
- * @returns {string}
- */
 function inferParamType(param) {
   if (param.type === 'AssignmentPattern') {
     const defaultVal = param.right;
@@ -190,13 +152,6 @@ function inferParamType(param) {
   return '*';
 }
 
-/**
- * Generate JSDoc for specific function by name
- * @param {string} filePath 
- * @param {string} functionName 
- * @param {Object} [options]
- * @returns {JSDocTemplate|null}
- */
 export function generateJSDocFor(filePath, functionName, options = {}) {
   const results = generateJSDoc(filePath, options);
   return results.find(r => r.name === functionName || r.name.endsWith(`.${functionName}`)) || null;

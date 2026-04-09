@@ -1,13 +1,4 @@
 #!/usr/bin/env node
-/**
- * Entry Point for Project Graph MCP
- * 
- * Decides whether to run in CLI mode or MCP Server mode (stdio)
- * Usage:
- *   npx project-graph-mcp                  -> stdio server
- *   npx project-graph-mcp <cmd> [args]     -> CLI execution
- */
-
 import { startStdioServer } from './mcp-server.js';
 import { runCLI } from './cli.js';
 

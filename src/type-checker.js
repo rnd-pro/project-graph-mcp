@@ -1,29 +1,7 @@
-/**
- * Optional Type Checker (tsc wrapper)
- * Provides JSDoc type validation via TypeScript compiler
- * 
- * Requires `tsc` in PATH (npm i -g typescript)
- * Graceful fallback if not available
- */
-
 import { execSync, spawn } from 'child_process';
 import { existsSync } from 'fs';
 import { resolve, join } from 'path';
 
-/**
- * @typedef {Object} TypeDiagnostic
- * @property {string} file
- * @property {number} line
- * @property {number} column
- * @property {'error'|'warning'} severity
- * @property {string} message
- * @property {string} code - TS error code (e.g. "TS2345")
- */
-
-/**
- * Check if tsc is available
- * @returns {{ available: boolean, version: string|null, path: string|null }}
- */
 function detectTsc() {
   try {
     const version = execSync('tsc --version', { encoding: 'utf-8', timeout: 5000 }).trim();
@@ -40,12 +18,6 @@ function detectTsc() {
   }
 }
 
-/**
- * Parse tsc output line into structured diagnostic
- * @param {string} line
- * @param {string} baseDir
- * @returns {TypeDiagnostic|null}
- */
 function parseDiagnosticLine(line, baseDir) {
   // Format: file.js(line,col): error TS1234: message
   const match = line.match(/^(.+?)\((\d+),(\d+)\):\s+(error|warning)\s+(TS\d+):\s+(.+)$/);
@@ -61,12 +33,6 @@ function parseDiagnosticLine(line, baseDir) {
   };
 }
 
-/**
- * Build tsc arguments
- * @param {string} dir
- * @param {Object} options
- * @returns {string[]}
- */
 function buildArgs(dir, options = {}) {
   const args = ['--noEmit'];
 
@@ -97,14 +63,6 @@ function buildArgs(dir, options = {}) {
   return args;
 }
 
-/**
- * Run type checking on a directory
- * @param {string} dir - Directory to check
- * @param {Object} [options]
- * @param {string[]} [options.files] - Specific files to check
- * @param {number} [options.maxDiagnostics=50] - Max diagnostics to return
- * @returns {Promise<{ available: boolean, version: string|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null }>}
- */
 export async function checkTypes(dir, options = {}) {
   const maxDiagnostics = options.maxDiagnostics || 50;
   const resolvedDir = resolve(dir);

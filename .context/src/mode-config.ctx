@@ -1,11 +1,11 @@
 --- src/mode-config.js ---
-@sig c2393092
+@sig 59f3a19d
 @enrich: Replace each {DESCRIBE} below. Read src/mode-config.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-export getConfig(projectDir:string)→{ mode: number, beautify: boolean, autoValidate: boolean, stripJSDoc: boolean →join,existsSync,readFileSync,JSON.parse|{DESCRIBE}
-export setConfig(projectDir:string,config:Object)→{ saved: boolean, path: string, config: Object →join,dirname,existsSync,mkdirSync,getConfig,JSON.stringify|{DESCRIBE}
-export getModeDescription(mode:number)→string|{DESCRIBE}
-export getModeWorkflow(mode:number)→{ read: string, edit: string, docs: string, validate: string |{DESCRIBE}
+export getConfig(projectDir)→join,existsSync,readFileSync,JSON.parse|{DESCRIBE}
+export setConfig(projectDir,config)→join,dirname,existsSync,mkdirSync,getConfig,JSON.stringify|{DESCRIBE}
+export getModeDescription(mode)|{DESCRIBE}
+export getModeWorkflow(mode)|{DESCRIBE}
 PATTERNS: {DESCRIBE}
 EDGE_CASES: {DESCRIBE}

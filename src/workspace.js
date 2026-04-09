@@ -1,13 +1,5 @@
-/**
- * Workspace Root Resolution
- * 
- * Resolves relative paths against the correct workspace root.
- * Priority: MCP initialize roots → --workspace arg → PROJECT_ROOT env → process.cwd()
- */
-
 import { resolve, isAbsolute } from 'path';
 
-/** @type {string|null} */
 let workspaceRoot = null;
 
 // Auto-detect --workspace arg at module load
@@ -17,10 +9,6 @@ if (wsArg) {
   console.error(`[project-graph] Workspace from arg: ${workspaceRoot}`);
 }
 
-/**
- * Set workspace root from MCP initialize roots
- * @param {Array<{uri: string, name?: string}>} roots
- */
 export function setRoots(roots) {
   if (roots && roots.length > 0) {
     let uri = roots[0].uri;
@@ -33,10 +21,6 @@ export function setRoots(roots) {
   }
 }
 
-/**
- * Get current workspace root
- * @returns {string}
- */
 export function getWorkspaceRoot() {
   if (workspaceRoot) {
     return workspaceRoot;
@@ -47,13 +31,6 @@ export function getWorkspaceRoot() {
   return process.cwd();
 }
 
-/**
- * Resolve a path argument against workspace root.
- * Absolute paths are returned as-is.
- * Relative paths are resolved against the workspace root.
- * @param {string} inputPath
- * @returns {string}
- */
 export function resolvePath(inputPath) {
   if (!inputPath) {
     return getWorkspaceRoot();

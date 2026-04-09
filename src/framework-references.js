@@ -1,8 +1,3 @@
-/**
- * Framework Reference System
- * Loads framework-specific AI references from GitHub (with caching) or local files
- */
-
 import { readFileSync, readdirSync, existsSync, writeFileSync } from 'fs';
 import { join, basename, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -11,26 +6,14 @@ import { detectProjectRuleSets } from './custom-rules.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REFERENCES_DIR = join(__dirname, '..', 'references');
 
-/**
- * Remote sources for framework references
- * Maps reference name to raw GitHub URL
- */
 const REMOTE_SOURCES = {
   'symbiote-3x': 'https://raw.githubusercontent.com/symbiotejs/symbiote.js/main/AI_REFERENCE.md',
 };
 
-/** @type {Map<string, {content: string, fetchedAt: number}>} */
 const cache = new Map();
 
-/** Cache TTL: 1 hour */
 const CACHE_TTL = 60 * 60 * 1000;
 
-/**
- * Fetch reference from GitHub with caching
- * Falls back to local file if fetch fails
- * @param {string} name - Reference name
- * @returns {Promise<{content: string, source: string}>}
- */
 async function fetchReference(name) {
   const url = REMOTE_SOURCES[name];
   const localPath = join(REFERENCES_DIR, `${name}.md`);
@@ -73,18 +56,11 @@ async function fetchReference(name) {
   return { content: '', source: 'not_found' };
 }
 
-/**
- * Map ruleset names to reference names
- */
 const RULESET_TO_REFERENCE = {
   'symbiote-3x': 'symbiote-3x',
   'symbiote-2x': 'symbiote-3x',
 };
 
-/**
- * List available framework references (local + remote)
- * @returns {string[]}
- */
 function listAvailable() {
   const names = new Set(Object.keys(REMOTE_SOURCES));
 
@@ -99,13 +75,6 @@ function listAvailable() {
   return [...names];
 }
 
-/**
- * Get framework reference content
- * @param {Object} options
- * @param {string} [options.framework] - Explicit framework name
- * @param {string} [options.path] - Project path for auto-detection
- * @returns {Promise<Object>}
- */
 export async function getFrameworkReference(options = {}) {
   const available = listAvailable();
 

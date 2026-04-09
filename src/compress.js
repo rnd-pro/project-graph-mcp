@@ -1,35 +1,15 @@
-/**
- * Code Compression for AI Context
- * 
- * Terser-based minification of JS source files for token-efficient AI consumption.
- * Preserves exported names and structure while stripping comments, whitespace,
- * and redundant syntax. Optionally generates a JSDoc legend header.
- */
-
 import { readFileSync } from 'fs';
 import { basename, extname } from 'path';
 import { minify } from '../vendor/terser.mjs';
 import { parse } from '../vendor/acorn.mjs';
 import { simple as walk } from '../vendor/walk.mjs';
 
-/** Supported file extensions for compression */
 const SUPPORTED_EXTENSIONS = new Set(['.js', '.mjs', '.ts', '.tsx']);
 
-/**
- * Estimate token count (rough: ~4 chars per token for code)
- * @param {string} text
- * @returns {number}
- */
 function estimateTokens(text) {
   return Math.ceil(text.length / 4);
 }
 
-/**
- * Extract JSDoc legend from source — exported symbols with their descriptions
- * @param {string} source - Original source code
- * @param {string} filePath
- * @returns {string} Compact legend string
- */
 function extractLegend(source, filePath) {
   const lines = [];
   lines.push(`--- ${basename(filePath)} ---`);
@@ -111,14 +91,6 @@ function extractLegend(source, filePath) {
   return lines.join('\n');
 }
 
-/**
- * Compress a source file for AI consumption
- * @param {string} filePath - Path to JS/MJS file
- * @param {Object} [options]
- * @param {boolean} [options.beautify=true] - Readable multi-line output
- * @param {boolean} [options.legend=true] - Add compact legend header
- * @returns {Promise<{code: string, legend: string, original: number, compressed: number, savings: string}>}
- */
 export async function compressFile(filePath, options = {}) {
   const { beautify = true, legend: includeLegend = true } = options;
 
@@ -188,19 +160,6 @@ export async function compressFile(filePath, options = {}) {
   };
 }
 
-/**
- * Edit a function/class in a source file by symbol name.
- * Agent sends new code (compressed or full); server replaces in the original file.
- * Supports: replace entire function, replace function body only, or add new function.
- *
- * @param {string} filePath - Path to JS/MJS file
- * @param {string} symbol - Function or class name to edit
- * @param {string} newCode - New code for the symbol (full function/class definition)
- * @param {Object} [options]
- * @param {boolean} [options.beautify=true] - Beautify the result after editing
- * @param {boolean} [options.dryRun=false] - Preview without writing
- * @returns {Promise<{success: boolean, file: string, symbol: string, oldRange: {start: number, end: number}, newLength: number, dryRun?: boolean}>}
- */
 export async function editCompressed(filePath, symbol, newCode, options = {}) {
   const { beautify: shouldBeautify = true, dryRun = false } = options;
 
@@ -268,16 +227,6 @@ export async function editCompressed(filePath, symbol, newCode, options = {}) {
   };
 }
 
-/**
- * Find the character range of a symbol (function or class) in source.
- * Handles: FunctionDeclaration, ExportNamedDeclaration wrapping functions,
- * ClassDeclaration, variable-assigned functions (const foo = ...).
- *
- * @param {Object} ast - Acorn AST
- * @param {string} source - Full source code
- * @param {string} symbol - Symbol name to find
- * @returns {{start: number, end: number, type: string}|null}
- */
 function findSymbolRange(ast, source, symbol) {
   let match = null;
 

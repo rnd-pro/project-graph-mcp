@@ -1,19 +1,19 @@
 --- src/doc-dialect.js ---
-@sig eaee71c4
+@sig 5aed9e6b
 @enrich: Replace each {DESCRIBE} below. Read src/doc-dialect.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-export generateDocDialect(graph:import('./graph-builder.js').Graph,projectPath:string)→string→basename,lines.push,parts.push,parts.join,edges.filter,edgeParts.push|generate compact doc-dialect string from graph|includes project/file/function levels
-walkCtxFiles(dir:string,base:string)→Array<{relPath: string, absPath: string→existsSync,readdirSync,join,statSync,stat.isDirectory,walkCtxFiles|recursively find .ctx files|returns relative and absolute paths
-resolveCtxPath(projectPath:string,sourceFile:string)→string|null→extname,basename,dirname,join,existsSync|null→extname,basename,dirname,join,existsSync|null→extname,basename,dirname,join,existsSync|resolve .ctx path for source file|priority: colocated > mirror
-resolveCtxMdPath(projectPath:string,sourceFile:string)→string|null→extname,basename,dirname,join,existsSync|null→extname,basename,dirname,join,existsSync|null→extname,basename,dirname,join,existsSync|resolve companion .ctx.md path|priority: colocated > mirror
-export readContextDocs(projectPath:string)→{ combined: string, files: string[], hasProjectCtx: boolean →join,walkCtxFiles,readFileSync,collected.set,relPath.startsWith,collected.keys|read manual docs (mirror + colocated)|colocated overrides mirror
-export getProjectDocs(graph:import('./graph-builder.js').Graph,projectPath:string,options:Object=)→string→readContextDocs,resolveCtxPath,readFileSync,generateDocDialect,autoFull.indexOf,autoFull.slice|get project docs|merges manual .ctx and auto-generated dialect
-computeSignature(file:string,parsed:Object)→string→params.join,parts.push,methods.sort,parts.sort,createHash,parts.join|compute structural signature hash from AST|used for staleness detection
-parseCtxDescriptions(content:string)→Map<string, string>→content.split,line.trim,trimmed.startsWith,trimmed.match,descriptions.set|extract user descriptions from existing .ctx|preserves data on overwrite
-export checkStaleness(projectPath:string,parsed:Object)→{ stale: string[], fresh: number, unknown: number →join,walkCtxFiles,readFileSync,content.match,computeSignature,stale.push|check .ctx files staleness vs current AST
-buildFileTemplate(file:string,nodes:Array,graph:import('./graph-builder.js').Graph,parsed:Object,existingDescriptions:Map<string, string>)→string→computeSignature,meta.push,desc.get,meta.join,lines.push,calls.slice|build rich AST template for single file|injects {DESCRIBE} markers
-export generateContextFiles(graph:import('./graph-builder.js').Graph,projectPath:string,parsed:Object,options:Object=)→Promise<{ created: string[], skipped: string[], templates?: Object →join,existsSync,mkdirSync,basename,statParts.push,statParts.join|generate .context/ templates|supports focus scope and overwrite merge
-processFileCtx(file:string,nodes:Array,graph:Object,parsed:Object,contextDir:string,projectPath:string,overwrite:boolean)→Promise<{action: string, path: string, template?: string→extname,basename,dirname,join,existsSync,mkdirSync|{DESCRIBE}
+export generateDocDialect(graph,projectPath)→basename,lines.push,parts.push,parts.join,edges.filter,edgeParts.push|generate compact doc-dialect string from graph|includes project/file/function levels
+walkCtxFiles(dir,base)→existsSync,readdirSync,join,statSync,stat.isDirectory,walkCtxFiles|recursively find .ctx files|returns relative and absolute paths
+resolveCtxPath(projectPath,sourceFile)→extname,basename,dirname,join,existsSync|null→extname,basename,dirname,join,existsSync|null→extname,basename,dirname,join,existsSync|null→extname,basename,dirname,join,existsSync|resolve .ctx path for source file|priority: colocated > mirror
+resolveCtxMdPath(projectPath,sourceFile)→extname,basename,dirname,join,existsSync|null→extname,basename,dirname,join,existsSync|null→extname,basename,dirname,join,existsSync|null→extname,basename,dirname,join,existsSync|resolve companion .ctx.md path|priority: colocated > mirror
+export readContextDocs(projectPath)→join,walkCtxFiles,readFileSync,collected.set,relPath.startsWith,collected.keys|read manual docs (mirror + colocated)|colocated overrides mirror
+export getProjectDocs(graph,projectPath,options=)→readContextDocs,resolveCtxPath,readFileSync,generateDocDialect,autoFull.indexOf,autoFull.slice|get project docs|merges manual .ctx and auto-generated dialect
+computeSignature(file,parsed)→params.join,parts.push,methods.sort,parts.sort,createHash,parts.join|compute structural signature hash from AST|used for staleness detection
+parseCtxDescriptions(content)→content.split,line.trim,trimmed.startsWith,trimmed.match,descriptions.set|extract user descriptions from existing .ctx|preserves data on overwrite
+export checkStaleness(projectPath,parsed)→join,walkCtxFiles,readFileSync,content.match,computeSignature,stale.push|check .ctx files staleness vs current AST
+buildFileTemplate(file,nodes,graph,parsed,existingDescriptions)→computeSignature,meta.push,desc.get,meta.join,lines.push,calls.slice|build rich AST template for single file|injects {DESCRIBE} markers
+export generateContextFiles(graph,projectPath,parsed,options=)→join,existsSync,mkdirSync,basename,statParts.push,statParts.join|generate .context/ templates|supports focus scope and overwrite merge
+processFileCtx(file,nodes,graph,parsed,contextDir,projectPath,overwrite)→extname,basename,dirname,join,existsSync,mkdirSync|{DESCRIBE}
 PATTERNS: two-tier doc resolution (colocated > mirror)|AST signature hashing
 EDGE_CASES: preserves existing {DESCRIBE} on overwrite|handles git diff for focus scope

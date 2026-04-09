@@ -1,29 +1,9 @@
-/**
- * Undocumented Code Finder (AST-based)
- * Finds methods/functions missing JSDoc annotations using Acorn AST parser
- */
-
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, relative, resolve } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import * as walk from '../vendor/walk.mjs';
 import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.js';
 
-/**
- * @typedef {Object} UndocumentedItem
- * @property {string} name - ClassName.methodName or functionName
- * @property {string} type - 'method' | 'function' | 'class'
- * @property {string} file
- * @property {number} line
- * @property {string} reason - What's missing
- */
-
-/**
- * Find all JS files in directory
- * @param {string} dir 
- * @param {string} rootDir
- * @returns {string[]}
- */
 function findJSFiles(dir, rootDir = dir) {
   if (dir === rootDir) {
     parseGitignore(rootDir);
@@ -54,11 +34,6 @@ function findJSFiles(dir, rootDir = dir) {
   return files;
 }
 
-/**
- * Extract JSDoc comments from code with their positions
- * @param {string} code 
- * @returns {Array<{text: string, endLine: number}>}
- */
 function extractComments(code) {
   const comments = [];
   const regex = /\/\*\*[\s\S]*?\*\//g;
@@ -72,12 +47,6 @@ function extractComments(code) {
   return comments;
 }
 
-/**
- * Find JSDoc comment before a target line
- * @param {Array<{text: string, endLine: number}>} comments - Extracted JSDoc comments
- * @param {number} targetLine - Line number to search before
- * @returns {string|null}
- */
 function findJSDocBefore(comments, targetLine) {
   for (const comment of comments) {
     const gap = targetLine - comment.endLine;
@@ -88,12 +57,6 @@ function findJSDocBefore(comments, targetLine) {
   return null;
 }
 
-/**
- * Check what's missing from JSDoc based on level
- * @param {string|null} jsdoc 
- * @param {'tests'|'params'|'all'} level 
- * @returns {string[]}
- */
 function checkMissing(jsdoc, level) {
   const missing = [];
 
@@ -111,19 +74,11 @@ function checkMissing(jsdoc, level) {
   return missing;
 }
 
-/** Skip list for methods */
 const SKIP_METHODS = [
   'constructor', 'connectedCallback', 'disconnectedCallback',
   'attributeChangedCallback', 'renderCallback',
 ];
 
-/**
- * Parse file using AST and find undocumented items (per-file export for cache integration)
- * @param {string} code 
- * @param {string} filePath 
- * @param {'tests'|'params'|'all'} level
- * @returns {UndocumentedItem[]}
- */
 export function checkUndocumentedFile(code, filePath, level) {
   const results = [];
 
@@ -205,12 +160,6 @@ export function checkUndocumentedFile(code, filePath, level) {
   return results;
 }
 
-/**
- * Get undocumented items from directory
- * @param {string} dir 
- * @param {'tests'|'params'|'all'} level
- * @returns {UndocumentedItem[]}
- */
 export function getUndocumented(dir, level = 'tests') {
   const resolvedDir = resolve(dir);
   const files = findJSFiles(dir);
@@ -230,12 +179,6 @@ export function getUndocumented(dir, level = 'tests') {
   return results;
 }
 
-/**
- * Get summary of undocumented items
- * @param {string} dir 
- * @param {'tests'|'params'|'all'} level
- * @returns {Object}
- */
 export function getUndocumentedSummary(dir, level = 'tests') {
   const items = getUndocumented(dir, level);
 

@@ -1,14 +1,6 @@
-/**
- * Filter Configuration for Project Graph
- * Manages excludes, includes, and gitignore parsing
- */
-
 import { readFileSync, existsSync } from 'fs';
 import { join, relative } from 'path';
 
-/**
- * Default directories to exclude
- */
 const DEFAULT_EXCLUDES = [
   'node_modules',
   'dist',
@@ -23,9 +15,6 @@ const DEFAULT_EXCLUDES = [
   'out',
 ];
 
-/**
- * Default file patterns to exclude
- */
 const DEFAULT_EXCLUDE_PATTERNS = [
   '*.test.js',
   '*.spec.js',
@@ -44,19 +33,10 @@ let config = {
   gitignorePatterns: [],
 };
 
-/**
- * Get current filter configuration
- * @returns {Object}
- */
 export function getFilters() {
   return { ...config };
 }
 
-/**
- * Update filter configuration
- * @param {Object} updates
- * @returns {Object}
- */
 export function setFilters(updates) {
   if (updates.excludeDirs !== undefined) {
     config.excludeDirs = updates.excludeDirs;
@@ -73,30 +53,16 @@ export function setFilters(updates) {
   return getFilters();
 }
 
-/**
- * Add directories to exclude list
- * @param {string[]} dirs
- * @returns {Object}
- */
 export function addExcludes(dirs) {
   config.excludeDirs = [...new Set([...config.excludeDirs, ...dirs])];
   return getFilters();
 }
 
-/**
- * Remove directories from exclude list
- * @param {string[]} dirs
- * @returns {Object}
- */
 export function removeExcludes(dirs) {
   config.excludeDirs = config.excludeDirs.filter(d => !dirs.includes(d));
   return getFilters();
 }
 
-/**
- * Reset filters to defaults
- * @returns {Object}
- */
 export function resetFilters() {
   config = {
     excludeDirs: [...DEFAULT_EXCLUDES],
@@ -108,11 +74,6 @@ export function resetFilters() {
   return getFilters();
 }
 
-/**
- * Parse .gitignore file
- * @param {string} rootDir
- * @returns {string[]}
- */
 export function parseGitignore(rootDir) {
   const gitignorePath = join(rootDir, '.gitignore');
 
@@ -135,12 +96,6 @@ export function parseGitignore(rootDir) {
   }
 }
 
-/**
- * Check if a directory should be excluded
- * @param {string} dirName - Directory name (not path)
- * @param {string} relativePath - Relative path from root
- * @returns {boolean}
- */
 export function shouldExcludeDir(dirName, relativePath = '') {
   // Check hidden directories
   if (!config.includeHidden && dirName.startsWith('.')) {
@@ -164,12 +119,6 @@ export function shouldExcludeDir(dirName, relativePath = '') {
   return false;
 }
 
-/**
- * Check if a file should be excluded
- * @param {string} fileName
- * @param {string} relativePath
- * @returns {boolean}
- */
 export function shouldExcludeFile(fileName, relativePath = '') {
   // Check exclude patterns
   for (const pattern of config.excludePatterns) {
@@ -190,12 +139,6 @@ export function shouldExcludeFile(fileName, relativePath = '') {
   return false;
 }
 
-/**
- * Match simple wildcard pattern (*.js, *.test.js)
- * @param {string} pattern
- * @param {string} str
- * @returns {boolean}
- */
 function matchWildcard(pattern, str) {
   const regex = pattern
     .replace(/\./g, '\\.')
@@ -203,13 +146,6 @@ function matchWildcard(pattern, str) {
   return new RegExp(`^${regex}$`).test(str);
 }
 
-/**
- * Match gitignore pattern
- * @param {string} pattern
- * @param {string} name
- * @param {string} relativePath
- * @returns {boolean}
- */
 function matchGitignorePattern(pattern, name, relativePath) {
   // Simple matching: exact name or wildcard
   if (pattern === name) return true;

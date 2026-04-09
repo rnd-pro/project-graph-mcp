@@ -1,15 +1,3 @@
-/**
- * Strip strings, template literals, and comments from source code.
- * Preserves line structure (newlines are kept) and character positions.
- * @param {string} code
- * @param {Object} [options]
- * @param {boolean} [options.singleQuote=true] - Handle single-quoted strings
- * @param {boolean} [options.backtick=true] - Handle backtick strings/templates
- * @param {boolean} [options.hashComment=false] - Handle # comments (Python)
- * @param {boolean} [options.tripleQuote=false] - Handle ''' and """ (Python)
- * @param {boolean} [options.templateInterpolation=true] - Handle ${} in backticks
- * @returns {string}
- */
 export function stripStringsAndComments(code, options = {}) {
   const {
     singleQuote = true,

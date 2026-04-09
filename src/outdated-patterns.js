@@ -1,17 +1,9 @@
-/**
- * Outdated Patterns Detector
- * Finds legacy code patterns and redundant npm dependencies
- */
-
 import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
 import { join, relative, resolve } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import * as walk from '../vendor/walk.mjs';
 import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.js';
 
-/**
- * Redundant npm packages that are now built into Node.js 18+
- */
 const REDUNDANT_DEPS = {
   'node-fetch': { replacement: 'fetch()', since: 'Node 18' },
   'cross-fetch': { replacement: 'fetch()', since: 'Node 18' },
@@ -30,9 +22,6 @@ const REDUNDANT_DEPS = {
   'glob': { replacement: 'fs.glob()', since: 'Node 22' },
 };
 
-/**
- * Legacy code patterns to detect
- */
 const CODE_PATTERNS = [
   {
     name: 'var-usage',
@@ -101,29 +90,6 @@ const CODE_PATTERNS = [
   },
 ];
 
-/**
- * @typedef {Object} PatternMatch
- * @property {string} pattern
- * @property {string} description
- * @property {string} file
- * @property {number} line
- * @property {string} severity
- * @property {string} replacement
- */
-
-/**
- * @typedef {Object} RedundantDep
- * @property {string} name
- * @property {string} replacement
- * @property {string} since
- */
-
-/**
- * Find all JS files
- * @param {string} dir 
- * @param {string} rootDir 
- * @returns {string[]}
- */
 function findJSFiles(dir, rootDir = dir) {
   if (dir === rootDir) parseGitignore(rootDir);
   const files = [];
@@ -149,12 +115,6 @@ function findJSFiles(dir, rootDir = dir) {
   return files;
 }
 
-/**
- * Analyze file for outdated patterns
- * @param {string} filePath 
- * @param {string} rootDir - Root directory for relative path calculation
- * @returns {PatternMatch[]}
- */
 function analyzeFilePatterns(filePath, rootDir) {
   const code = readFileSync(filePath, 'utf-8');
   const relPath = relative(rootDir, filePath);
@@ -211,11 +171,6 @@ function analyzeFilePatterns(filePath, rootDir) {
   return matches;
 }
 
-/**
- * Analyze package.json for redundant dependencies
- * @param {string} dir 
- * @returns {RedundantDep[]}
- */
 function analyzePackageJson(dir) {
   const pkgPath = join(dir, 'package.json');
   const redundant = [];
@@ -242,14 +197,6 @@ function analyzePackageJson(dir) {
   return redundant;
 }
 
-/**
- * Get outdated patterns analysis
- * @param {string} dir 
- * @param {Object} [options]
- * @param {boolean} [options.codeOnly=false] - Only check code patterns
- * @param {boolean} [options.depsOnly=false] - Only check dependencies
- * @returns {Promise<{codePatterns: PatternMatch[], redundantDeps: RedundantDep[], stats: Object}>}
- */
 export async function getOutdatedPatterns(dir, options = {}) {
   const codeOnly = options.codeOnly || false;
   const depsOnly = options.depsOnly || false;

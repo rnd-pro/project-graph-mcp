@@ -1,31 +1,9 @@
-/**
- * Large Files Analyzer
- * Identifies files that may need splitting
- */
-
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, relative, resolve } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import * as walk from '../vendor/walk.mjs';
 import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.js';
 
-/**
- * @typedef {Object} LargeFileItem
- * @property {string} file
- * @property {number} lines
- * @property {number} functions
- * @property {number} classes
- * @property {number} exports
- * @property {string} rating - 'ok' | 'warning' | 'critical'
- * @property {string[]} reasons
- */
-
-/**
- * Find all JS files
- * @param {string} dir 
- * @param {string} rootDir 
- * @returns {string[]}
- */
 function findJSFiles(dir, rootDir = dir) {
   if (dir === rootDir) parseGitignore(rootDir);
   const files = [];
@@ -51,12 +29,6 @@ function findJSFiles(dir, rootDir = dir) {
   return files;
 }
 
-/**
- * Analyze a single file
- * @param {string} filePath 
- * @param {string} rootDir - Root directory for relative path calculation
- * @returns {LargeFileItem}
- */
 function analyzeFile(filePath, rootDir) {
   const code = readFileSync(filePath, 'utf-8');
   const relPath = relative(rootDir, filePath);
@@ -126,13 +98,6 @@ function analyzeFile(filePath, rootDir) {
   return { file: relPath, lines, functions, classes, exports, rating, reasons };
 }
 
-/**
- * Get large files analysis
- * @param {string} dir 
- * @param {Object} [options]
- * @param {boolean} [options.onlyProblematic=false] - Only show warning/critical
- * @returns {Promise<{total: number, stats: Object, items: LargeFileItem[]}>}
- */
 export async function getLargeFiles(dir, options = {}) {
   const onlyProblematic = options.onlyProblematic || false;
   const resolvedDir = resolve(dir);

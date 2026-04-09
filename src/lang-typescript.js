@@ -1,18 +1,5 @@
 import { stripStringsAndComments } from './lang-utils.js';
 
-/**
- * TypeScript/TSX regex-based parser.
- * Extracts structural information (classes, functions, imports, exports, calls)
- * directly from TypeScript code without relying on Acorn.
- *
- * Strategy: Instead of stripping TS syntax to feed Acorn (which causes
- * catastrophic backtracking in regex), parse structural elements directly
- * — same approach as lang-python.js and lang-go.js.
- *
- * @param {string} code - TypeScript source code
- * @param {string} filename - File path for the result
- * @returns {ParseResult}
- */
 export function parseTypeScript(code, filename) {
   const result = {
     file: filename,
@@ -175,11 +162,6 @@ export function parseTypeScript(code, filename) {
   return result;
 }
 
-/**
- * Extract parameter names from a function signature line.
- * @param {string} line
- * @returns {string[]}
- */
 function extractParams(line) {
   const match = line.match(/\(([^)]*)\)/);
   if (!match) return [];

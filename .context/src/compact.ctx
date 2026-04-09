@@ -1,8 +1,8 @@
 --- src/compact.js ---
-@sig 550d15bd
-compactFile(filePath:string)→Promise<{original: number, compacted: number→readFileSync,source.trim,minify,writeFileSync|minify single JS file via Terser (mangle:false)
-beautifyFile(filePath:string)→Promise<{original: number, beautified: number→readFileSync,source.trim,minify,writeFileSync|format single JS file with proper indentation
-export compactProject(dir:string,options:Object=)→Promise<{files: number, originalBytes: number, compactedBytes: number, savings: string→walkJSFiles,relative,readFileSync,compactFile,minify,processed.push|compact all JS files in dir, per-file error handling, ret stats+savings%
-export expandProject(dir:string,options:Object=)→Promise<{files: number, originalBytes: number, beautifiedBytes: number→walkJSFiles,relative,readFileSync,beautifyFile,minify,processed.push|beautify all JS files in dir, inverse of compactProject
+@sig 4cc8ddab
+compactFile(filePath)→readFileSync,source.trim,minify,writeFileSync|minify single JS file via Terser (mangle:false)
+beautifyFile(filePath)→readFileSync,source.trim,minify,writeFileSync|format single JS file with proper indentation
+export compactProject(dir,options=)→walkJSFiles,relative,readFileSync,compactFile,minify,processed.push|compact all JS files in dir, per-file error handling, ret stats+savings%
+export expandProject(dir,options=)→walkJSFiles,relative,readFileSync,beautifyFile,minify,processed.push|beautify all JS files in dir, inverse of compactProject
 PATTERNS: Terser mangle:false preserves all names|per-file try/catch collects errors array|dryRun mode estimates without writing|skips node_modules,vendor,.git,.context
 EDGE_CASES: empty files return 0/0|syntax errors collected in errors[] not thrown|files with only comments become empty (correct behavior)

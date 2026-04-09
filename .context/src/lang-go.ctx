@@ -1,11 +1,11 @@
 --- src/lang-go.js ---
-@sig 36270dde
+@sig 7ce14b2b
 @enrich: Replace each {DESCRIBE} below. Read src/lang-go.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-export parseGo(code:string,filename:string)→ParseResult→extractImports,stripStringsAndComments,structRegex.exec,getBody,code.substring,body.split|{DESCRIBE}
+export parseGo(code,filename)→extractImports,stripStringsAndComments,structRegex.exec,getBody,code.substring,body.split|{DESCRIBE}
 extractImports(text)→text.replace,importBlockRegex.exec,block.split,line.match,imports.includes,imports.push|{DESCRIBE}
-getBody(code:string,startIndex:number)→string→code.substring|{DESCRIBE}
-extractCalls(body:string,packageNames:Set<string>)→string[]→callRegex.exec,keywords.includes,callName.includes,callName.split,packageNames.has,calls.includes|{DESCRIBE}
+getBody(code,startIndex)→code.substring|{DESCRIBE}
+extractCalls(body,packageNames)→callRegex.exec,keywords.includes,callName.includes,callName.split,packageNames.has,calls.includes|{DESCRIBE}
 PATTERNS: {DESCRIBE}
 EDGE_CASES: {DESCRIBE}

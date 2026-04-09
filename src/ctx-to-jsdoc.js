@@ -1,13 +1,3 @@
-/**
- * CTX-to-JSDoc Generator
- * 
- * Generates JSDoc blocks from .ctx contract files and injects them
- * into source code. Also supports stripping JSDoc from source.
- * 
- * This is a BUILD STEP for IDE IntelliSense support when working
- * in Compact Code Mode (where documentation lives in .ctx files only).
- */
-
 import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from 'fs';
 import { join, extname, relative } from 'path';
 import { parse } from '../vendor/acorn.mjs';
@@ -16,11 +6,6 @@ import { simple as walk } from '../vendor/walk.mjs';
 const SUPPORTED = new Set(['.js', '.mjs']);
 const SKIP_DIRS = new Set(['node_modules', '.git', 'vendor', '.context', 'dev-docs', '.agent', '.agents']);
 
-/**
- * Parse a .ctx file into structured signature data
- * @param {string} ctxContent - Content of .ctx file
- * @returns {{ file: string|null, functions: Array<{name: string, params: string, exported: boolean, description: string}> }}
- */
 export function parseCtxFile(ctxContent) {
   const lines = ctxContent.split('\n');
   const result = { file: null, functions: [] };
@@ -72,11 +57,6 @@ export function parseCtxFile(ctxContent) {
   return result;
 }
 
-/**
- * Build a JSDoc block from ctx signature data
- * @param {{ name: string, params: string, exported: boolean, description: string }} funcInfo
- * @returns {string} JSDoc block
- */
 function buildJSDocBlock(funcInfo) {
   const lines = ['/**'];
 
@@ -114,12 +94,6 @@ function buildJSDocBlock(funcInfo) {
   return lines.join('\n');
 }
 
-/**
- * Find .ctx file for a given source file
- * @param {string} sourceFile - Relative path like 'src/workspace.js'
- * @param {string} projectRoot
- * @returns {string|null} Path to .ctx file or null
- */
 function findCtxFile(sourceFile, projectRoot) {
   const base = sourceFile.replace(/\.[^.]+$/, '.ctx');
 
@@ -134,13 +108,6 @@ function findCtxFile(sourceFile, projectRoot) {
   return null;
 }
 
-/**
- * Inject JSDoc blocks from .ctx files into source code
- * @param {string} dir - Directory to process
- * @param {Object} [options]
- * @param {boolean} [options.dryRun=false] - Preview without writing
- * @returns {{ files: number, injected: number, skipped: number, details: Array }}
- */
 export function injectJSDoc(dir, options = {}) {
   const { dryRun = false } = options;
   const projectRoot = dir;
@@ -244,13 +211,6 @@ export function injectJSDoc(dir, options = {}) {
   };
 }
 
-/**
- * Strip all JSDoc blocks from source files
- * @param {string} dir - Directory to process
- * @param {Object} [options]
- * @param {boolean} [options.dryRun=false]
- * @returns {{ files: number, stripped: number, savedBytes: number }}
- */
 export function stripJSDoc(dir, options = {}) {
   const { dryRun = false } = options;
   const files = walkJSFiles(dir);
@@ -315,11 +275,6 @@ export function stripJSDoc(dir, options = {}) {
   };
 }
 
-/**
- * Walk directory for JS files
- * @param {string} dir
- * @returns {string[]}
- */
 function walkJSFiles(dir) {
   const results = [];
   try {
@@ -339,14 +294,6 @@ function walkJSFiles(dir) {
   return results;
 }
 
-/**
- * Split parameter string at top-level commas only.
- * Respects: {}, <>, () balanced delimiters — won't split inside compound types.
- * Example: "a:string,b:{x:number, y:string}" → ["a:string", "b:{x:number, y:string}"]
- *
- * @param {string} paramStr
- * @returns {string[]}
- */
 function splitTopLevelParams(paramStr) {
   const params = [];
   let depth = 0;
@@ -374,15 +321,6 @@ function splitTopLevelParams(paramStr) {
 // CTX Contract Validator
 // ============================
 
-/**
- * Validate .ctx contracts against actual AST of source files.
- * Zero-dependency alternative to tsc — checks contract consistency.
- *
- * @param {string} dir - Project root directory
- * @param {Object} [options]
- * @param {boolean} [options.strict=false] - Also warn about missing .ctx entries
- * @returns {{ files: number, violations: Array<{file: string, severity: string, message: string}>, summary: {errors: number, warnings: number} }}
- */
 export function validateCtxContracts(dir, options = {}) {
   const strict = options.strict || false;
   const jsFiles = walkJSFiles(dir);

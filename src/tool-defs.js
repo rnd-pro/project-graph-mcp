@@ -1,7 +1,3 @@
-/**
- * MCP Tool Definitions
- */
-
 export const TOOLS = [
   // Graph Tools
   {

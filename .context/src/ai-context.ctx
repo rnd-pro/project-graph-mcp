@@ -1,8 +1,8 @@
 --- src/ai-context.js ---
-@sig 00346ad9
+@sig 4de57d15
 @enrich: Replace each {DESCRIBE} below. Read src/ai-context.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-export getAiContext(dirPath:string,options:Object=)→Promise<{skeleton?: Object, docs?: string, files?: Object, totalTokens: number, vsOriginal: number, savings: string→resolve,getSkeleton,estimateTokens,getGraph,getProjectDocs,findJSFiles|{DESCRIBE}
+export getAiContext(dirPath,options=)→resolve,getSkeleton,estimateTokens,getGraph,getProjectDocs,findJSFiles|{DESCRIBE}
 PATTERNS: {DESCRIBE}
 EDGE_CASES: {DESCRIBE}

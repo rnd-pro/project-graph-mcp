@@ -1,11 +1,5 @@
 import { stripStringsAndComments } from './lang-utils.js';
 
-/**
- * Parse Python file using regex-based structural extraction.
- * @param {string} code - Python source code
- * @param {string} filename - File path
- * @returns {ParseResult}
- */
 export function parsePython(code = '', filename = '') {
   const result = {
     file: filename,

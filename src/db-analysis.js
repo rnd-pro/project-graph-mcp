@@ -1,21 +1,6 @@
-/**
- * Database Analysis Tools
- *
- * Provides MCP tools for understanding code-database interactions:
- * - getDBSchema: Extract table/column structure from .sql files
- * - getTableUsage: Map functions to the tables they read/write
- * - getDBDeadTables: Find schema-defined tables/columns not referenced in code
- */
-
 import { parseProject } from './parser.js';
 import { buildGraph } from './graph-builder.js';
 
-/**
- * Get database schema from SQL files in the project.
- * Scans for .sql files and extracts CREATE TABLE definitions.
- * @param {string} dir - Directory to scan
- * @returns {Promise<Object>}
- */
 export async function getDBSchema(dir) {
   const parsed = await parseProject(dir);
   const tables = parsed.tables || [];
@@ -32,13 +17,6 @@ export async function getDBSchema(dir) {
   };
 }
 
-/**
- * Show which functions read/write database tables.
- * Traces SQL queries in code to table references.
- * @param {string} dir - Directory to scan
- * @param {string} [tableName] - Optional: filter to specific table
- * @returns {Promise<Object>}
- */
 export async function getTableUsage(dir, tableName) {
   const parsed = await parseProject(dir);
   const graph = buildGraph(parsed);
@@ -93,11 +71,6 @@ export async function getTableUsage(dir, tableName) {
   };
 }
 
-/**
- * Find tables and columns defined in schema but never referenced in code.
- * @param {string} dir - Directory to scan
- * @returns {Promise<Object>}
- */
 export async function getDBDeadTables(dir) {
   const parsed = await parseProject(dir);
   const graph = buildGraph(parsed);
@@ -152,12 +125,6 @@ export async function getDBDeadTables(dir) {
   };
 }
 
-/**
- * Collect column names referenced in code SQL strings (best-effort).
- * Scans all string literals for column-like identifiers after SQL keywords.
- * @param {Object} parsed - ParseResult
- * @returns {Set<string>}
- */
 function collectReferencedColumns(parsed) {
   const columns = new Set();
 

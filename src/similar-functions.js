@@ -1,40 +1,9 @@
-/**
- * Similar Functions Detector
- * Finds functionally similar functions across the codebase
- */
-
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, relative, resolve } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import * as walk from '../vendor/walk.mjs';
 import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.js';
 
-/**
- * @typedef {Object} FunctionSignature
- * @property {string} name
- * @property {string} file
- * @property {number} line
- * @property {number} paramCount
- * @property {string[]} paramNames
- * @property {boolean} async
- * @property {string} bodyHash - Structural hash of function body
- * @property {string[]} calls - Functions called inside
- */
-
-/**
- * @typedef {Object} SimilarPair
- * @property {FunctionSignature} a
- * @property {FunctionSignature} b
- * @property {number} similarity - 0-100
- * @property {string[]} reasons
- */
-
-/**
- * Find all JS files
- * @param {string} dir 
- * @param {string} rootDir 
- * @returns {string[]}
- */
 function findJSFiles(dir, rootDir = dir) {
   if (dir === rootDir) parseGitignore(rootDir);
   const files = [];
@@ -60,12 +29,6 @@ function findJSFiles(dir, rootDir = dir) {
   return files;
 }
 
-/**
- * Extract function signatures from a file
- * @param {string} filePath 
- * @param {string} rootDir - Root directory for relative path calculation
- * @returns {FunctionSignature[]}
- */
 function extractSignatures(filePath, rootDir) {
   const code = readFileSync(filePath, 'utf-8');
   const relPath = relative(rootDir, filePath);
@@ -95,13 +58,6 @@ function extractSignatures(filePath, rootDir) {
   return signatures;
 }
 
-/**
- * Build signature from function node
- * @param {Object} node 
- * @param {string} name 
- * @param {string} file 
- * @returns {FunctionSignature}
- */
 function buildSignature(node, name, file) {
   const paramNames = node.params.map(p => extractParamName(p));
   const calls = [];
@@ -132,11 +88,6 @@ function buildSignature(node, name, file) {
   };
 }
 
-/**
- * Extract param name
- * @param {Object} param 
- * @returns {string}
- */
 function extractParamName(param) {
   if (param.type === 'Identifier') return param.name;
   if (param.type === 'AssignmentPattern' && param.left.type === 'Identifier') return param.left.name;
@@ -144,11 +95,6 @@ function extractParamName(param) {
   return 'param';
 }
 
-/**
- * Create structural hash of function body
- * @param {Object} body 
- * @returns {string}
- */
 function hashBodyStructure(body) {
   const structure = [];
 
@@ -168,12 +114,6 @@ function hashBodyStructure(body) {
   return structure.join('|');
 }
 
-/**
- * Calculate similarity between two functions
- * @param {FunctionSignature} a 
- * @param {FunctionSignature} b 
- * @returns {{similarity: number, reasons: string[]}}
- */
 function calculateSimilarity(a, b) {
   const reasons = [];
   let score = 0;
@@ -230,13 +170,6 @@ function calculateSimilarity(a, b) {
   return { similarity, reasons };
 }
 
-/**
- * Get similar functions in directory
- * @param {string} dir 
- * @param {Object} [options]
- * @param {number} [options.threshold=60] - Minimum similarity percentage
- * @returns {Promise<{total: number, pairs: SimilarPair[]}>}
- */
 export async function getSimilarFunctions(dir, options = {}) {
   const threshold = options.threshold || 60;
   const resolvedDir = resolve(dir);

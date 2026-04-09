@@ -1,11 +1,5 @@
 import { stripStringsAndComments } from './lang-utils.js';
 
-/**
- * Parse Go file using regex-based structural extraction.
- * @param {string} code - Go source code
- * @param {string} filename - File path
- * @returns {ParseResult}
- */
 export function parseGo(code, filename) {
   const result = {
     file: filename,
@@ -230,12 +224,6 @@ function extractImports(text) {
   return { imports, packageNames };
 }
 
-/**
- * Extract block body correctly handling nested braces.
- * @param {string} code
- * @param {number} startIndex
- * @returns {string}
- */
 function getBody(code, startIndex) {
   let braces = 1;
   let end = startIndex;
@@ -247,12 +235,6 @@ function getBody(code, startIndex) {
   return code.substring(startIndex, end - 1);
 }
 
-/**
- * Extract method calls from a block of code, filtering out Go keywords.
- * @param {string} body
- * @param {Set<string>} packageNames
- * @returns {string[]}
- */
 function extractCalls(body, packageNames) {
   const calls = [];
   const callRegex = /([a-zA-Z_]\w*(?:\.[a-zA-Z_]\w*)?)\s*\(/g;

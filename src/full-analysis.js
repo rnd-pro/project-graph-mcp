@@ -1,11 +1,3 @@
-/**
- * Full Analysis - Comprehensive Code Health Report
- * Runs all analysis tools and generates a health score
- * 
- * Uses incremental caching for per-file metrics (complexity, undocumented, jsdocConsistency).
- * Cross-file metrics (dead code, similarity) always run dynamically.
- */
-
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, relative, resolve } from 'path';
 import { getDeadCode } from './dead-code.js';
@@ -20,22 +12,6 @@ import { readCache, writeCache, computeContentHash, isCacheValid } from './analy
 import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.js';
 import { getWorkspaceRoot } from './workspace.js';
 
-/**
- * @typedef {Object} AnalysisResult
- * @property {Object} deadCode
- * @property {Object} undocumented
- * @property {Object} similar
- * @property {Object} complexity
- * @property {Object} largeFiles
- * @property {Object} outdated
- * @property {Object} overall
- */
-
-/**
- * Calculate health score from analysis results
- * @param {Object} results 
- * @returns {{score: number, rating: string, topIssues: string[]}}
- */
 function calculateHealthScore(results) {
   let score = 100;
   const topIssues = [];
@@ -112,12 +88,6 @@ function calculateHealthScore(results) {
   return { score, rating, topIssues: topIssues.slice(0, 5) };
 }
 
-/**
- * Find all JS files in directory
- * @param {string} dir
- * @param {string} rootDir
- * @returns {string[]}
- */
 function findJSFiles(dir, rootDir = dir) {
   if (dir === rootDir) parseGitignore(rootDir);
   const files = [];
@@ -140,13 +110,6 @@ function findJSFiles(dir, rootDir = dir) {
   return files;
 }
 
-/**
- * Run cacheable per-file analyses with cache support
- * Returns aggregated complexity, undocumented, and jsdoc results
- * @param {string} dir
- * @param {string} contextDir
- * @returns {{ complexity: Object[], undocumented: Object[], jsdocIssues: Object[], cacheStats: { hits: number, misses: number } }}
- */
 function runCacheableAnalyses(dir, contextDir) {
   const resolvedDir = resolve(dir);
   const wsRoot = getWorkspaceRoot();
@@ -209,12 +172,6 @@ function runCacheableAnalyses(dir, contextDir) {
   };
 }
 
-/**
- * Aggregate complexity items into summary format
- * @param {Object[]} items
- * @param {number} minComplexity
- * @returns {Object}
- */
 function aggregateComplexity(items, minComplexity = 5) {
   let filtered = items.filter(i => i.complexity >= minComplexity);
   filtered.sort((a, b) => b.complexity - a.complexity);
@@ -232,11 +189,6 @@ function aggregateComplexity(items, minComplexity = 5) {
   return { total: filtered.length, stats, items: filtered.slice(0, 30) };
 }
 
-/**
- * Aggregate undocumented items into summary format
- * @param {Object[]} items
- * @returns {Object}
- */
 function aggregateUndocumented(items) {
   const byType = {
     class: items.filter(i => i.type === 'class').length,
@@ -246,11 +198,6 @@ function aggregateUndocumented(items) {
   return { total: items.length, byType, items: items.slice(0, 20) };
 }
 
-/**
- * Aggregate JSDoc issues into summary format
- * @param {Object[]} issues
- * @returns {{ issues: Object[], summary: Object }}
- */
 function aggregateJSDoc(issues) {
   const errors = issues.filter(i => i.severity === 'error').length;
   const warnings = issues.filter(i => i.severity === 'warning').length;
@@ -261,14 +208,6 @@ function aggregateJSDoc(issues) {
   return { issues, summary: { total: issues.length, errors, warnings, byFile } };
 }
 
-/**
- * Run full analysis on directory
- * Uses incremental cache for per-file metrics; cross-file metrics always recompute.
- * @param {string} dir 
- * @param {Object} [options]
- * @param {boolean} [options.includeItems=false] - Include individual items
- * @returns {Promise<AnalysisResult>}
- */
 export async function getFullAnalysis(dir, options = {}) {
   const includeItems = options.includeItems || false;
   const resolvedDir = resolve(dir);
@@ -357,11 +296,6 @@ export async function getFullAnalysis(dir, options = {}) {
   return result;
 }
 
-/**
- * Quick health check — runs only cached per-file metrics, skips cross-file.
- * @param {string} dir - Path to scan
- * @returns {{healthScore: number, complexity: number, undocumented: number, jsdocIssues: number}}
- */
 export function getAnalysisSummaryOnly(dir) {
   const contextDir = join(getWorkspaceRoot(), '.context');
   const cached = runCacheableAnalyses(dir, contextDir);
@@ -391,14 +325,6 @@ export function getAnalysisSummaryOnly(dir) {
   };
 }
 
-/**
- * Streaming analysis — yields results as each sub-analysis completes.
- * Useful for large codebases where waiting for all analyses is too slow.
- * @param {string} dir - Path to scan
- * @param {Object} [options]
- * @param {boolean} [options.includeItems=false]
- * @returns {AsyncGenerator<{type: string, data: Object}>}
- */
 export async function* getFullAnalysisStreaming(dir, options = {}) {
   const includeItems = options.includeItems || false;
   const contextDir = join(getWorkspaceRoot(), '.context');

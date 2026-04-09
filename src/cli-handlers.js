@@ -1,8 +1,3 @@
-/**
- * CLI Command Handlers Registry
- * Extracted from cli.js to reduce cyclomatic complexity
- */
-
 import { getSkeleton, getFocusZone, expand, deps, usages } from './tools.js';
 import { getPendingTests, getTestSummary } from './test-annotations.js';
 import { getFilters } from './filters.js';
@@ -26,31 +21,16 @@ import { compactProject, expandProject } from './compact.js';
 import { injectJSDoc, stripJSDoc, validateCtxContracts } from './ctx-to-jsdoc.js';
 import { getConfig, setConfig, getModeDescription, getModeWorkflow } from './mode-config.js';
 
-/**
- * Parse named argument from args array
- * @param {string[]} args 
- * @param {string} name 
- * @returns {string|undefined}
- */
 function getArg(args, name) {
   const arg = args.find(a => a.startsWith(`--${name}=`));
   return arg ? arg.split('=')[1] : undefined;
 }
 
-/**
- * Get path argument (first non-flag arg), resolved against workspace root
- * @param {string[]} args 
- * @returns {string}
- */
 function getPath(args) {
   const raw = args.find(a => !a.startsWith('--')) || '.';
   return resolvePath(raw);
 }
 
-/**
- * CLI command handlers registry
- * Each handler returns a result or throws an error
- */
 export const CLI_HANDLERS = {
   skeleton: {
     requiresArg: true,

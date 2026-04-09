@@ -1,39 +1,3 @@
-/**
- * Graph Builder - Creates minified project graph from parsed data
- */
-
-/**
- * @typedef {Object} GraphNode
- * @property {string} t - type (class/func)
- * @property {string} [x] - extends
- * @property {string[]} [m] - methods
- * @property {string[]} [$] - properties (init$)
- * @property {string[]} [i] - imports
- * @property {string[]} [→] - calls (outgoing)
- * @property {string[]} [←] - usedBy (incoming)
- * @property {string} [f] - source file path
- * @property {boolean} [e] - exported flag (functions)
- */
-
-/**
- * @typedef {Object} Graph
- * @property {number} v - version
- * @property {Object<string, string>} legend - minified name → full name
- * @property {Object<string, string>} reverseLegend - full name → minified
- * @property {Object} stats - { files, classes, functions, tables }
- * @property {Object<string, GraphNode>} nodes
- * @property {Array<[string, string, string]>} edges - [from, type, to] where type is →, R→, or W→
- * @property {string[]} orphans
- * @property {Object<string, string[]>} duplicates
- * @property {string[]} files - list of parsed file paths
- */
-
-/**
- * Create minified legend from names
- * Strategy: Use camelCase initials + suffix if collision
- * @param {string[]} names 
- * @returns {Object<string, string>}
- */
 export function minifyLegend(names) {
   const legend = {};
   const used = new Set();
@@ -54,12 +18,6 @@ export function minifyLegend(names) {
   return legend;
 }
 
-/**
- * Create short name from full name
- * SymNode → SN, togglePin → tP, autoArrange → aA
- * @param {string} name 
- * @returns {string}
- */
 function createShortName(name) {
   // For PascalCase: extract uppercase letters
   const upperOnly = name.replace(/[a-z]/g, '');
@@ -77,11 +35,6 @@ function createShortName(name) {
   return name.slice(0, 2);
 }
 
-/**
- * Build graph from parsed project data
- * @param {import('./parser.js').ParseResult} parsed 
- * @returns {Graph}
- */
 export function buildGraph(parsed) {
   // Collect all names for legend
   const classes = parsed.classes || [];
@@ -217,11 +170,6 @@ export function buildGraph(parsed) {
   return graph;
 }
 
-/**
- * Create compact skeleton (minimal tokens)
- * @param {Graph} graph 
- * @returns {Object}
- */
 export function createSkeleton(graph) {
   const legend = {};
   const nodes = {};

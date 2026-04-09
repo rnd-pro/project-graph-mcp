@@ -1,8 +1,3 @@
-/**
- * Custom Rules System
- * Configurable code analysis rules with JSON storage
- */
-
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'fs';
 import { join, relative, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
@@ -11,13 +6,8 @@ import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.j
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const RULES_DIR = join(__dirname, '..', 'rules');
 
-/** @type {string[]} Patterns from .graphignore */
 let graphignorePatterns = [];
 
-/**
- * Parse .graphignore file - searches current and parent directories
- * @param {string} startDir 
- */
 function parseGraphignore(startDir) {
   graphignorePatterns = [];
 
@@ -39,11 +29,6 @@ function parseGraphignore(startDir) {
   }
 }
 
-/**
- * Check if file matches .graphignore patterns
- * @param {string} relativePath 
- * @returns {boolean}
- */
 function isGraphignored(relativePath) {
   const basename = relativePath.split('/').pop();
 
@@ -63,42 +48,6 @@ function isGraphignored(relativePath) {
   return false;
 }
 
-/**
- * @typedef {Object} Rule
- * @property {string} id
- * @property {string} name
- * @property {string} description
- * @property {string} pattern - String or regex pattern to search
- * @property {string} patternType - 'string' | 'regex'
- * @property {string} replacement - Suggested fix
- * @property {string} severity - 'error' | 'warning' | 'info'
- * @property {string} filePattern - Glob pattern for files
- * @property {string[]} [exclude] - Patterns to exclude
- * @property {string} [contextRequired] - HTML tag context required (e.g. '<template>')
- */
-
-/**
- * @typedef {Object} RuleSet
- * @property {string} name
- * @property {string} description
- * @property {Rule[]} rules
- */
-
-/**
- * @typedef {Object} Violation
- * @property {string} ruleId
- * @property {string} ruleName
- * @property {string} severity
- * @property {string} file
- * @property {number} line
- * @property {string} match
- * @property {string} replacement
- */
-
-/**
- * Load rule sets from rules directory
- * @returns {Object<string, RuleSet>}
- */
 function loadRuleSets() {
   const ruleSets = {};
 
@@ -116,22 +65,11 @@ function loadRuleSets() {
   return ruleSets;
 }
 
-/**
- * Save rule set to file
- * @param {RuleSet} ruleSet 
- */
 function saveRuleSet(ruleSet) {
   const filePath = join(RULES_DIR, `${ruleSet.name}.json`);
   writeFileSync(filePath, JSON.stringify(ruleSet, null, 2));
 }
 
-/**
- * Find all files matching pattern
- * @param {string} dir 
- * @param {string} filePattern 
- * @param {string} rootDir 
- * @returns {string[]}
- */
 function findFiles(dir, filePattern, rootDir = dir) {
   if (dir === rootDir) {
     parseGitignore(rootDir);
@@ -161,12 +99,6 @@ function findFiles(dir, filePattern, rootDir = dir) {
   return files;
 }
 
-/**
- * Check if file matches exclude patterns
- * @param {string} filePath 
- * @param {string[]} excludePatterns 
- * @returns {boolean}
- */
 function isExcluded(filePath, excludePatterns = []) {
   for (const pattern of excludePatterns) {
     const ext = pattern.replace('*', '');
@@ -175,12 +107,6 @@ function isExcluded(filePath, excludePatterns = []) {
   return false;
 }
 
-/**
- * Check if a position in a line is inside a string or comment
- * @param {string} line - The line of code
- * @param {number} matchIndex - Position of the match
- * @returns {boolean}
- */
 function isInStringOrComment(line, matchIndex) {
   // Check if in single-line comment
   const commentIndex = line.indexOf('//');
@@ -208,13 +134,6 @@ function isInStringOrComment(line, matchIndex) {
   return inString;
 }
 
-/**
- * Check if a line index is within an HTML context block (e.g. <template>...</template>)
- * @param {string[]} lines - All file lines
- * @param {number} lineIndex - Current line index
- * @param {string} contextTag - Tag to check (e.g. '<template>')
- * @returns {boolean}
- */
 function isWithinContext(lines, lineIndex, contextTag) {
   const openTag = contextTag;
   const tagName = openTag.replace(/[<>]/g, '');
@@ -244,13 +163,6 @@ function isWithinContext(lines, lineIndex, contextTag) {
   return depth > 0;
 }
 
-/**
- * Check file against rule
- * @param {string} filePath 
- * @param {Rule} rule 
- * @param {string} rootDir - Root directory for relative path calculation
- * @returns {Violation[]}
- */
 function checkFileAgainstRule(filePath, rule, rootDir) {
   if (isExcluded(filePath, rule.exclude)) return [];
 
@@ -307,10 +219,6 @@ function checkFileAgainstRule(filePath, rule, rootDir) {
   return violations;
 }
 
-/**
- * Get all available custom rules
- * @returns {Promise<{ruleSets: Object, totalRules: number}>}
- */
 export async function getCustomRules() {
   const ruleSets = loadRuleSets();
   let totalRules = 0;
@@ -332,12 +240,6 @@ export async function getCustomRules() {
   return { ruleSets: summary, totalRules };
 }
 
-/**
- * Add or update a custom rule
- * @param {string} ruleSetName 
- * @param {Rule} rule 
- * @returns {Promise<{success: boolean, message: string}>}
- */
 export async function setCustomRule(ruleSetName, rule) {
   const ruleSets = loadRuleSets();
 
@@ -369,12 +271,6 @@ export async function setCustomRule(ruleSetName, rule) {
   };
 }
 
-/**
- * Delete a custom rule
- * @param {string} ruleSetName 
- * @param {string} ruleId 
- * @returns {Promise<{success: boolean, message: string}>}
- */
 export async function deleteCustomRule(ruleSetName, ruleId) {
   const ruleSets = loadRuleSets();
 
@@ -395,11 +291,6 @@ export async function deleteCustomRule(ruleSetName, ruleId) {
   return { success: true, message: `Deleted rule "${ruleId}" from ${ruleSetName}` };
 }
 
-/**
- * Detect which rulesets apply to a project
- * @param {string} dir 
- * @returns {{detected: string[], reasons: Object<string, string>}}
- */
 export function detectProjectRuleSets(dir) {
   const ruleSets = loadRuleSets();
   const detected = [];
@@ -472,15 +363,6 @@ export function detectProjectRuleSets(dir) {
   return { detected, reasons };
 }
 
-/**
- * Check directory against custom rules
- * @param {string} dir 
- * @param {Object} [options]
- * @param {string} [options.ruleSet] - Specific ruleset to use
- * @param {string} [options.severity] - Filter by severity
- * @param {boolean} [options.autoDetect] - Auto-detect applicable rulesets
- * @returns {Promise<{total: number, bySeverity: Object, byRule: Object, violations: Violation[], detected?: Object}>}
- */
 export async function checkCustomRules(dir, options = {}) {
   const resolvedDir = resolve(dir);
   const ruleSets = loadRuleSets();

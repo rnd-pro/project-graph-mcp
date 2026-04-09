@@ -1,38 +1,16 @@
-/**
- * AI Context Boot — Single-call agent bootstrap
- *
- * Combines skeleton + doc-dialect + optional compressed files
- * into one response for AI agent initialization.
- */
-
 import { resolve, extname } from 'path';
 import { getSkeleton, getGraph } from './tools.js';
 import { getProjectDocs } from './doc-dialect.js';
 import { compressFile } from './compress.js';
 import { findJSFiles } from './parser.js';
 
-/** Supported extensions for compression */
 const COMPRESSIBLE = new Set(['.js', '.mjs', '.ts', '.tsx']);
 
-/**
- * Estimate tokens for any value (string or object)
- * @param {*} value
- * @returns {number}
- */
 function estimateTokens(value) {
   const str = typeof value === 'string' ? value : JSON.stringify(value);
   return Math.ceil(str.length / 4);
 }
 
-/**
- * Load complete AI context for agent bootstrap
- * @param {string} dirPath - Project directory
- * @param {Object} [options]
- * @param {string[]} [options.includeFiles] - Specific files to include compressed
- * @param {boolean} [options.includeDocs=true] - Include doc-dialect
- * @param {boolean} [options.includeSkeleton=true] - Include skeleton
- * @returns {Promise<{skeleton?: Object, docs?: string, files?: Object, totalTokens: number, vsOriginal: number, savings: string}>}
- */
 export async function getAiContext(dirPath, options = {}) {
   const {
     includeFiles = [],

@@ -1,7 +1,3 @@
-/**
- * Project Guidelines and Instructions for AI Agents
- */
-
 export const AGENT_INSTRUCTIONS = `
 # 🤖 Project Guidelines for AI Agents
 
@@ -64,10 +60,6 @@ Use \`set_custom_rule\` to add framework-specific rules:
 - \`info\`: Suggestions and best practices
 `;
 
-/**
- * Get agent instructions
- * @returns {string}
- */
 export function getInstructions() {
   return AGENT_INSTRUCTIONS;
 }

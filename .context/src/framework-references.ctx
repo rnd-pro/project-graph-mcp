@@ -1,10 +1,10 @@
 --- src/framework-references.js ---
-@sig b5175d7a
+@sig 8315cfb3
 @enrich: Replace each {DESCRIBE} below. Read src/framework-references.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-fetchReference(name:string)→Promise<{content: string, source: string→join,cache.get,Date.now,AbortSignal.timeout,fetch,response.text|{DESCRIBE}
-listAvailable()→string[]→Object.keys,existsSync,readdirSync,f.endsWith,basename,names.add|{DESCRIBE}
-export getFrameworkReference(options:Object=)→Promise<Object>→listAvailable,available.includes,fetchReference,content.split,detectProjectRuleSets,matchedRefs.includes|{DESCRIBE}
+fetchReference(name)→join,cache.get,Date.now,AbortSignal.timeout,fetch,response.text|{DESCRIBE}
+listAvailable()→Object.keys,existsSync,readdirSync,f.endsWith,basename,names.add|{DESCRIBE}
+export getFrameworkReference(options=)→listAvailable,available.includes,fetchReference,content.split,detectProjectRuleSets,matchedRefs.includes|{DESCRIBE}
 PATTERNS: {DESCRIBE}
 EDGE_CASES: {DESCRIBE}

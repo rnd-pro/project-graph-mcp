@@ -1,30 +1,9 @@
-/**
- * Cyclomatic Complexity Analyzer
- * Measures function complexity based on decision points
- */
-
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, relative, resolve } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import * as walk from '../vendor/walk.mjs';
 import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.js';
 
-/**
- * @typedef {Object} ComplexityItem
- * @property {string} name
- * @property {string} type - 'function' | 'method'
- * @property {string} file
- * @property {number} line
- * @property {number} complexity - Cyclomatic complexity score
- * @property {string} rating - 'low' | 'moderate' | 'high' | 'critical'
- */
-
-/**
- * Find all JS files
- * @param {string} dir 
- * @param {string} rootDir 
- * @returns {string[]}
- */
 function findJSFiles(dir, rootDir = dir) {
   if (dir === rootDir) parseGitignore(rootDir);
   const files = [];
@@ -50,11 +29,6 @@ function findJSFiles(dir, rootDir = dir) {
   return files;
 }
 
-/**
- * Calculate complexity of a function body
- * @param {Object} body 
- * @returns {number}
- */
 function calculateComplexity(body) {
   let complexity = 1; // Base complexity
 
@@ -96,11 +70,6 @@ function calculateComplexity(body) {
   return complexity;
 }
 
-/**
- * Get rating from complexity score
- * @param {number} complexity 
- * @returns {string}
- */
 function getRating(complexity) {
   if (complexity <= 5) return 'low';
   if (complexity <= 10) return 'moderate';
@@ -108,12 +77,6 @@ function getRating(complexity) {
   return 'critical';
 }
 
-/**
- * Analyze complexity of a single file (per-file export for cache integration)
- * @param {string} code - File source code
- * @param {string} relPath - Relative path for reporting
- * @returns {ComplexityItem[]}
- */
 export function analyzeComplexityFile(code, relPath) {
   const items = [];
 
@@ -171,12 +134,6 @@ export function analyzeComplexityFile(code, relPath) {
   return items;
 }
 
-/**
- * Analyze complexity of file (internal, reads from disk)
- * @param {string} filePath 
- * @param {string} rootDir
- * @returns {ComplexityItem[]}
- */
 function analyzeFile(filePath, rootDir) {
   let code;
   try {
@@ -188,14 +145,6 @@ function analyzeFile(filePath, rootDir) {
   return analyzeComplexityFile(code, relPath);
 }
 
-/**
- * Get complexity analysis for directory
- * @param {string} dir 
- * @param {Object} [options]
- * @param {number} [options.minComplexity=1] - Minimum complexity to include
- * @param {boolean} [options.onlyProblematic=false] - Only show high/critical
- * @returns {Promise<{total: number, stats: Object, items: ComplexityItem[]}>}
- */
 export async function getComplexity(dir, options = {}) {
   const minComplexity = options.minComplexity || 1;
   const onlyProblematic = options.onlyProblematic || false;

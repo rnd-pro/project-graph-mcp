@@ -1,27 +1,15 @@
-/**
- * MCP Tools for Project Graph
- */
-
 import { parseProject, parseFile, findJSFiles } from './parser.js';
 import { buildGraph, createSkeleton } from './graph-builder.js';
 import { readFileSync, statSync, writeFileSync, existsSync, unlinkSync } from 'fs';
 import { execSync } from 'child_process';
 import { join } from 'path';
 
-/** @type {import('./graph-builder.js').Graph|null} */
 let cachedGraph = null;
 
-/** @type {string|null} */
 let cachedPath = null;
 
-/** @type {Map<string, number>} file path -> mtimeMs */
 let cachedMtimes = new Map();
 
-/**
- * Save cache to disk
- * @param {string} path 
- * @param {import('./graph-builder.js').Graph} graph 
- */
 function saveDiskCache(path, graph) {
   try {
     const cachePath = join(path, '.project-graph-cache.json');
@@ -37,11 +25,6 @@ function saveDiskCache(path, graph) {
   }
 }
 
-/**
- * Load cache from disk
- * @param {string} path 
- * @returns {boolean} true if cache was successfully loaded and is valid
- */
 function loadDiskCache(path) {
   try {
     const cachePath = join(path, '.project-graph-cache.json');
@@ -74,13 +57,6 @@ function loadDiskCache(path) {
   }
 }
 
-/**
- * Get or build graph with smart mtime-based caching.
- * On first call: full parse + build.
- * On subsequent calls: check file mtimes, rebuild only if changes detected.
- * @param {string} path 
- * @returns {Promise<import('./graph-builder.js').Graph>}
- */
 export async function getGraph(path) {
   // Different path = full rebuild
   if (cachedGraph && cachedPath === path) {
@@ -107,12 +83,6 @@ export async function getGraph(path) {
   return cachedGraph;
 }
 
-/**
- * Detect if any JS files changed since last snapshot.
- * Checks: new files, deleted files, modified files (via mtimeMs).
- * @param {string} path
- * @returns {boolean} true if changes detected
- */
 function detectChanges(path) {
   if (cachedMtimes.size === 0) return true;
 
@@ -146,10 +116,6 @@ function detectChanges(path) {
   }
 }
 
-/**
- * Snapshot current mtimes for all JS files in path.
- * @param {string} path
- */
 function snapshotMtimes(path) {
   cachedMtimes.clear();
   try {
@@ -166,23 +132,11 @@ function snapshotMtimes(path) {
   }
 }
 
-/**
- * Get compact project skeleton
- * @param {string} path 
- * @returns {Promise<Object>}
- */
 export async function getSkeleton(path) {
   const graph = await getGraph(path);
   return createSkeleton(graph);
 }
 
-/**
- * Get enriched focus zone based on recent activity
- * @param {Object} options
- * @param {string[]} [options.recentFiles]
- * @param {boolean} [options.useGitDiff]
- * @returns {Promise<Object>}
- */
 export async function getFocusZone(options = {}) {
   const path = options.path || 'src/components';
   const graph = await getGraph(path);
@@ -227,11 +181,6 @@ export async function getFocusZone(options = {}) {
   };
 }
 
-/**
- * Expand a symbol to full details
- * @param {string} symbol - Minified symbol like 'SN' or 'SN.tP'
- * @returns {Promise<Object>}
- */
 export async function expand(symbol) {
   const path = cachedPath || 'src/components';
   const graph = await getGraph(path);
@@ -292,11 +241,6 @@ export async function expand(symbol) {
   };
 }
 
-/**
- * Get dependency tree for a symbol
- * @param {string} symbol 
- * @returns {Promise<Object>}
- */
 export async function deps(symbol) {
   const path = cachedPath || 'src/components';
   const graph = await getGraph(path);
@@ -324,11 +268,6 @@ export async function deps(symbol) {
   };
 }
 
-/**
- * Find all usages of a symbol
- * @param {string} symbol 
- * @returns {Promise<Array>}
- */
 export async function usages(symbol) {
   const path = cachedPath || 'src/components';
   const graph = await getGraph(path);
@@ -350,12 +289,6 @@ export async function usages(symbol) {
   return results;
 }
 
-/**
- * Extract method code from file content
- * @param {string} content 
- * @param {string} methodName 
- * @returns {string}
- */
 function extractMethod(content, methodName) {
   const regex = new RegExp(`((?:\\/\\*\\*[\\s\\S]*?\\*\\/\\s*)?)(?:async\\s+)?${methodName}\\s*\\([^)]*\\)\\s*{`, 'g');
   const match = regex.exec(content);
@@ -380,14 +313,6 @@ function extractMethod(content, methodName) {
   return content.slice(start);
 }
 
-/**
- * Find call chain from one symbol to another
- * @param {Object} options 
- * @param {string} options.from - Starting symbol (full or minified)
- * @param {string} options.to - Target symbol (full or minified)
- * @param {string} [options.path] - Project path
- * @returns {Promise<string[]|Object>}
- */
 export async function getCallChain(options = {}) {
   const { from, to, path } = options;
   if (!from || !to) {
@@ -452,9 +377,6 @@ export async function getCallChain(options = {}) {
   return { error: `No call path found from "${from}" to "${to}"` };
 }
 
-/**
- * Invalidate cache
- */
 export function invalidateCache() {
   if (cachedPath) {
     try {

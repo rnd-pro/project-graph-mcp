@@ -1,13 +1,13 @@
 --- src/similar-functions.js ---
-@sig e784d8e0
+@sig 36a3e214
 @enrich: Replace each {DESCRIBE} below. Read src/similar-functions.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-extractParamName(param:Object)→string|{DESCRIBE}
-extractSignatures(filePath:string,rootDir:string)→FunctionSignature[]→readFileSync,relative,parse,buildSignature,signatures.push,name.startsWith|{DESCRIBE}
-buildSignature(node:Object,name:string,file:string)→FunctionSignature→extractParamName,params.map,calls.push,walk.simple,hashBodyStructure|{DESCRIBE}
-hashBodyStructure(body:Object)→string→structure.push,walk.simple,structure.join|{DESCRIBE}
-calculateSimilarity(a:FunctionSignature,b:FunctionSignature)→{similarity: number, reasons: string[]→reasons.push,paramNames.includes,paramNames.filter,Math.max,Math.round,commonParams.join|{DESCRIBE}
-export getSimilarFunctions(dir:string,options:Object=)→Promise<{total: number, pairs: SimilarPair[]→resolve,findJSFiles,extractSignatures,allSignatures.push,calculateSimilarity,pairs.push|{DESCRIBE}
+extractParamName(param)|{DESCRIBE}
+extractSignatures(filePath,rootDir)→readFileSync,relative,parse,buildSignature,signatures.push,name.startsWith|{DESCRIBE}
+buildSignature(node,name,file)→extractParamName,params.map,calls.push,walk.simple,hashBodyStructure|{DESCRIBE}
+hashBodyStructure(body)→structure.push,walk.simple,structure.join|{DESCRIBE}
+calculateSimilarity(a,b)→reasons.push,paramNames.includes,paramNames.filter,Math.max,Math.round,commonParams.join|{DESCRIBE}
+export getSimilarFunctions(dir,options=)→resolve,findJSFiles,extractSignatures,allSignatures.push,calculateSimilarity,pairs.push|{DESCRIBE}
 PATTERNS: {DESCRIBE}
 EDGE_CASES: {DESCRIBE}

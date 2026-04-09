@@ -1,29 +1,9 @@
-/**
- * Dead Code Detector
- * Finds unused functions, classes, exports, variables, and imports
- */
-
 import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
 import { join, relative, resolve, dirname } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import * as walk from '../vendor/walk.mjs';
 import { shouldExcludeDir, shouldExcludeFile, parseGitignore } from './filters.js';
 
-/**
- * @typedef {Object} DeadCodeItem
- * @property {string} name
- * @property {string} type - 'function' | 'class' | 'export' | 'variable' | 'import'
- * @property {string} file
- * @property {number} line
- * @property {string} reason
- */
-
-/**
- * Find all JS files
- * @param {string} dir 
- * @param {string} rootDir 
- * @returns {string[]}
- */
 function findJSFiles(dir, rootDir = dir) {
   if (dir === rootDir) parseGitignore(rootDir);
   const files = [];
@@ -53,11 +33,6 @@ function findJSFiles(dir, rootDir = dir) {
   return files;
 }
 
-/**
- * Find project root by walking up from dir to find package.json
- * @param {string} dir
- * @returns {string}
- */
 function findProjectRoot(dir) {
   let current = resolve(dir);
   while (current !== dirname(current)) {
@@ -67,31 +42,12 @@ function findProjectRoot(dir) {
   return resolve(dir);
 }
 
-/**
- * @typedef {Object} ImportInfo
- * @property {string} name - imported name
- * @property {string} source - import source path
- */
-
-/**
- * @typedef {Object} ExportInfo
- * @property {string} name - exported name
- * @property {number} line - line number
- */
-
-/**
- * Parse file and extract definitions, calls, exports, and imports
- * @param {string} code 
- * @returns {{definitions: Set<string>, calls: Set<string>, exports: Set<string>, imports: ImportInfo[], namedExports: ExportInfo[]}}
- */
 function analyzeFile(code) {
   const definitions = new Set();
   const calls = new Set();
   const exports = new Set();
-  /** @type {ImportInfo[]} */
-  const imports = [];
-  /** @type {ExportInfo[]} */
-  const namedExports = [];
+    const imports = [];
+    const namedExports = [];
 
   let ast;
   try {
@@ -179,11 +135,6 @@ function analyzeFile(code) {
   return { definitions, calls, exports, imports, namedExports };
 }
 
-/**
- * Analyze file for unused local variables and imports
- * @param {string} code
- * @returns {{unusedVars: Array<{name: string, line: number}>, unusedImports: Array<{name: string, local: string, source: string, line: number}>}}
- */
 function analyzeFileLocals(code) {
   const unusedVars = [];
   const unusedImports = [];
@@ -293,11 +244,6 @@ function analyzeFileLocals(code) {
   return { unusedVars, unusedImports };
 }
 
-/**
- * Get dead code items
- * @param {string} dir 
- * @returns {Promise<{total: number, byType: Object, items: DeadCodeItem[]}>}
- */
 export async function getDeadCode(dir) {
   const resolvedDir = resolve(dir);
   const files = findJSFiles(dir);
@@ -309,8 +255,7 @@ export async function getDeadCode(dir) {
   const fileData = [];
 
   // Track imports project-wide: key = "importedName@resolvedSourcePath", value = consumer files
-  /** @type {Map<string, Set<string>>} */
-  const importConsumers = new Map();
+    const importConsumers = new Map();
 
   // Scan entire project for import consumers (not just target dir)
   const projectRoot = findProjectRoot(dir);

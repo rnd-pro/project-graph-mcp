@@ -1,19 +1,3 @@
-/**
- * Doc Dialect — Compact documentation format for AI agents
- *
- * Generates ultra-compact, LLM-readable documentation from project graph.
- * Replaces verbose JSDoc with token-efficient .context/ files.
- *
- * Two generation modes:
- *   agent     — returns rich AST-extracted template for calling agent to enrich (free, default)
- *   Enrichment is done via agent-pool delegation with doc-enricher skill.
- *
- * Three doc levels:
- *   PROJECT  — architecture, data flow, key decisions
- *   FILE     — exports, internal mapping, patterns
- *   FUNCTION — signature→return|description, behavior, edge cases
- */
-
 import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync, statSync } from 'fs';
 import { join, basename, extname, dirname, relative } from 'path';
 import { execSync } from 'child_process';
@@ -27,12 +11,6 @@ import { checkJSDocFile } from './jsdoc-checker.js';
 // SECTION 1: Auto-generated doc-dialect from graph
 // ────────────────────────────────────────────────────────
 
-/**
- * Generate doc-dialect string from project graph
- * @param {import('./graph-builder.js').Graph} graph - Project graph from buildGraph()
- * @param {string} [projectPath] - Project root path (to detect .context/)
- * @returns {string} Compact doc-dialect string
- */
 export function generateDocDialect(graph, projectPath) {
   const lines = [];
   const projectName = projectPath ? basename(projectPath) : 'unknown';
@@ -132,12 +110,6 @@ export function generateDocDialect(graph, projectPath) {
 // SECTION 2: Read existing .context/ files (mirror + colocated)
 // ────────────────────────────────────────────────────────
 
-/**
- * Recursively walk a directory collecting .ctx files
- * @param {string} dir - Directory to walk
- * @param {string} base - Base directory for relative paths
- * @returns {Array<{relPath: string, absPath: string}>}
- */
 function walkCtxFiles(dir, base) {
   const results = [];
   if (!existsSync(dir)) return results;
@@ -157,13 +129,6 @@ function walkCtxFiles(dir, base) {
   return results;
 }
 
-/**
- * Resolve .ctx path for a source file.
- * Priority: colocated (src/parser.ctx) > mirror (.context/src/parser.ctx)
- * @param {string} projectPath - Project root
- * @param {string} sourceFile - Relative source file path (e.g. src/parser.js)
- * @returns {string|null} Resolved .ctx path or null
- */
 function resolveCtxPath(projectPath, sourceFile) {
   const ctxName = basename(sourceFile, extname(sourceFile)) + '.ctx';
   const sourceDir = dirname(sourceFile);
@@ -179,13 +144,6 @@ function resolveCtxPath(projectPath, sourceFile) {
   return null;
 }
 
-/**
- * Resolve companion .ctx.md path for a source file.
- * Priority: colocated (src/parser.ctx.md) > mirror (.context/src/parser.ctx.md)
- * @param {string} projectPath
- * @param {string} sourceFile
- * @returns {string|null}
- */
 function resolveCtxMdPath(projectPath, sourceFile) {
   const ctxMdName = basename(sourceFile, extname(sourceFile)) + '.ctx.md';
   const sourceDir = dirname(sourceFile);
@@ -199,11 +157,6 @@ function resolveCtxMdPath(projectPath, sourceFile) {
   return null;
 }
 
-/**
- * Read existing doc-dialect files: .context/ mirror + colocated overrides
- * @param {string} projectPath - Project root path
- * @returns {{ combined: string, files: string[], hasProjectCtx: boolean }}
- */
 export function readContextDocs(projectPath) {
   const contextDir = join(projectPath, '.context');
   const collected = new Map(); // relPath → content (dedup)
@@ -247,15 +200,6 @@ export function readContextDocs(projectPath) {
   };
 }
 
-/**
- * Get project documentation: merge auto-generated + manual .context/ files
- * Priority for specific file: colocated > mirror > auto-generated
- * @param {import('./graph-builder.js').Graph} graph
- * @param {string} projectPath
- * @param {Object} [options]
- * @param {string} [options.file] - Specific file to get docs for
- * @returns {string}
- */
 export function getProjectDocs(graph, projectPath, options = {}) {
   const { file } = options;
 
@@ -311,14 +255,6 @@ export function getProjectDocs(graph, projectPath, options = {}) {
 // SECTION 3.1: AST Signature for Staleness Detection
 // ────────────────────────────────────────────────────────
 
-/**
- * Compute structural signature hash from parsed AST.
- * Only includes interface-level elements (names, exports, params, methods).
- * Ignores function bodies, comments, formatting.
- * @param {string} file - Relative file path
- * @param {Object} parsed - ParseResult from parseProject()
- * @returns {string} 8-char hex hash
- */
 function computeSignature(file, parsed) {
   const parts = [];
   for (const fn of (parsed.functions || []).filter(f => f.file === file)) {
@@ -332,13 +268,6 @@ function computeSignature(file, parsed) {
   return createHash('md5').update(parts.join('|')).digest('hex').slice(0, 8);
 }
 
-/**
- * Parse existing .ctx file and extract user-written descriptions.
- * Returns a map: key (e.g. "parseProject", "PATTERNS") → description text.
- * Used for merge strategy: preserve existing descriptions when regenerating.
- * @param {string} content - .ctx file content
- * @returns {Map<string, string>} key → description
- */
 function parseCtxDescriptions(content) {
   const descriptions = new Map();
   for (const line of content.split('\n')) {
@@ -371,12 +300,6 @@ function parseCtxDescriptions(content) {
   return descriptions;
 }
 
-/**
- * Check staleness of .ctx files against current AST.
- * @param {string} projectPath - Project root
- * @param {Object} parsed - ParseResult from parseProject()
- * @returns {{ stale: string[], fresh: number, unknown: number }}
- */
 export function checkStaleness(projectPath, parsed) {
   const contextDir = join(projectPath, '.context');
   const stale = [];
@@ -428,16 +351,6 @@ export function checkStaleness(projectPath, parsed) {
   return { stale, fresh, unknown };
 }
 
-/**
- * Build rich AST-extracted template for a single file.
- * Uses ParseResult data for signatures, calls, db access.
- * @param {string} file - Relative file path
- * @param {Array} nodes - Graph nodes for this file
- * @param {import('./graph-builder.js').Graph} graph
- * @param {Object} parsed - ParseResult from parseProject()
- * @param {Map<string, string>} [existingDescriptions] - Merge: preserved descriptions
- * @returns {string} Rich template in doc-dialect format
- */
 function buildFileTemplate(file, nodes, graph, parsed, existingDescriptions) {
   const sig = computeSignature(file, parsed);
   const lines = [`--- ${file} ---`, `@sig ${sig}`];
@@ -519,19 +432,6 @@ function buildFileTemplate(file, nodes, graph, parsed, existingDescriptions) {
   return lines.join('\n');
 }
 
-/**
- * Generate .context/ files from project graph + ParseResult.
- * Creates templates with {DESCRIBE} markers for agents to fill.
- * Use agent-pool with doc-enricher skill to auto-fill descriptions.
- *
- * @param {import('./graph-builder.js').Graph} graph
- * @param {string} projectPath
- * @param {Object} parsed - ParseResult from parseProject()
- * @param {Object} [options]
- * @param {boolean} [options.overwrite=false]
- * @param {string|string[]} [options.scope='all'] - 'all', 'focus' (git diff), or array of file paths
- * @returns {Promise<{ created: string[], skipped: string[], templates?: Object }>}
- */
 export async function generateContextFiles(graph, projectPath, parsed, options = {}) {
   const { overwrite = false, scope = 'all' } = options;
   const contextDir = join(projectPath, '.context');
@@ -560,7 +460,6 @@ export async function generateContextFiles(graph, projectPath, parsed, options =
       `FLOW: {DESCRIBE}`,
       `STATS: ${statParts.join('|')}`,
     ].join('\n') + '\n';
-
 
     writeFileSync(projectCtxPath, projectContent, 'utf-8');
     created.push('project.ctx');
@@ -641,17 +540,6 @@ export async function generateContextFiles(graph, projectPath, parsed, options =
   return result;
 }
 
-/**
- * Process a single file: generate .ctx, warm cache, create .ctx.md stub
- * @param {string} file - Relative file path
- * @param {Array} nodes - Graph nodes for this file
- * @param {Object} graph - Project graph
- * @param {Object} parsed - Parsed project data
- * @param {string} contextDir - .context/ directory path
- * @param {string} projectPath - Project root
- * @param {boolean} overwrite - Whether to overwrite existing
- * @returns {Promise<{action: string, path: string, template?: string}>}
- */
 async function processFileCtx(file, nodes, graph, parsed, contextDir, projectPath, overwrite) {
   const ctxName = basename(file, extname(file)) + '.ctx';
   const fileDir = dirname(file);

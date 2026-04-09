@@ -1,12 +1,5 @@
-/**
- * CLI Entry Point for Project Graph MCP
- */
-
 import { CLI_HANDLERS } from './cli-handlers.js';
 
-/**
- * Print CLI help
- */
 export function printHelp() {
   console.log(`
 project-graph-mcp - MCP server for AI agents
@@ -53,11 +46,6 @@ Examples:
 `);
 }
 
-/**
- * Run CLI command
- * @param {string} command 
- * @param {string[]} args 
- */
 export async function runCLI(command, args) {
   // Handle help commands
   if (!command || command === 'help' || command === '--help' || command === '-h') {

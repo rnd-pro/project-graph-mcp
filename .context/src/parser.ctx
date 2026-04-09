@@ -1,20 +1,20 @@
 --- src/parser.js ---
-@sig f7ac5bff
+@sig 2a983638
 @enrich: Replace each {DESCRIBE} below. Read src/parser.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-export parseFile(code:string,filename:string)→Promise<ParseResult>→parse,console.warn,buildJSDocTypeMap,imports.push,exportedNames.add,methods.push|parse single JS file to AST|extracts classes,functions,imports,exports
-extractCallsAndSQL(node:Object,calls:string[],dbReads:string[],dbWrites:string[])→calls.includes,calls.push,getCallMethodName,DB_METHODS.has,extractStringValue,isSQLString|walk AST to extract method calls and SQL queries
-getTagName(tag:Object)→string|null|null|null|extract tag name from tagged template expr|handles sql,Prisma.sql,db.sql
-getCallMethodName(callNode:Object)→string|null|null|null|extract method name from CallExpression callee
-extractStringValue(node:Object)→string|null→templateToString|null→templateToString|null→templateToString|extract string from Literal or TemplateLiteral|replaces $N placeholders
-templateToString(tplNode:Object)→string|convert TemplateLiteral AST node to string with $N
-export discoverSubProjects(rootDir:string)→Array<{name: string, path: string, absolutePath: string→resolve,join,existsSync,readdirSync,statSync,readFileSync|{DESCRIBE}
-export parseProject(dir:string,options:Object=)→Promise<ParseResult>→resolve,findJSFiles,readFileSync,relative,parseFileByExtension,files.push|parse all JS files in dir|returns aggregated ParseResult
-parseFileByExtension(code:string,filename:string)→Promise<ParseResult>→filename.endsWith,parseSQL,parsePython,parseGo,parseTypeScript,parseFile|route file to correct parser based on extension
-isSourceFile(filename:string)→boolean→filename.endsWith,SOURCE_EXTENSIONS.some|check if file extension is supported|excludes .css.js,.tpl.js
-buildJSDocTypeMap(comments:Array,code:string)→Map<number, {params: Array<{name: string, type: string→value.startsWith,code.slice,paramStartRegex.exec,text.slice,afterType.match,name.startsWith|{DESCRIBE}
-findJSDocForNode(jsdocMap:Map,funcLine:number)→{ params: Array<{name: string, type: string→jsdocMap.get|{DESCRIBE}
-enrichParamsWithTypes(rawParams:string[],jsdoc:Object|null)→string[]→typeMap.set,param.startsWith,param.endsWith,cleanName.slice,typeMap.get,type.startsWith|{DESCRIBE}
+export parseFile(code,filename)→parse,console.warn,buildJSDocTypeMap,imports.push,exportedNames.add,methods.push|parse single JS file to AST|extracts classes,functions,imports,exports
+extractCallsAndSQL(node,calls,dbReads,dbWrites)→calls.includes,calls.push,getCallMethodName,DB_METHODS.has,extractStringValue,isSQLString|walk AST to extract method calls and SQL queries
+getTagName(tag)|null|null|null|extract tag name from tagged template expr|handles sql,Prisma.sql,db.sql
+getCallMethodName(callNode)|null|null|null|extract method name from CallExpression callee
+extractStringValue(node)→templateToString|null→templateToString|null→templateToString|null→templateToString|extract string from Literal or TemplateLiteral|replaces $N placeholders
+templateToString(tplNode)|convert TemplateLiteral AST node to string with $N
+export discoverSubProjects(rootDir)→resolve,join,existsSync,readdirSync,statSync,readFileSync|{DESCRIBE}
+export parseProject(dir,options=)→resolve,findJSFiles,readFileSync,relative,parseFileByExtension,files.push|parse all JS files in dir|returns aggregated ParseResult
+parseFileByExtension(code,filename)→filename.endsWith,parseSQL,parsePython,parseGo,parseTypeScript,parseFile|route file to correct parser based on extension
+isSourceFile(filename)→filename.endsWith,SOURCE_EXTENSIONS.some|check if file extension is supported|excludes .css.js,.tpl.js
+buildJSDocTypeMap(comments,code)→value.startsWith,code.slice,paramStartRegex.exec,text.slice,afterType.match,name.startsWith|{DESCRIBE}
+findJSDocForNode(jsdocMap,funcLine)→jsdocMap.get|{DESCRIBE}
+enrichParamsWithTypes(rawParams,jsdoc)→typeMap.set,param.startsWith,param.endsWith,cleanName.slice,typeMap.get,type.startsWith|{DESCRIBE}
 PATTERNS: AST visitor via walk.simple|extension-based parser routing
 EDGE_CASES: ignores parse errors (returns empty)|excludes specific presentation files

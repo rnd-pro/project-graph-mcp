@@ -1,11 +1,3 @@
-/**
- * Core MCP Server Logic
- * 
- * Implements bidirectional JSON-RPC 2.0 over stdio:
- * - Handles client→server requests (tools/list, tools/call)
- * - Sends server→client requests (roots/list) to get workspace info
- */
-
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -39,10 +31,6 @@ import { getConfig, setConfig, getModeDescription, getModeWorkflow } from './mod
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/**
- * Tool handlers registry
- * Maps tool names to their handler functions
- */
 const TOOL_HANDLERS = {
   // Graph Tools
   get_skeleton: (args) => getSkeleton(resolvePath(args.path)),
@@ -225,13 +213,6 @@ const TOOL_HANDLERS = {
   },
 };
 
-/**
- * Response hints — contextual coaching tips appended to tool responses.
- * Maps tool names to hint generators. Each receives the result and returns
- * an array of hint strings (or empty array for no hints).
- *
- * @type {Record<string, (result: any) => string[]>}
- */
 const RESPONSE_HINTS = {
   get_skeleton: () => [
     '💡 Use expand("SYMBOL") to see code for a specific class.',
@@ -415,29 +396,17 @@ const RESPONSE_HINTS = {
   },
 };
 
-/**
- * Create MCP server instance
- * @param {Function} sendToClient - Function to send JSON-RPC messages to client
- * @returns {Object}
- */
 export function createServer(sendToClient) {
   let nextRequestId = 1;
 
-  /** @type {Map<number, {resolve: Function, reject: Function}>} */
-  const pendingRequests = new Map();
+    const pendingRequests = new Map();
 
-  /** @type {boolean} */
-  let clientSupportsRoots = false;
+    let clientSupportsRoots = false;
 
   return {
     pendingRequests,
 
-    /**
-     * Handle incoming JSON-RPC message (request, response, or notification)
-     * @param {Object} message
-     * @returns {Promise<Object|null>}
-     */
-    async handleMessage(message) {
+        async handleMessage(message) {
       // Check if this is a response to our server→client request
       if (message.result !== undefined || message.error !== undefined) {
         const pending = pendingRequests.get(message.id);
@@ -553,12 +522,7 @@ export function createServer(sendToClient) {
       }
     },
 
-    /**
-     * Handle MCP notifications
-     * @param {string} method
-     * @param {Object} params
-     */
-    async handleNotification(method, params) {
+        async handleNotification(method, params) {
       switch (method) {
         case 'notifications/initialized':
           // Client is ready — request workspace roots if supported
@@ -591,11 +555,7 @@ export function createServer(sendToClient) {
       }
     },
 
-    /**
-     * Send roots/list request to client
-     * @returns {Promise<Array<{uri: string, name?: string}>>}
-     */
-    requestRoots() {
+        requestRoots() {
       return new Promise((resolve, reject) => {
         const id = nextRequestId++;
         const timeout = setTimeout(() => {
@@ -622,13 +582,7 @@ export function createServer(sendToClient) {
       });
     },
 
-    /**
-     * Execute a tool by name
-     * @param {string} name
-     * @param {Object} args
-     * @returns {Promise<any>}
-     */
-    async executeTool(name, args) {
+        async executeTool(name, args) {
       const handler = TOOL_HANDLERS[name];
       if (!handler) {
         throw new Error(`Unknown tool: ${name}`);
@@ -638,15 +592,8 @@ export function createServer(sendToClient) {
   };
 }
 
-/**
- * Start server with stdio transport
- */
 export async function startStdioServer() {
-  /**
-   * Send JSON-RPC message to client via stdout
-   * @param {Object} message
-   */
-  const sendToClient = (message) => {
+    const sendToClient = (message) => {
     console.log(JSON.stringify(message));
   };
 

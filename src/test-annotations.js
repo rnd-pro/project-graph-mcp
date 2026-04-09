@@ -1,32 +1,6 @@
-/**
- * Test Checklists — .ctx.md based
- * Reads/writes test checklists from ## Tests sections in .ctx.md files
- */
-
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'fs';
 import { join, basename, relative, resolve } from 'path';
 
-/**
- * @typedef {Object} TestStep
- * @property {string} id - Unique ID (e.g., "togglePin.0")
- * @property {string} action - What to do
- * @property {string} [expected] - Expected result (after →)
- * @property {string} status - 'pending' | 'passed' | 'failed'
- * @property {string} [failReason] - Why it failed
- */
-
-/**
- * @typedef {Object} Feature
- * @property {string} name - Function/method name
- * @property {TestStep[]} tests - Test steps
- * @property {string} file - Source .ctx.md file path
- */
-
-/**
- * Find all .ctx.md files in .context/ directory
- * @param {string} dir - Context directory path
- * @returns {string[]}
- */
 function findCtxMdFiles(dir) {
   const files = [];
   try {
@@ -45,12 +19,6 @@ function findCtxMdFiles(dir) {
   return files;
 }
 
-/**
- * Parse ## Tests section from a .ctx.md file
- * @param {string} content - File content
- * @param {string} filePath - Path to .ctx.md file
- * @returns {Feature[]}
- */
 export function parseAnnotations(content, filePath) {
   const lines = content.split('\n');
   const features = [];
@@ -104,12 +72,6 @@ export function parseAnnotations(content, filePath) {
   return features;
 }
 
-/**
- * Group test steps by function name into Feature objects
- * @param {Array} tests - Raw test entries
- * @param {string} filePath - Source file
- * @returns {Feature[]}
- */
 function groupByName(tests, filePath) {
   const map = {};
   let indexMap = {};
@@ -135,11 +97,6 @@ function groupByName(tests, filePath) {
   }));
 }
 
-/**
- * Get all features from a project directory
- * @param {string} dir - Project root
- * @returns {Feature[]}
- */
 export function getAllFeatures(dir) {
   const contextDir = join(resolve(dir), '.context');
   const files = findCtxMdFiles(contextDir);
@@ -158,11 +115,6 @@ export function getAllFeatures(dir) {
   return features;
 }
 
-/**
- * Get pending (uncompleted) tests
- * @param {string} dir - Project root
- * @returns {TestStep[]}
- */
 export function getPendingTests(dir) {
   const resolvedDir = resolve(dir);
   const features = getAllFeatures(dir);
@@ -183,35 +135,16 @@ export function getPendingTests(dir) {
   return pending;
 }
 
-/**
- * Mark a test as passed — writes directly to .ctx.md file
- * @param {string} testId - e.g. "togglePin.0"
- * @returns {{success: boolean, testId: string}}
- */
 export function markTestPassed(testId) {
   const name = testId.split('.')[0];
   return updateTestState(name, testId, 'x');
 }
 
-/**
- * Mark a test as failed — writes directly to .ctx.md file
- * @param {string} testId - e.g. "togglePin.0"
- * @param {string} reason - Why it failed
- * @returns {{success: boolean, testId: string, reason: string}}
- */
 export function markTestFailed(testId, reason) {
   const name = testId.split('.')[0];
   return updateTestState(name, testId, '!', reason);
 }
 
-/**
- * Update test state in .ctx.md files
- * @param {string} name - Function name
- * @param {string} testId - Full test ID
- * @param {string} newState - 'x' | '!' | ' '
- * @param {string} [reason] - Failure reason
- * @returns {{success: boolean, testId: string, reason?: string}}
- */
 function updateTestState(name, testId, newState, reason) {
   // Need to find which .ctx.md file contains this test
   // Walk all .ctx.md files in .context/
@@ -256,11 +189,6 @@ function updateTestState(name, testId, newState, reason) {
   return { success: false, testId, error: 'Test not found' };
 }
 
-/**
- * Get test summary across all .ctx.md files
- * @param {string} dir - Project root
- * @returns {Object}
- */
 export function getTestSummary(dir) {
   const features = getAllFeatures(dir);
 
@@ -294,10 +222,6 @@ export function getTestSummary(dir) {
   };
 }
 
-/**
- * Reset all test states — changes [x] and [!] back to [ ] in all .ctx.md files
- * @returns {{success: boolean}}
- */
 export function resetTestState() {
   const cwd = process.cwd();
   const contextDir = join(cwd, '.context');

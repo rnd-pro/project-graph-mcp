@@ -1,11 +1,11 @@
 --- src/complexity.js ---
-@sig 8d1ccdd1
+@sig ddd77195
 @enrich: Replace each {DESCRIBE} below. Read src/complexity.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-calculateComplexity(body:Object)→number→walk.simple|{DESCRIBE}
-getRating(complexity:number)→string|{DESCRIBE}
-export analyzeComplexityFile(code:string,relPath:string)→ComplexityItem[]→parse,calculateComplexity,getRating,items.push,walk.simple|{DESCRIBE}
-export getComplexity(dir:string,options:Object=)→Promise<{total: number, stats: Object, items: ComplexityItem[]→resolve,findJSFiles,analyzeFile,allItems.push,allItems.filter,allItems.sort|{DESCRIBE}
+calculateComplexity(body)→walk.simple|{DESCRIBE}
+getRating(complexity)|{DESCRIBE}
+export analyzeComplexityFile(code,relPath)→parse,calculateComplexity,getRating,items.push,walk.simple|{DESCRIBE}
+export getComplexity(dir,options=)→resolve,findJSFiles,analyzeFile,allItems.push,allItems.filter,allItems.sort|{DESCRIBE}
 PATTERNS: {DESCRIBE}
 EDGE_CASES: {DESCRIBE}

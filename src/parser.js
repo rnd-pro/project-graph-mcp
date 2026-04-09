@@ -1,8 +1,3 @@
-/**
- * AST Parser for JavaScript files using Acorn
- * Extracts classes, functions, methods, properties, imports, calls, and SQL queries
- */
-
 import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
 import { join, relative, resolve } from 'path';
 import { parse } from '../vendor/acorn.mjs';
@@ -13,48 +8,8 @@ import { parsePython } from './lang-python.js';
 import { parseGo } from './lang-go.js';
 import { parseSQL, extractSQLFromString, isSQLString } from './lang-sql.js';
 
-/** Supported source file extensions */
 const SOURCE_EXTENSIONS = ['.js', '.ts', '.tsx', '.py', '.go', '.sql'];
 
-/**
- * @typedef {Object} ClassInfo
- * @property {string} name
- * @property {string} [extends]
- * @property {string[]} methods
- * @property {string[]} properties
- * @property {string[]} calls
- * @property {string[]} [dbReads] - Tables read by SQL queries
- * @property {string[]} [dbWrites] - Tables written by SQL queries
- * @property {string} file
- * @property {number} line
- */
-
-/**
- * @typedef {Object} FunctionInfo
- * @property {string} name
- * @property {boolean} exported
- * @property {string[]} calls
- * @property {string[]} [dbReads] - Tables read by SQL queries
- * @property {string[]} [dbWrites] - Tables written by SQL queries
- * @property {string} file
- * @property {number} line
- */
-
-/**
- * @typedef {Object} ParseResult
- * @property {string[]} files
- * @property {ClassInfo[]} classes
- * @property {FunctionInfo[]} functions
- * @property {string[]} imports
- * @property {string[]} exports
- */
-
-/**
- * Parse a JavaScript file content using AST
- * @param {string} code 
- * @param {string} filename 
- * @returns {Promise<ParseResult>}
- */
 export async function parseFile(code, filename) {
   const result = {
     file: filename,
@@ -206,17 +161,8 @@ export async function parseFile(code, filename) {
   return result;
 }
 
-/** DB client method names that accept SQL as first argument */
 const DB_METHODS = new Set(['query', 'execute', 'raw', 'exec', 'queryFile', 'none', 'one', 'many', 'any', 'oneOrNone', 'manyOrNone', 'result']);
 
-/**
- * Extract method calls AND SQL queries from AST node in a single walk.
- * Combines what was previously two separate walk.simple() calls.
- * @param {Object} node 
- * @param {string[]} calls 
- * @param {string[]} [dbReads]
- * @param {string[]} [dbWrites]
- */
 function extractCallsAndSQL(node, calls, dbReads, dbWrites) {
   if (!node) return;
 
@@ -297,12 +243,6 @@ function extractCallsAndSQL(node, calls, dbReads, dbWrites) {
   });
 }
 
-/**
- * Get tag name from tagged template expression.
- * Handles: sql`...`, Prisma.sql`...`, db.sql`...`
- * @param {Object} tag - AST node
- * @returns {string|null}
- */
 function getTagName(tag) {
   if (tag.type === 'Identifier') return tag.name;
   if (tag.type === 'MemberExpression' && tag.property.type === 'Identifier') {
@@ -311,11 +251,6 @@ function getTagName(tag) {
   return null;
 }
 
-/**
- * Get method name from a CallExpression callee.
- * @param {Object} callNode
- * @returns {string|null}
- */
 function getCallMethodName(callNode) {
   const callee = callNode.callee;
   if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
@@ -324,12 +259,6 @@ function getCallMethodName(callNode) {
   return null;
 }
 
-/**
- * Extract string value from AST node (Literal or TemplateLiteral).
- * For templates with expressions, substitutes $N placeholders.
- * @param {Object} node
- * @returns {string|null}
- */
 function extractStringValue(node) {
   if (!node) return null;
   if (node.type === 'Literal' && typeof node.value === 'string') {
@@ -341,12 +270,6 @@ function extractStringValue(node) {
   return null;
 }
 
-/**
- * Convert TemplateLiteral AST node to string.
- * Expressions are replaced with $N placeholders.
- * @param {Object} tplNode
- * @returns {string}
- */
 function templateToString(tplNode) {
   if (!tplNode || !tplNode.quasis) return '';
   let result = '';
@@ -359,11 +282,6 @@ function templateToString(tplNode) {
   return result;
 }
 
-/**
- * Discover sub-projects in a monorepo directory structure
- * @param {string} rootDir 
- * @returns {Array<{name: string, path: string, absolutePath: string}>}
- */
 export function discoverSubProjects(rootDir) {
   const resolvedRoot = resolve(rootDir);
   const subProjects = [];
@@ -398,13 +316,6 @@ export function discoverSubProjects(rootDir) {
   return subProjects;
 }
 
-/**
- * Parse all JS files in a directory
- * @param {string} dir 
- * @param {Object} [options={}]
- * @param {boolean} [options.recursive=false]
- * @returns {Promise<ParseResult>}
- */
 export async function parseProject(dir, options = {}) {
   const result = {
     files: [],
@@ -471,12 +382,6 @@ export async function parseProject(dir, options = {}) {
   return result;
 }
 
-/**
- * Route file to appropriate parser based on extension.
- * @param {string} code
- * @param {string} filename
- * @returns {Promise<ParseResult>}
- */
 async function parseFileByExtension(code, filename) {
   if (filename.endsWith('.sql')) {
     return parseSQL(code, filename);
@@ -494,11 +399,6 @@ async function parseFileByExtension(code, filename) {
   return parseFile(code, filename);
 }
 
-/**
- * Check if file is a supported source file.
- * @param {string} filename
- * @returns {boolean}
- */
 function isSourceFile(filename) {
   // Exclude Symbiote.js presentation files
   if (filename.endsWith('.css.js') || filename.endsWith('.tpl.js')) {
@@ -507,12 +407,6 @@ function isSourceFile(filename) {
   return SOURCE_EXTENSIONS.some(ext => filename.endsWith(ext));
 }
 
-/**
- * Find all JS files recursively (uses filter configuration)
- * @param {string} dir 
- * @param {string} [rootDir] - Root directory for relative path calculation
- * @returns {string[]}
- */
 export function findJSFiles(dir, rootDir = dir) {
   // Parse gitignore on first call
   if (dir === rootDir) {
@@ -548,12 +442,6 @@ export function findJSFiles(dir, rootDir = dir) {
 // JSDoc Type Extraction
 // ============================
 
-/**
- * Build a map of JSDoc comment end-lines to their extracted type info.
- * @param {Array} comments - Acorn onComment array
- * @param {string} code - Full source code
- * @returns {Map<number, {params: Array<{name: string, type: string}>, returns: string|null}>}
- */
 function buildJSDocTypeMap(comments, code) {
   const map = new Map();
 
@@ -607,13 +495,6 @@ function buildJSDocTypeMap(comments, code) {
   return map;
 }
 
-/**
- * Find the JSDoc entry that applies to a function at the given line.
- * JSDoc must end within 2 lines above the function declaration.
- * @param {Map} jsdocMap
- * @param {number} funcLine - Function start line
- * @returns {{ params: Array<{name: string, type: string}>, returns: string|null }|null}
- */
 function findJSDocForNode(jsdocMap, funcLine) {
   // JSDoc can end 1 or 2 lines above (direct or with blank line)
   for (let offset = 1; offset <= 3; offset++) {
@@ -623,14 +504,6 @@ function findJSDocForNode(jsdocMap, funcLine) {
   return null;
 }
 
-/**
- * Enrich AST-extracted param names with types from JSDoc.
- * Input:  ['filePath', 'options=']  + jsdoc.params: [{name:'filePath', type:'string'}, {name:'options', type:'Object'}]
- * Output: ['filePath:string', 'options:Object=']
- * @param {string[]} rawParams
- * @param {Object|null} jsdoc
- * @returns {string[]}
- */
 function enrichParamsWithTypes(rawParams, jsdoc) {
   if (!jsdoc || jsdoc.params.length === 0) return rawParams;
 
