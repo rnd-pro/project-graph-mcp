@@ -161,6 +161,14 @@ export async function parseFile(code, filename) {
         const funcInfo = {
           name: node.id.name,
           exported: false, // Will be updated later
+          params: node.params.map(p => {
+            if (p.type === 'Identifier') return p.name;
+            if (p.type === 'AssignmentPattern' && p.left.type === 'Identifier') return p.left.name + '=';
+            if (p.type === 'RestElement' && p.argument.type === 'Identifier') return '...' + p.argument.name;
+            if (p.type === 'ObjectPattern') return 'options';
+            return '?';
+          }),
+          async: node.async || false,
           calls: [],
           dbReads: [],
           dbWrites: [],

@@ -33,6 +33,8 @@ Commands:
   jsdoc-check <path>     Validate JSDoc ↔ function signatures
   types <path>           Run tsc type checking (--max=50)
   compress <file>        Compress JS file for AI (--no-beautify, --no-legend)
+  compact <path>         Compact all JS files — strips comments/whitespace (--dry-run)
+  beautify <path>        Beautify/expand all JS files — inverse of compact (--dry-run)
   docs <path>            Get project docs in doc-dialect format (--file=<name>)
   generate-ctx <path>    Generate .context/ docs (--overwrite --scope=focus)
   filters                Show current filter configuration
@@ -42,7 +44,7 @@ Commands:
 Examples:
   npx project-graph-mcp skeleton src/components
   npx project-graph-mcp expand SN
-  npx project-graph-mcp pending src/
+  npx project-graph-mcp compact src/ --dry-run
 `);
 }
 

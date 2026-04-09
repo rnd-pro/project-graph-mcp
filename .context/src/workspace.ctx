@@ -1,10 +1,10 @@
 --- src/workspace.js ---
-@sig 9787a024
+@sig 30b74887
 @enrich: Replace each {DESCRIBE} below. Read src/workspace.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-export setRoots()→uri.startsWith,uri.slice,console.error|{DESCRIBE}
+export setRoots(roots)→uri.startsWith,uri.slice,console.error|{DESCRIBE}
 export getWorkspaceRoot()→process.cwd|{DESCRIBE}
-export resolvePath()→getWorkspaceRoot,isAbsolute,resolve,resolved.startsWith|{DESCRIBE}
+export resolvePath(inputPath)→getWorkspaceRoot,isAbsolute,resolve,resolved.startsWith|{DESCRIBE}
 PATTERNS: {DESCRIBE}
 EDGE_CASES: {DESCRIBE}

@@ -22,6 +22,7 @@ import { parseProject } from './parser.js';
 import { resolvePath } from './workspace.js';
 import { checkJSDocConsistency } from './jsdoc-checker.js';
 import { checkTypes } from './type-checker.js';
+import { compactProject, expandProject } from './compact.js';
 
 /**
  * Parse named argument from args array
@@ -186,6 +187,26 @@ export const CLI_HANDLERS = {
       const overwrite = args.includes('--overwrite');
       const scope = args.find(a => a.startsWith('--scope='))?.split('=')[1] || 'all';
       return generateContextFiles(graph, projectPath, parsed, { overwrite, scope });
+    },
+  },
+
+  compact: {
+    requiresArg: true,
+    argError: 'Usage: compact <path> [--dry-run]',
+    handler: async (args) => {
+      const projectPath = resolvePath(args[0]);
+      const dryRun = args.includes('--dry-run');
+      return compactProject(projectPath, { dryRun });
+    },
+  },
+
+  beautify: {
+    requiresArg: true,
+    argError: 'Usage: beautify <path> [--dry-run]',
+    handler: async (args) => {
+      const projectPath = resolvePath(args[0]);
+      const dryRun = args.includes('--dry-run');
+      return expandProject(projectPath, { dryRun });
     },
   },
 };

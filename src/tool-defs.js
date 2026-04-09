@@ -701,4 +701,40 @@ export const TOOLS = [
       required: ['path'],
     },
   },
+  {
+    name: 'compact_project',
+    description: 'Compact all JS files in a directory — strips comments, whitespace, dead code. Preserves all names (mangle: false). Use with .ctx docs for AI-first workflow. Irreversible without git — use --dry-run first.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Directory to compact (e.g., "src/")',
+        },
+        dryRun: {
+          type: 'boolean',
+          description: 'Preview savings without modifying files (default: false)',
+        },
+      },
+      required: ['path'],
+    },
+  },
+  {
+    name: 'beautify_project',
+    description: 'Beautify/expand all JS files in a directory — formats with proper indentation. Inverse of compact_project. Preserves all names.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Directory to beautify (e.g., "src/")',
+        },
+        dryRun: {
+          type: 'boolean',
+          description: 'Preview without modifying files (default: false)',
+        },
+      },
+      required: ['path'],
+    },
+  },
 ];

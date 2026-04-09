@@ -488,10 +488,11 @@ function buildFileTemplate(file, nodes, graph, parsed, existingDescriptions) {
     } else if (node.t === 'F') {
       const func = funcLookup[fullName] || {};
       const exported = node.e ? 'export ' : '';
+      const paramStr = func.params?.length > 0 ? func.params.join(',') : '';
       const calls = func.calls?.slice(0, 6) || [];
       const callStr = calls.length > 0 ? `→${calls.join(',')}` : '';
       const funcDesc = desc.get(fullName) || '{DESCRIBE}';
-      lines.push(`${exported}${fullName}()${callStr}|${funcDesc}`);
+      lines.push(`${exported}${fullName}(${paramStr})${callStr}|${funcDesc}`);
 
       if (func.dbReads?.length > 0) lines.push(`  R→${func.dbReads.join(',')}`);
       if (func.dbWrites?.length > 0) lines.push(`  W→${func.dbWrites.join(',')}`);

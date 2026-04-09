@@ -33,6 +33,7 @@ import { parseProject, discoverSubProjects } from './parser.js';
 import { getAiContext } from './ai-context.js';
 import { checkJSDocConsistency } from './jsdoc-checker.js';
 import { checkTypes } from './type-checker.js';
+import { compactProject, expandProject } from './compact.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -185,6 +186,12 @@ const TOOL_HANDLERS = {
   },
   get_analysis_summary: (args) => {
     return getAnalysisSummaryOnly(resolvePath(args.path));
+  },
+  compact_project: (args) => {
+    return compactProject(resolvePath(args.path), { dryRun: args.dryRun || false });
+  },
+  beautify_project: (args) => {
+    return expandProject(resolvePath(args.path), { dryRun: args.dryRun || false });
   },
 };
 
