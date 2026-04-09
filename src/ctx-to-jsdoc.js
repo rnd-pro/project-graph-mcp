@@ -173,10 +173,9 @@ export function injectJSDoc(dir, options = {}) {
         const ctxFunc = ctxData.functions.find(f => f.name === funcName);
         if (!ctxFunc) return;
 
-        // Check if JSDoc already exists
-        const linesBefore = source.slice(0, node.start).split('\n');
-        const prevLine = linesBefore[linesBefore.length - 2]?.trim() || '';
-        if (prevLine.endsWith('*/')) return; // Already has JSDoc
+        // Check if JSDoc already exists — scan backwards, skipping blank lines
+        const textBefore = source.slice(0, node.start).trimEnd();
+        if (textBefore.endsWith('*/')) return; // Already has JSDoc
 
         const jsdoc = buildJSDocBlock(ctxFunc);
         insertions.push({ position: node.start, jsdoc });
@@ -232,8 +231,38 @@ export function stripJSDoc(dir, options = {}) {
 
   for (const filePath of files) {
     const source = readFileSync(filePath, 'utf-8');
-    // Match JSDoc blocks (/** ... */) but not regular comments (/* ... */)
-    const stripped = source.replace(/\/\*\*[\s\S]*?\*\/\s*\n?/g, '');
+    // Use AST to find JSDoc comment ranges, avoiding false matches inside strings
+    const comments = [];
+    let parsedOk = false;
+    try {
+      parse(source, {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        onComment: comments,
+      });
+      parsedOk = true;
+    } catch {
+      // Fallback to regex for unparseable files
+    }
+
+    let stripped;
+    if (parsedOk) {
+      // Remove JSDoc comments found by parser (safe — ignores strings)
+      const jsdocRanges = comments
+        .filter(c => c.type === 'Block' && c.value.startsWith('*'))
+        .sort((a, b) => b.start - a.start); // reverse order
+
+      stripped = source;
+      for (const { start, end } of jsdocRanges) {
+        // Also remove trailing newline
+        let trimEnd = end;
+        while (trimEnd < stripped.length && (stripped[trimEnd] === '\n' || stripped[trimEnd] === '\r')) trimEnd++;
+        stripped = stripped.slice(0, start) + stripped.slice(trimEnd);
+      }
+    } else {
+      // Regex fallback (less safe but works for broken files)
+      stripped = source.replace(/\/\*\*[\s\S]*?\*\/\s*\n?/g, '');
+    }
     // Clean up excessive blank lines
     const cleaned = stripped.replace(/\n{3,}/g, '\n\n');
 

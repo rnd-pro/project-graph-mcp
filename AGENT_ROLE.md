@@ -80,6 +80,8 @@ The graph automatically detects SQL queries in your code:
 | `check_stale_docs` | Detect outdated .ctx files by @sig hash |
 | `discover_sub_projects` | Find sub-projects in monorepo (packages/apps/services/...) |
 | `get_analysis_summary` | Quick health score — cached metrics only, skips cross-file |
+| `compact_project` | Compact all JS files — strips comments/whitespace (mangle:false) |
+| `beautify_project` | Beautify/expand all JS files — inverse of compact |
 
 ### AI-First Workflow
 1. **Boot**: `get_ai_context(path)` — loads skeleton + docs (~1700 tokens vs ~60K original)

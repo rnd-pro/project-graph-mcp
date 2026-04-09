@@ -96,6 +96,27 @@
 
 ---
 
+## v1.5 — Compact Code Mode ✅
+
+### Phase 1: `.ctx` with Typed Signatures ✅
+- [x] Parser extracts function params from AST (`params`, `async` fields)
+- [x] `.ctx` format includes param names: `parseFile(filePath,options=)`
+- [x] Default params marked with `=`, rest params with `...`
+
+### Phase 2: Project Compact/Beautify ✅
+- [x] `compact_project` — Strips comments, whitespace, dead code from all JS files
+  - Terser with `mangle: false` — preserves all function/variable names
+  - 25-40% size reduction on real codebases
+- [x] `beautify_project` — Inverse: formats compact code with proper indentation
+- [x] CLI commands: `compact <path>`, `beautify <path>` (both support `--dry-run`)
+
+### Phase 3: CTX ↔ JSDoc Pipeline ✅
+- [x] `inject-jsdoc` CLI — Reads `.ctx` contracts → generates JSDoc → injects into source
+- [x] `strip-jsdoc` CLI — Removes all JSDoc blocks from source files
+- [x] Full pipeline: `generate-ctx → strip-jsdoc → compact → inject-jsdoc`
+
+---
+
 ## Implementation Notes
 
 All tools follow the pattern:

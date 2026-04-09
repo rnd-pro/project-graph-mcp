@@ -114,26 +114,31 @@ export async function compactProject(dir, options = {}) {
   let totalOriginal = 0;
   let totalCompacted = 0;
   const processed = [];
+  const errors = [];
 
   for (const filePath of files) {
-    const source = readFileSync(filePath, 'utf-8');
-    totalOriginal += source.length;
+    const rel = relative(dir, filePath);
+    try {
+      const source = readFileSync(filePath, 'utf-8');
+      totalOriginal += source.length;
 
-    if (!dryRun) {
-      const { compacted } = await compactFile(filePath);
-      totalCompacted += compacted;
-    } else {
-      // Dry run — estimate
-      const result = await minify(source, {
-        compress: { dead_code: true, drop_console: false, passes: 2 },
-        mangle: false,
-        module: true,
-        output: { beautify: false, comments: false },
-      });
-      totalCompacted += result.code?.length || source.length;
+      if (!dryRun) {
+        const { compacted } = await compactFile(filePath);
+        totalCompacted += compacted;
+      } else {
+        const result = await minify(source, {
+          compress: { dead_code: true, drop_console: false, passes: 2 },
+          mangle: false,
+          module: true,
+          output: { beautify: false, comments: false },
+        });
+        totalCompacted += result.code?.length || source.length;
+      }
+
+      processed.push(rel);
+    } catch (e) {
+      errors.push({ file: rel, error: e.message });
     }
-
-    processed.push(relative(dir, filePath));
   }
 
   const savings = totalOriginal > 0
@@ -146,6 +151,7 @@ export async function compactProject(dir, options = {}) {
     originalBytes: totalOriginal,
     compactedBytes: totalCompacted,
     savings: `${savings}%`,
+    errors: errors.length > 0 ? errors : undefined,
     dryRun,
   };
 }
@@ -163,25 +169,31 @@ export async function expandProject(dir, options = {}) {
   let totalOriginal = 0;
   let totalBeautified = 0;
   const processed = [];
+  const errors = [];
 
   for (const filePath of files) {
-    const source = readFileSync(filePath, 'utf-8');
-    totalOriginal += source.length;
+    const rel = relative(dir, filePath);
+    try {
+      const source = readFileSync(filePath, 'utf-8');
+      totalOriginal += source.length;
 
-    if (!dryRun) {
-      const { beautified } = await beautifyFile(filePath);
-      totalBeautified += beautified;
-    } else {
-      const result = await minify(source, {
-        compress: false,
-        mangle: false,
-        module: true,
-        output: { beautify: true, comments: false, indent_level: 2 },
-      });
-      totalBeautified += result.code?.length || source.length;
+      if (!dryRun) {
+        const { beautified } = await beautifyFile(filePath);
+        totalBeautified += beautified;
+      } else {
+        const result = await minify(source, {
+          compress: false,
+          mangle: false,
+          module: true,
+          output: { beautify: true, comments: false, indent_level: 2 },
+        });
+        totalBeautified += result.code?.length || source.length;
+      }
+
+      processed.push(rel);
+    } catch (e) {
+      errors.push({ file: rel, error: e.message });
     }
-
-    processed.push(relative(dir, filePath));
   }
 
   return {
@@ -189,6 +201,7 @@ export async function expandProject(dir, options = {}) {
     fileList: processed,
     originalBytes: totalOriginal,
     beautifiedBytes: totalBeautified,
+    errors: errors.length > 0 ? errors : undefined,
     dryRun,
   };
 }

@@ -1,6 +1,6 @@
 # Project Graph MCP
 
-You have **Project Graph MCP** tools available — 43 tools for code analysis, project navigation, monorepo scanning, and framework-specific linting.
+You have **Project Graph MCP** tools available — 45 tools for code analysis, project navigation, monorepo scanning, and framework-specific linting.
 
 ## Quick Start
 
@@ -34,6 +34,8 @@ You have **Project Graph MCP** tools available — 43 tools for code analysis, p
 - `generate_context_docs` — Generate .context/ templates with `@sig` staleness hashes
 - `check_stale_docs` — Check which .ctx files need updating
 - `discover_sub_projects` — Find sub-projects in monorepo
+- `compact_project` — Compact all JS files (strips comments/whitespace, preserves names)
+- `beautify_project` — Beautify/expand all JS files (inverse of compact)
 
 ### Testing
 - `get_pending_tests` — List `[ ]` checklists from `.ctx.md` files
