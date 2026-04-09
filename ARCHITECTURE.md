@@ -25,7 +25,7 @@ project-graph-mcp/
 │   ├── similar-functions.js  # Duplicate detection
 │   ├── large-files.js        # File size analysis
 │   ├── outdated-patterns.js  # Legacy pattern detection
-│   ├── full-analysis.js      # Health Score (0-100)
+│   ├── full-analysis.js      # Health Score (0-100) + streaming + summary
 │   ├── jsdoc-checker.js      # JSDoc ↔ AST consistency validator
 │   ├── type-checker.js       # Optional tsc wrapper (async)
 │   ├── analysis-cache.js     # Incremental analysis cache (.context/.cache/)
@@ -33,7 +33,7 @@ project-graph-mcp/
 │   ├── jsdoc-generator.js    # JSDoc template generation
 │   ├── custom-rules.js       # Configurable lint rules
 │   ├── framework-references.js # Framework-specific docs
-│   ├── test-annotations.js   # @test/@expect parsing
+│   ├── test-annotations.js   # .ctx.md test checklist parsing
 │   ├── db-analysis.js        # SQL schema + table usage
 │   └── instructions.js       # Agent guidelines
 ├── rules/                    # Pre-built rule sets (JSON)

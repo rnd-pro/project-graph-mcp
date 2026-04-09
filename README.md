@@ -5,10 +5,10 @@
 
 # project-graph-mcp
 
-An MCP server that parses your source code into a **10-50x compressed skeleton** — classes, functions, imports, and dependencies in a minified JSON. Agents navigate the graph using `expand`, `deps`, and `usages` without reading irrelevant files. The **AI Context Layer** compresses an entire codebase into ~1700 tokens (97% savings) with a single `get_ai_context` call.
+An MCP server that parses your source code into a **10-50x compressed skeleton** — classes, functions, imports, and dependencies in a minified JSON. Agents navigate the graph using `expand`, `deps`, and `usages` without reading irrelevant files. The **AI Context Layer** compresses an entire codebase into ~1700 tokens (97% savings) with a single `get_ai_context` call. Supports **monorepo scanning** and **streaming analysis** for large codebases.
 
 > [!TIP]
-> **132 kB, 47 files, zero external dependencies.** Add one line to your MCP config and the server downloads itself on the next IDE restart.
+> **132 kB, 47 files, zero external dependencies.** 43 MCP tools. Add one line to your MCP config and the server downloads itself on the next IDE restart.
 
 ### Project Skeleton (10-50x compression)
 
@@ -46,7 +46,7 @@ stripStringsAndComments(code, { backtick: true, templateInterpolation: false })
 - **Legacy pattern finder** — outdated code patterns and redundant npm deps (built into Node.js 18+)
 - **JSDoc consistency** — validates `@param` count/names and `@returns` against AST signatures
 - **Type checking** — optional `tsc --checkJs` wrapper with graceful fallback
-- **Health Score (0-100)** — aggregated result from all checks in one call
+- **Health Score (0-100)** — aggregated result from all checks in one call (`get_full_analysis` or quick `get_analysis_summary`)
 - **Incremental cache** — per-file analysis results cached in `.context/.cache/` with content hashing
 
 ### AI Context Layer
@@ -79,19 +79,26 @@ npx project-graph-mcp compress src/parser.js
 
 ### Test Checklists
 
-JSDoc annotations (`@test` and `@expect`) define test checklists directly in the code:
+Test checklists live in `.ctx.md` files (alongside documentation), not in source code:
 
-```javascript
-/**
- * Create new user via API
- *
- * @test request: POST /api/users with valid data
- * @expect status: 201 Created
- */
-async createUser(data) { ... }
+```markdown
+## Tests
+- [ ] POST /api/users with valid data → 201 Created
+- [ ] GET /api/users/:id returns user object
+- [x] DELETE /api/users/:id → 204 No Content
 ```
 
-The agent calls `get_pending_tests`, runs the test, then `mark_test_passed`. Supports browser, API, CLI, and integration test types.
+The agent calls `get_pending_tests`, runs the test, then `mark_test_passed` (which writes `[x]` directly to the `.ctx.md` file). Test state is persistent and survives session restarts.
+
+### Monorepo Support
+
+`discover_sub_projects` scans standard monorepo directories (`packages/`, `apps/`, `services/`, `modules/`, `libs/`, `plugins/`) for sub-projects with `package.json`. Combined with `parseProject({ recursive: true })`, agents can analyze entire monorepos.
+
+### Performance
+
+- **Batch concurrency** — `generate_context_docs` processes 5 files in parallel
+- **Quick health check** — `get_analysis_summary` runs only cached per-file metrics (skips expensive cross-file analysis)
+- **Streaming analysis** — `getFullAnalysisStreaming` yields results incrementally as each sub-analysis completes
 
 ### Custom Rules & Framework References
 

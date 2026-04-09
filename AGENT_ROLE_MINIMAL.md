@@ -1,6 +1,6 @@
 # Project Graph MCP
 
-You have **Project Graph MCP** tools available — code analysis, project navigation, and framework-specific linting.
+You have **Project Graph MCP** tools available — 43 tools for code analysis, project navigation, monorepo scanning, and framework-specific linting.
 
 ## Quick Start
 
@@ -18,6 +18,7 @@ You have **Project Graph MCP** tools available — code analysis, project naviga
 
 ### Code Quality
 - `get_full_analysis` — Run ALL checks + Health Score
+- `get_analysis_summary` — Quick health score (cached only, fast)
 - `get_dead_code` — Unused functions/classes  
 - `get_undocumented` — Missing JSDoc
 - `get_similar_functions` — Code duplicates
@@ -31,11 +32,13 @@ You have **Project Graph MCP** tools available — code analysis, project naviga
 - `get_project_docs` — Doc Dialect documentation (.context/)
 - `generate_context_docs` — Generate .context/ templates with `@sig` staleness hashes
 - `check_stale_docs` — Check which .ctx files need updating
+- `discover_sub_projects` — Find sub-projects in monorepo
 
 ### Testing
-- `get_pending_tests` — List @test/@expect annotations
-- `mark_test_passed(testId)` / `mark_test_failed(testId, reason)`
+- `get_pending_tests` — List `[ ]` checklists from `.ctx.md` files
+- `mark_test_passed(testId)` / `mark_test_failed(testId, reason)` — writes to `.ctx.md`
 - `get_test_summary` — Progress report
+- `reset_test_state` — Reset all checklists to `[ ]`
 
 ### Custom Rules
 - `check_custom_rules(path)` — Run framework-specific analysis (auto-detected)

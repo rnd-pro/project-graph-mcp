@@ -19,17 +19,22 @@ You have access to **Project Graph MCP** — a suite of code analysis and projec
 
 | Tool | Purpose |
 |------|---------|
-| `get_pending_tests` | List @test/@expect annotations needing verification |
-| `mark_test_passed` / `mark_test_failed` | Track test results |
+| `get_pending_tests` | List `[ ]` checklists from `.ctx.md` files |
+| `mark_test_passed` / `mark_test_failed` | Write `[x]` or `[!]` directly to `.ctx.md` |
 | `get_test_summary` | Progress report |
+| `reset_test_state` | Reset all checklists to `[ ]` |
 
-### When to Write @test/@expect
-Add annotations to JSDoc when creating or modifying **interactive methods**:
-- `onclick` / `onchange` / `oninput` event handlers
-- Methods that change DOM state (show/hide, toggle classes/attributes)
-- Navigation and routing methods
-- Form submission and validation handlers
-- Any method with user-visible side effects
+### How Test Checklists Work
+Tests live in `.ctx.md` files (the "agent zone" of the two-tier documentation), not in source code:
+
+```markdown
+# parser.js
+
+## Tests
+- [ ] Parse valid JS file with classes and functions
+- [ ] Handle syntax errors gracefully
+- [x] Parse empty file without crash
+```
 
 ### Browser Testing Workflow (VERIFICATION mode)
 After code changes, you MUST verify UI with this flow:
@@ -41,20 +46,9 @@ After code changes, you MUST verify UI with this flow:
 4. get_test_summary(path)            → final report before completing task
 ```
 
-**Rule**: If `get_pending_tests()` returns items, they MUST be executed in the browser before the task is marked complete. Never skip browser verification when @test annotations exist.
+**Rule**: If `get_pending_tests()` returns items, they MUST be executed before the task is marked complete.
 
-### Example
-```javascript
-/**
- * Delete selected persona
- *
- * @test click: Click delete button on persona card
- * @test click: Confirm in dialog
- * @expect element: Persona removed from list
- * @expect visual: Toast notification appears
- */
-async onDeletePersona() { ... }
-```
+> **Note**: Test state is persistent (written to files) and survives agent session restarts.
 
 ## 🗄️ Database Analysis
 | Tool | Purpose |
@@ -81,7 +75,10 @@ The graph automatically detects SQL queries in your code:
 | `get_ai_context` | **Boot**: skeleton + docs + compressed files in one call |
 | `get_compressed_file` | Terser-minified source with export legend |
 | `get_project_docs` | Doc Dialect documentation (auto + manual .context/) |
-| `generate_context_docs` | Generate .context/ templates from AST |
+| `generate_context_docs` | Generate .context/ templates from AST (batch concurrent) |
+| `check_stale_docs` | Detect outdated .ctx files by @sig hash |
+| `discover_sub_projects` | Find sub-projects in monorepo (packages/apps/services/...) |
+| `get_analysis_summary` | Quick health score — cached metrics only, skips cross-file |
 
 ### AI-First Workflow
 1. **Boot**: `get_ai_context(path)` — loads skeleton + docs (~1700 tokens vs ~60K original)
@@ -127,6 +124,7 @@ EDGE_CASES: Python uses regex, not AST|Go interfaces ≠ classes
 | Tool | Purpose |
 |------|---------|
 | `get_full_analysis` | Run ALL checks + Health Score (0-100) |
+| `get_analysis_summary` | Quick health score (cached only, fast) |
 | `get_dead_code` | Find unused functions/classes |
 | `get_undocumented` | Find missing JSDoc |
 | `get_similar_functions` | Detect code duplicates |

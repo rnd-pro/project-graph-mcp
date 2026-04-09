@@ -26,10 +26,10 @@ get_dead_code({ path: "src/utils" });
 ```
 
 ## Testing
-Manage and track testing progress using annotations.
+Manage and track testing progress using `.ctx.md` checklists.
 Example:
 ```javascript
-// View pending tests from @test annotations
+// View pending tests from .ctx.md checklists
 get_pending_tests({ path: "src/components" });
 ```
 
