@@ -6,6 +6,6 @@
 export generateJSDoc(filePath:string,options:Object=)→JSDocTemplate[]→readFileSync,getWorkspaceRoot,relative,parse,code.split,Math.max|{DESCRIBE}
 buildJSDoc(info:Object)→string→lines.push,extractParamName,inferParamType,lines.join|{DESCRIBE}
 inferParamType(param:Object)→string|{DESCRIBE}
-export generateJSDocFor(filePath:string,functionName:string,options:Object=)→JSDocTemplate|null→generateJSDoc,name.endsWith,results.find|null→generateJSDoc,name.endsWith,results.find|{DESCRIBE}
+export generateJSDocFor(filePath:string,functionName:string,options:Object=)→JSDocTemplate|null→generateJSDoc,name.endsWith,results.find|null→generateJSDoc,name.endsWith,results.find|null→generateJSDoc,name.endsWith,results.find|{DESCRIBE}
 PATTERNS: {DESCRIBE}
 EDGE_CASES: {DESCRIBE}

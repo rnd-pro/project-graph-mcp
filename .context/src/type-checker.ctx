@@ -3,9 +3,9 @@
 @enrich: Replace each {DESCRIBE} below. Read src/type-checker.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-detectTsc()→{ available: boolean, version: string|null, path: string|null →execSync|null, path: string|null →execSync|{DESCRIBE}
-parseDiagnosticLine(line:string,baseDir:string)→TypeDiagnostic|null→line.match,parseInt|null→line.match,parseInt|{DESCRIBE}
+detectTsc()→{ available: boolean, version: string|null, path: string|null →execSync|null, path: string|null →execSync|null, path: string|null →execSync|{DESCRIBE}
+parseDiagnosticLine(line:string,baseDir:string)→TypeDiagnostic|null→line.match,parseInt|null→line.match,parseInt|null→line.match,parseInt|{DESCRIBE}
 buildArgs(dir:string,options:Object=)→string[]→join,existsSync,args.push|{DESCRIBE}
-export checkTypes(dir:string,options:Object=)→Promise<{ available: boolean, version: string|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|{DESCRIBE}
+export checkTypes(dir:string,options:Object=)→Promise<{ available: boolean, version: string|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|{DESCRIBE}
 PATTERNS: {DESCRIBE}
 EDGE_CASES: {DESCRIBE}

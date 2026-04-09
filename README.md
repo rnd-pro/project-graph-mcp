@@ -8,7 +8,7 @@
 An MCP server that parses your source code into a **10-50x compressed skeleton** — classes, functions, imports, and dependencies in a minified JSON. Agents navigate the graph using `expand`, `deps`, and `usages` without reading irrelevant files. The **AI Context Layer** compresses an entire codebase into ~1700 tokens (97% savings) with a single `get_ai_context` call. Supports **monorepo scanning** and **streaming analysis** for large codebases.
 
 > [!TIP]
-> **132 kB, 47 files, zero external dependencies.** 43 MCP tools. Add one line to your MCP config and the server downloads itself on the next IDE restart.
+> **132 kB, 47 files, zero external dependencies.** 49 MCP tools. Add one line to your MCP config and the server downloads itself on the next IDE restart.
 
 ### Project Skeleton (10-50x compression)
 
@@ -76,6 +76,47 @@ npx project-graph-mcp docs src/
 
 # Compress a single file for AI
 npx project-graph-mcp compress src/parser.js
+```
+
+### Compact Code Architecture
+
+Three modes for AI-native codebase editing — configure per project via `.context/config.json`:
+
+| Mode | Storage | Agent reads | Agent edits |
+|------|---------|-------------|-------------|
+| **1 — Native Compact** | Minified JS | Files directly | Files directly |
+| **2 — Full Storage** (default) | Formatted JS | `get_compressed_file` | `edit_compressed` |
+| **3 — IDE Virtual** | Minified JS | IDE renders full view | IDE handles mapping |
+
+**Mode 2 workflow** (recommended):
+
+```javascript
+// 1. Read compressed view (saves 20-55% tokens)
+get_compressed_file({ path: "src/parser.js" })
+
+// 2. Edit by symbol name — server finds it via AST
+edit_compressed({
+  path: "src/parser.js",
+  symbol: "parseFile",
+  code: "export async function parseFile(code, filename) { /* new body */ }"
+})
+
+// 3. Validate .ctx contracts after editing
+validate_ctx_contracts({ path: "." })
+```
+
+**`.ctx` typed signatures** — JSDoc types extracted into compact format:
+
+```
+parseFile(code:string,filename:string)→Promise<ParseResult>→parse,walk|parse JS file into AST
+```
+
+```bash
+# Set project mode
+npx project-graph-mcp set-mode . 2
+
+# Validate .ctx documentation matches source
+npx project-graph-mcp validate-ctx . --strict
 ```
 
 ### Test Checklists
@@ -172,6 +213,9 @@ npx project-graph-mcp pending src/        # List pending tests
 npx project-graph-mcp compress src/f.js   # Compress file for AI
 npx project-graph-mcp docs src/           # Project docs (doc-dialect)
 npx project-graph-mcp generate-ctx src/   # Generate .context/ docs
+npx project-graph-mcp validate-ctx .      # Validate .ctx ↔ source
+npx project-graph-mcp mode .             # Show current editing mode
+npx project-graph-mcp set-mode . 2       # Set mode (1/2/3)
 npx project-graph-mcp help                # All commands
 ```
 

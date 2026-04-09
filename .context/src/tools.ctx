@@ -11,7 +11,7 @@ export expand(symbol:string)→Promise<Object>→getGraph,symbol.split,parseProj
 export deps(symbol:string)→Promise<Object>→getGraph,edges.filter|get dependency tree for a symbol|shows imports, usedBy, calls
 export usages(symbol:string)→Promise<Array>→getGraph,parseProject,calls.includes,c.includes,calls.some,results.push|find all usages of a symbol across project
 extractMethod(content:string,methodName:string)→string→regex.exec,content.slice|extract method code from file content using regex
-export getCallChain(options:Object=)→Promise<string[]|Object>→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|Object>→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|find shortest call path between two symbols|uses BFS
+export getCallChain(options:Object=)→Promise<string[]|Object>→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|Object>→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|Object>→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|find shortest call path between two symbols|uses BFS
 export invalidateCache()→join,existsSync,unlinkSync,cachedMtimes.clear|delete cache file and clear memory cache
 PATTERNS: smart mtime caching|BFS for call chain|regex for method extraction
 EDGE_CASES: gracefully handles unreadable files/mtimes|handles missing symbols
