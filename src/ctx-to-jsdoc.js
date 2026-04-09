@@ -9,7 +9,7 @@
  */
 
 import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from 'fs';
-import { join, extname, relative, dirname, basename } from 'path';
+import { join, extname, relative } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import { simple as walk } from '../vendor/walk.mjs';
 
