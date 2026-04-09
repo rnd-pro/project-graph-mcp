@@ -377,6 +377,41 @@ const RESPONSE_HINTS = {
     }
     return hints;
   },
+
+  validate_ctx_contracts: (result) => {
+    const hints = [];
+    if (result.summary?.errors > 0) {
+      hints.push(`⚠️ ${result.summary.errors} contract violations found. Run generate_context_docs({ overwrite: true }) to regenerate .ctx files.`);
+    } else {
+      hints.push('✅ All .ctx contracts valid — documentation matches source.');
+    }
+    return hints;
+  },
+
+  edit_compressed: (result) => {
+    const hints = [];
+    if (result.success) {
+      hints.push(`✅ Symbol "${result.symbol}" replaced in ${result.file}.`);
+      hints.push('💡 Run invalidate_cache() to refresh the graph after editing.');
+      hints.push('💡 Run validate_ctx_contracts() to check if .ctx docs need updating.');
+    }
+    return hints;
+  },
+
+  get_mode: (result) => {
+    const hints = [`📋 Current mode: ${result.mode} — ${result.description}`];
+    if (result.mode === 2) {
+      hints.push('💡 Workflow: get_compressed_file() → read → edit_compressed() → write.');
+    }
+    return hints;
+  },
+
+  set_mode: (result) => {
+    if (result.saved) {
+      return [`✅ Mode set to ${result.config.mode}. Saved to ${result.path}.`];
+    }
+    return [];
+  },
 };
 
 /**

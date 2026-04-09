@@ -39,6 +39,9 @@ Commands:
   strip-jsdoc <path>     Strip all JSDoc blocks from source files
   docs <path>            Get project docs in doc-dialect format (--file=<name>)
   generate-ctx <path>    Generate .context/ docs (--overwrite --scope=focus)
+  validate-ctx <path>    Validate .ctx contracts against source AST (--strict)
+  mode <path>            Show current compact code mode and workflow
+  set-mode <path> <1|2|3> Set compact code mode (1=compact, 2=full, 3=IDE)
   filters                Show current filter configuration
   instructions           Show agent guidelines (JSDoc, Arch)
   help                   Show this help

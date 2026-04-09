@@ -24,6 +24,7 @@ import { checkJSDocConsistency } from './jsdoc-checker.js';
 import { checkTypes } from './type-checker.js';
 import { compactProject, expandProject } from './compact.js';
 import { injectJSDoc, stripJSDoc, validateCtxContracts } from './ctx-to-jsdoc.js';
+import { getConfig, setConfig, getModeDescription, getModeWorkflow } from './mode-config.js';
 
 /**
  * Parse named argument from args array
@@ -238,6 +239,33 @@ export const CLI_HANDLERS = {
       const projectPath = resolvePath(args[0]);
       const strict = args.includes('--strict');
       return validateCtxContracts(projectPath, { strict });
+    },
+  },
+
+  mode: {
+    requiresArg: true,
+    argError: 'Usage: mode <path>',
+    handler: async (args) => {
+      const dir = resolvePath(args[0]);
+      const config = getConfig(dir);
+      return {
+        ...config,
+        description: getModeDescription(config.mode),
+        workflow: getModeWorkflow(config.mode),
+      };
+    },
+  },
+
+  'set-mode': {
+    requiresArg: true,
+    argError: 'Usage: set-mode <path> <1|2|3>',
+    handler: async (args) => {
+      const dir = resolvePath(args[0]);
+      const mode = parseInt(args[1], 10);
+      if (!mode || ![1, 2, 3].includes(mode)) {
+        throw new Error('Mode must be 1, 2, or 3');
+      }
+      return setConfig(dir, { mode });
     },
   },
 };
