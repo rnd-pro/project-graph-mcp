@@ -23,6 +23,7 @@ import { resolvePath } from './workspace.js';
 import { checkJSDocConsistency } from './jsdoc-checker.js';
 import { checkTypes } from './type-checker.js';
 import { compactProject, expandProject } from './compact.js';
+import { injectJSDoc, stripJSDoc } from './ctx-to-jsdoc.js';
 
 /**
  * Parse named argument from args array
@@ -207,6 +208,26 @@ export const CLI_HANDLERS = {
       const projectPath = resolvePath(args[0]);
       const dryRun = args.includes('--dry-run');
       return expandProject(projectPath, { dryRun });
+    },
+  },
+
+  'inject-jsdoc': {
+    requiresArg: true,
+    argError: 'Usage: inject-jsdoc <path> [--dry-run]',
+    handler: async (args) => {
+      const projectPath = resolvePath(args[0]);
+      const dryRun = args.includes('--dry-run');
+      return injectJSDoc(projectPath, { dryRun });
+    },
+  },
+
+  'strip-jsdoc': {
+    requiresArg: true,
+    argError: 'Usage: strip-jsdoc <path> [--dry-run]',
+    handler: async (args) => {
+      const projectPath = resolvePath(args[0]);
+      const dryRun = args.includes('--dry-run');
+      return stripJSDoc(projectPath, { dryRun });
     },
   },
 };

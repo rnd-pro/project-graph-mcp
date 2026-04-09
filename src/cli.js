@@ -35,6 +35,8 @@ Commands:
   compress <file>        Compress JS file for AI (--no-beautify, --no-legend)
   compact <path>         Compact all JS files — strips comments/whitespace (--dry-run)
   beautify <path>        Beautify/expand all JS files — inverse of compact (--dry-run)
+  inject-jsdoc <path>    Generate JSDoc from .ctx files and inject into source
+  strip-jsdoc <path>     Strip all JSDoc blocks from source files
   docs <path>            Get project docs in doc-dialect format (--file=<name>)
   generate-ctx <path>    Generate .context/ docs (--overwrite --scope=focus)
   filters                Show current filter configuration
