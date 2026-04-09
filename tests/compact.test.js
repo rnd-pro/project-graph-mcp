@@ -458,6 +458,20 @@ removed()|was deleted
       assert.ok(error, 'Should report missing function');
       assert.strictEqual(error.severity, 'error');
     });
+
+    it('should handle compound types with commas', () => {
+      const dir = join(TEST_DIR, 'validate4');
+      mkdirSync(join(dir, 'src'), { recursive: true });
+      mkdirSync(join(dir, '.context', 'src'), { recursive: true });
+
+      writeFileSync(join(dir, 'src', 'obj.js'), `function process(data) {}\n`, 'utf-8');
+      writeFileSync(join(dir, '.context', 'src', 'obj.ctx'), `--- src/obj.js ---
+process(data:{name: string, value: number})|process data
+`, 'utf-8');
+
+      const result = validateCtxContracts(dir);
+      assert.strictEqual(result.summary.errors, 0, 'Compound type should count as 1 param');
+    });
   });
 
   // ============================

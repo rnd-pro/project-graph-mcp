@@ -4,7 +4,7 @@
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
 findJSFiles(dir:string,rootDir:string=)→string[]→parseGitignore,readdirSync,join,relative,statSync,stat.isDirectory|{DESCRIBE}
-findJSDocBefore(comments:Array<{text: string, endLine: number}>,targetLine:number)→string|null|{DESCRIBE}
+findJSDocBefore(comments:Array<{text: string, endLine: number}>,targetLine:number)→string|null|null|{DESCRIBE}
 extractComments(code:string)→Array<{text: string, endLine: number→regex.exec,code.slice,comments.push|{DESCRIBE}
 checkMissing(jsdoc:string|null,level:'tests'|'params'|'all')→string[]→missing.push,jsdoc.includes|{DESCRIBE}
 export checkUndocumentedFile(code:string,filePath:string,level:'tests'|'params'|'all')→UndocumentedItem[]→parse,extractComments,findJSDocBefore,results.push,methodName.startsWith,SKIP_METHODS.includes|{DESCRIBE}

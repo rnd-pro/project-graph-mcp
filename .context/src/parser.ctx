@@ -5,9 +5,9 @@
   Save this file after filling all markers. Remove @enrich lines when done.
 export parseFile(code:string,filename:string)→Promise<ParseResult>→parse,console.warn,buildJSDocTypeMap,imports.push,exportedNames.add,methods.push|parse single JS file to AST|extracts classes,functions,imports,exports
 extractCallsAndSQL(node:Object,calls:string[],dbReads:string[],dbWrites:string[])→calls.includes,calls.push,getCallMethodName,DB_METHODS.has,extractStringValue,isSQLString|walk AST to extract method calls and SQL queries
-getTagName(tag:Object)→string|null|extract tag name from tagged template expr|handles sql,Prisma.sql,db.sql
-getCallMethodName(callNode:Object)→string|null|extract method name from CallExpression callee
-extractStringValue(node:Object)→string|null→templateToString|extract string from Literal or TemplateLiteral|replaces $N placeholders
+getTagName(tag:Object)→string|null|null|extract tag name from tagged template expr|handles sql,Prisma.sql,db.sql
+getCallMethodName(callNode:Object)→string|null|null|extract method name from CallExpression callee
+extractStringValue(node:Object)→string|null→templateToString|null→templateToString|extract string from Literal or TemplateLiteral|replaces $N placeholders
 templateToString(tplNode:Object)→string|convert TemplateLiteral AST node to string with $N
 export discoverSubProjects(rootDir:string)→Array<{name: string, path: string, absolutePath: string→resolve,join,existsSync,readdirSync,statSync,readFileSync|{DESCRIBE}
 export parseProject(dir:string,options:Object=)→Promise<ParseResult>→resolve,findJSFiles,readFileSync,relative,parseFileByExtension,files.push|parse all JS files in dir|returns aggregated ParseResult

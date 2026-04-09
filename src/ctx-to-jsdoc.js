@@ -339,6 +339,37 @@ function walkJSFiles(dir) {
   return results;
 }
 
+/**
+ * Split parameter string at top-level commas only.
+ * Respects: {}, <>, () balanced delimiters — won't split inside compound types.
+ * Example: "a:string,b:{x:number, y:string}" → ["a:string", "b:{x:number, y:string}"]
+ *
+ * @param {string} paramStr
+ * @returns {string[]}
+ */
+function splitTopLevelParams(paramStr) {
+  const params = [];
+  let depth = 0;
+  let current = '';
+
+  for (const ch of paramStr) {
+    if (ch === '{' || ch === '<' || ch === '(') depth++;
+    else if (ch === '}' || ch === '>' || ch === ')') depth--;
+
+    if (ch === ',' && depth === 0) {
+      const trimmed = current.trim();
+      if (trimmed) params.push(trimmed);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+
+  const trimmed = current.trim();
+  if (trimmed) params.push(trimmed);
+  return params;
+}
+
 // ============================
 // CTX Contract Validator
 // ============================
@@ -423,8 +454,8 @@ export function validateCtxContracts(dir, options = {}) {
         continue;
       }
 
-      // Param count check
-      const ctxParams = ctxFunc.params ? ctxFunc.params.split(',').filter(Boolean) : [];
+      // Param count check — balanced split (handles {a: string, b: number} as one param)
+      const ctxParams = ctxFunc.params ? splitTopLevelParams(ctxFunc.params) : [];
       if (ctxParams.length !== astFunc.paramCount) {
         violations.push({
           file: relPath,

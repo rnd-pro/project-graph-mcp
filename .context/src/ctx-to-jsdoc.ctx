@@ -4,9 +4,9 @@
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
 walkJSFiles(dir:string)→string[]→readdirSync,entry.startsWith,join,statSync,stat.isDirectory,SKIP_DIRS.has|walk dir for JS/MJS files, skip node_modules/vendor/.git
-export parseCtxFile(ctxContent:string)→{ file: string|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|parse .ctx file into structured fn signatures with params+types
+export parseCtxFile(ctxContent:string)→{ file: string|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|parse .ctx file into structured fn signatures with params+types
 buildJSDocBlock(funcInfo:{ name: string, params: string, exported: boolean, description: string })→string→lines.push,params.split,p.trim,param.match,lines.join|build JSDoc /** */ block from ctx fn info with @param/@returns
-findCtxFile(sourceFile:string,projectRoot:string)→string|null→sourceFile.replace,join,existsSync|locate .ctx file for source: check .context/ dir first, then colocated
+findCtxFile(sourceFile:string,projectRoot:string)→string|null→sourceFile.replace,join,existsSync|null→sourceFile.replace,join,existsSync|locate .ctx file for source: check .context/ dir first, then colocated
 findExportStart(funcNode)|find real start position for exported fns (before export keyword)
 export injectJSDoc(dir:string,options:Object=)→{ files: number, injected: number, skipped: number, details: Array →walkJSFiles,relative,findCtxFile,readFileSync,parseCtxFile,parse|inject JSDoc from .ctx into source, skip if JSDoc exists, AST-located
 export stripJSDoc(dir:string,options:Object=)→{ files: number, stripped: number, savedBytes: number →walkJSFiles,readFileSync,parse,value.startsWith,comments.filter,stripped.slice|strip all JSDoc via AST comments (safe—ignores strings), regex fallback

@@ -3,7 +3,7 @@
 export computeSig(fileData:Object)→string→parts.push,createHash,parts.sort,hash.slice|compute interface signature hash|for staleness of docs
 export computeContentHash(code:string)→string→createHash|compute full source code hash|for body-dependent metrics
 export getCachePath(contextDir:string,relPath:string)→string→relPath.replace,join|get cache file path for source file|.context/.cache/path.json
-export readCache(contextDir:string,relPath:string)→CacheEntry|null→getCachePath,existsSync,readFileSync,JSON.parse|read cached analysis file|returns CacheEntry or null
+export readCache(contextDir:string,relPath:string)→CacheEntry|null→getCachePath,existsSync,readFileSync,JSON.parse|null→getCachePath,existsSync,readFileSync,JSON.parse|read cached analysis file|returns CacheEntry or null
 export writeCache(contextDir:string,relPath:string,data:CacheEntry)→getCachePath,dirname,mkdirSync,JSON.stringify,writeFileSync|write analysis cache entry|includes timestamp
 export isCacheValid(cached:CacheEntry|null,currentSig:string,currentContentHash:string,level:'sig'|'content'=)→boolean|check if cache is valid|supports interface or content hash level
 export invalidateAllCaches(contextDir:string)→join,existsSync,rmSync|delete entire cache directory
