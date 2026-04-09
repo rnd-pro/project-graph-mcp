@@ -671,4 +671,34 @@ export const TOOLS = [
       required: ['path'],
     },
   },
+
+  // Monorepo & Performance Tools
+  {
+    name: 'discover_sub_projects',
+    description: 'Find sub-projects in a monorepo. Scans packages/, apps/, services/, modules/, libs/, plugins/ for package.json.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Root path to scan for sub-projects',
+        },
+      },
+      required: ['path'],
+    },
+  },
+  {
+    name: 'get_analysis_summary',
+    description: 'Quick health score — runs only cached per-file metrics (complexity, undocumented, JSDoc). Much faster than get_full_analysis for large codebases.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Path to scan',
+        },
+      },
+      required: ['path'],
+    },
+  },
 ];

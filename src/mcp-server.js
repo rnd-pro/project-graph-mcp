@@ -21,7 +21,7 @@ import { getSimilarFunctions } from './similar-functions.js';
 import { getComplexity } from './complexity.js';
 import { getLargeFiles } from './large-files.js';
 import { getOutdatedPatterns } from './outdated-patterns.js';
-import { getFullAnalysis } from './full-analysis.js';
+import { getFullAnalysis, getAnalysisSummaryOnly } from './full-analysis.js';
 import { getCustomRules, setCustomRule, checkCustomRules } from './custom-rules.js';
 import { getFrameworkReference } from './framework-references.js';
 import { setRoots, resolvePath } from './workspace.js';
@@ -29,7 +29,7 @@ import { getDBSchema, getTableUsage, getDBDeadTables } from './db-analysis.js';
 import { compressFile } from './compress.js';
 import { getProjectDocs, generateContextFiles, checkStaleness } from './doc-dialect.js';
 import { getGraph } from './tools.js';
-import { parseProject } from './parser.js';
+import { parseProject, discoverSubProjects } from './parser.js';
 import { getAiContext } from './ai-context.js';
 import { checkJSDocConsistency } from './jsdoc-checker.js';
 import { checkTypes } from './type-checker.js';
@@ -177,6 +177,14 @@ const TOOL_HANDLERS = {
       files: args.files,
       maxDiagnostics: args.maxDiagnostics,
     });
+  },
+
+  // Monorepo & Performance
+  discover_sub_projects: (args) => {
+    return discoverSubProjects(resolvePath(args.path));
+  },
+  get_analysis_summary: (args) => {
+    return getAnalysisSummaryOnly(resolvePath(args.path));
   },
 };
 

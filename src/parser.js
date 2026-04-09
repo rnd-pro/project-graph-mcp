@@ -3,7 +3,7 @@
  * Extracts classes, functions, methods, properties, imports, calls, and SQL queries
  */
 
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
 import { join, relative, resolve } from 'path';
 import { parse } from '../vendor/acorn.mjs';
 import * as walk from '../vendor/walk.mjs';
@@ -339,11 +339,52 @@ function templateToString(tplNode) {
 }
 
 /**
+ * Discover sub-projects in a monorepo directory structure
+ * @param {string} rootDir 
+ * @returns {Array<{name: string, path: string, absolutePath: string}>}
+ */
+export function discoverSubProjects(rootDir) {
+  const resolvedRoot = resolve(rootDir);
+  const subProjects = [];
+  
+  // Known monorepo directory conventions
+  const MONO_DIRS = ['packages', 'apps', 'services', 'modules', 'libs', 'plugins'];
+  
+  for (const monoDir of MONO_DIRS) {
+    const monoPath = join(resolvedRoot, monoDir);
+    if (!existsSync(monoPath)) continue;
+    
+    try {
+      for (const entry of readdirSync(monoPath)) {
+        const entryPath = join(monoPath, entry);
+        const pkgPath = join(entryPath, 'package.json');
+        if (statSync(entryPath).isDirectory() && existsSync(pkgPath)) {
+          try {
+            const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+            subProjects.push({
+              name: pkg.name || entry,
+              path: relative(resolvedRoot, entryPath),
+              absolutePath: entryPath,
+            });
+          } catch { 
+            subProjects.push({ name: entry, path: relative(resolvedRoot, entryPath), absolutePath: entryPath });
+          }
+        }
+      }
+    } catch { /* dir not readable */ }
+  }
+  
+  return subProjects;
+}
+
+/**
  * Parse all JS files in a directory
  * @param {string} dir 
+ * @param {Object} [options={}]
+ * @param {boolean} [options.recursive=false]
  * @returns {Promise<ParseResult>}
  */
-export async function parseProject(dir) {
+export async function parseProject(dir, options = {}) {
   const result = {
     files: [],
     classes: [],
@@ -357,17 +398,48 @@ export async function parseProject(dir) {
   const files = findJSFiles(dir);
 
   for (const file of files) {
-    const content = readFileSync(file, 'utf-8');
-    const relPath = relative(resolvedDir, file);
-    const parsed = await parseFileByExtension(content, relPath);
+    try {
+      const content = readFileSync(file, 'utf-8');
+      const relPath = relative(resolvedDir, file);
+      const parsed = await parseFileByExtension(content, relPath);
 
-    result.files.push(relPath);
-    result.classes.push(...parsed.classes);
-    result.functions.push(...parsed.functions);
-    result.imports.push(...parsed.imports);
-    result.exports.push(...parsed.exports);
-    if (parsed.tables?.length) {
-      result.tables.push(...parsed.tables);
+      result.files.push(relPath);
+      result.classes.push(...parsed.classes);
+      result.functions.push(...parsed.functions);
+      result.imports.push(...parsed.imports);
+      result.exports.push(...parsed.exports);
+      if (parsed.tables?.length) {
+        result.tables.push(...parsed.tables);
+      }
+    } catch (e) {
+      // Ignore unreadable files
+    }
+  }
+
+  // Recursive monorepo support
+  if (options.recursive) {
+    const subs = discoverSubProjects(dir);
+    result.subProjects = [];
+    for (const sub of subs) {
+      try {
+        const subResult = await parseProject(sub.absolutePath);
+        // Prefix all file paths with sub-project path
+        for (const f of subResult.files) {
+          result.files.push(join(sub.path, f));
+        }
+        for (const c of subResult.classes) {
+          c.file = join(sub.path, c.file);
+          result.classes.push(c);
+        }
+        for (const fn of subResult.functions) {
+          fn.file = join(sub.path, fn.file);
+          result.functions.push(fn);
+        }
+        result.imports.push(...subResult.imports);
+        result.exports.push(...subResult.exports);
+        if (subResult.tables?.length) result.tables.push(...subResult.tables);
+        result.subProjects.push({ name: sub.name, path: sub.path, files: subResult.files.length });
+      } catch { /* sub-project parse failure is non-fatal */ }
     }
   }
 

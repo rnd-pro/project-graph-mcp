@@ -1,11 +1,15 @@
 --- src/parser.js ---
-@sig 9de1b893
+@sig bb390425
+@enrich: Replace each {DESCRIBE} below. Read src/parser.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
 export parseFile()→parse,console.warn,imports.push,exportedNames.add,methods.push,extractCallsAndSQL|parse single JS file to AST|extracts classes,functions,imports,exports
 extractCallsAndSQL()→calls.includes,calls.push,getCallMethodName,DB_METHODS.has,extractStringValue,isSQLString|walk AST to extract method calls and SQL queries
 getTagName()|extract tag name from tagged template expr|handles sql,Prisma.sql,db.sql
 getCallMethodName()|extract method name from CallExpression callee
 extractStringValue()→templateToString|extract string from Literal or TemplateLiteral|replaces $N placeholders
 templateToString()|convert TemplateLiteral AST node to string with $N
+export discoverSubProjects()→resolve,join,existsSync,readdirSync,statSync,readFileSync|{DESCRIBE}
 export parseProject()→resolve,findJSFiles,readFileSync,relative,parseFileByExtension,files.push|parse all JS files in dir|returns aggregated ParseResult
 parseFileByExtension()→filename.endsWith,parseSQL,parsePython,parseGo,parseTypeScript,parseFile|route file to correct parser based on extension
 isSourceFile()→filename.endsWith,SOURCE_EXTENSIONS.some|check if file extension is supported|excludes .css.js,.tpl.js

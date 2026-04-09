@@ -91,8 +91,8 @@
   - State is file-based (no in-memory Map)
   - Removed `@test/@expect` from: jsdoc-generator, undocumented, instructions, tool-defs
 - [x] **Batch concurrency** for `generate_context_docs` (batches of 5 files)
-- [ ] Recursive project support (monorepo scanning)
-- [ ] Streaming large codebase analysis
+- [x] **Recursive project support** (monorepo scanning via `discover_sub_projects`)
+- [x] **Streaming large codebase analysis** (`getFullAnalysisStreaming` async generator + `get_analysis_summary` quick check)
 
 ---
 

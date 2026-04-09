@@ -84,7 +84,7 @@ function calculateHealthScore(results) {
   const warningPatterns = results.outdated.stats?.bySeverity?.warning || 0;
   const outdatedPenalty = Math.min(errorPatterns * 3 + warningPatterns * 1, 10);
   score -= outdatedPenalty;
-  if (results.outdated.redundantDeps.length > 0) {
+  if (results.outdated.redundantDeps?.length > 0) {
     topIssues.push(`${results.outdated.redundantDeps.length} redundant npm dependencies`);
   }
 
@@ -355,4 +355,116 @@ export async function getFullAnalysis(dir, options = {}) {
   }
 
   return result;
+}
+
+/**
+ * Quick health check — runs only cached per-file metrics, skips cross-file.
+ * @param {string} dir - Path to scan
+ * @returns {{healthScore: number, complexity: number, undocumented: number, jsdocIssues: number}}
+ */
+export function getAnalysisSummaryOnly(dir) {
+  const contextDir = join(getWorkspaceRoot(), '.context');
+  const cached = runCacheableAnalyses(dir, contextDir);
+  const complexity = aggregateComplexity(cached.complexity);
+  const undocumented = aggregateUndocumented(cached.undocumented);
+  const jsdocCheck = aggregateJSDoc(cached.jsdocIssues);
+
+  // Reuse the same health score formula as getFullAnalysis
+  const overall = calculateHealthScore({
+    deadCode: { total: 0 },
+    undocumented,
+    similar: { total: 0 },
+    complexity,
+    largeFiles: { total: 0 },
+    outdated: { stats: { totalPatterns: 0 } },
+    jsdocConsistency: jsdocCheck.summary,
+  });
+
+  return {
+    healthScore: overall.score,
+    grade: overall.rating,
+    complexity: complexity.total,
+    undocumented: undocumented.total,
+    jsdocIssues: jsdocCheck.summary.total,
+    cache: cached.cacheStats,
+    note: 'Partial score — cross-file analyses skipped for speed. Run get_full_analysis for complete health check.',
+  };
+}
+
+/**
+ * Streaming analysis — yields results as each sub-analysis completes.
+ * Useful for large codebases where waiting for all analyses is too slow.
+ * @param {string} dir - Path to scan
+ * @param {Object} [options]
+ * @param {boolean} [options.includeItems=false]
+ * @returns {AsyncGenerator<{type: string, data: Object}>}
+ */
+export async function* getFullAnalysisStreaming(dir, options = {}) {
+  const includeItems = options.includeItems || false;
+  const contextDir = join(getWorkspaceRoot(), '.context');
+  
+  // Phase 1: Cached per-file analyses (fast)
+  const cached = runCacheableAnalyses(dir, contextDir);
+  
+  const complexity = aggregateComplexity(cached.complexity);
+  yield { type: 'complexity', data: {
+    total: complexity.total,
+    stats: complexity.stats,
+    ...(includeItems && { items: complexity.items.slice(0, 10) }),
+  }};
+  
+  const undocumented = aggregateUndocumented(cached.undocumented);
+  yield { type: 'undocumented', data: {
+    total: undocumented.total,
+    byType: undocumented.byType,
+    ...(includeItems && { items: undocumented.items.slice(0, 10) }),
+  }};
+  
+  const jsdocCheck = aggregateJSDoc(cached.jsdocIssues);
+  yield { type: 'jsdocConsistency', data: {
+    total: jsdocCheck.summary.total,
+    errors: jsdocCheck.summary.errors,
+    warnings: jsdocCheck.summary.warnings,
+    ...(includeItems && { issues: jsdocCheck.issues.slice(0, 10) }),
+  }};
+  
+  yield { type: 'cache', data: cached.cacheStats };
+  
+  // Phase 2: Cross-file analyses (slow, one at a time)
+  try {
+    const deadCode = await getDeadCode(dir);
+    yield { type: 'deadCode', data: {
+      total: deadCode.total,
+      byType: deadCode.byType,
+      ...(includeItems && { items: deadCode.items.slice(0, 10) }),
+    }};
+  } catch { yield { type: 'deadCode', data: { total: 0, byType: {}, error: 'analysis failed' } }; }
+  
+  try {
+    const similar = await getSimilarFunctions(dir, { threshold: 70 });
+    yield { type: 'similar', data: {
+      total: similar.total,
+      ...(includeItems && { pairs: similar.pairs.slice(0, 5) }),
+    }};
+  } catch { yield { type: 'similar', data: { total: 0, error: 'analysis failed' } }; }
+  
+  try {
+    const largeFiles = await getLargeFiles(dir);
+    yield { type: 'largeFiles', data: {
+      total: largeFiles.total,
+      stats: largeFiles.stats,
+      ...(includeItems && { items: largeFiles.items.slice(0, 10) }),
+    }};
+  } catch { yield { type: 'largeFiles', data: { total: 0, error: 'analysis failed' } }; }
+  
+  try {
+    const outdated = await getOutdatedPatterns(dir);
+    yield { type: 'outdated', data: {
+      totalPatterns: outdated.stats.totalPatterns,
+      redundantDeps: outdated.redundantDeps,
+      ...(includeItems && { codePatterns: outdated.codePatterns.slice(0, 10) }),
+    }};
+  } catch { yield { type: 'outdated', data: { totalPatterns: 0, error: 'analysis failed' } }; }
+  
+  yield { type: 'done', data: { phases: 2, timestamp: new Date().toISOString() } };
 }
