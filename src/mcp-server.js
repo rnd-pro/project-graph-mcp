@@ -34,6 +34,7 @@ import { getAiContext } from './ai-context.js';
 import { checkJSDocConsistency } from './jsdoc-checker.js';
 import { checkTypes } from './type-checker.js';
 import { compactProject, expandProject } from './compact.js';
+import { validateCtxContracts } from './ctx-to-jsdoc.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -192,6 +193,9 @@ const TOOL_HANDLERS = {
   },
   beautify_project: (args) => {
     return expandProject(resolvePath(args.path), { dryRun: args.dryRun || false });
+  },
+  validate_ctx_contracts: (args) => {
+    return validateCtxContracts(resolvePath(args.path), { strict: args.strict || false });
   },
 };
 

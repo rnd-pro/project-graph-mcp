@@ -737,4 +737,16 @@ export const TOOLS = [
       required: ['path'],
     },
   },
+  {
+    name: 'validate_ctx_contracts',
+    description: 'Validate .ctx contracts against actual source code AST. Checks param count/names, export status, and reports mismatches. Zero-dependency alternative to tsc.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Project root path' },
+        strict: { type: 'boolean', description: 'Also report functions missing from .ctx (default: false)' },
+      },
+      required: ['path'],
+    },
+  },
 ];

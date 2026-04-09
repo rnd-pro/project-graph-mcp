@@ -23,7 +23,7 @@ import { resolvePath } from './workspace.js';
 import { checkJSDocConsistency } from './jsdoc-checker.js';
 import { checkTypes } from './type-checker.js';
 import { compactProject, expandProject } from './compact.js';
-import { injectJSDoc, stripJSDoc } from './ctx-to-jsdoc.js';
+import { injectJSDoc, stripJSDoc, validateCtxContracts } from './ctx-to-jsdoc.js';
 
 /**
  * Parse named argument from args array
@@ -228,6 +228,16 @@ export const CLI_HANDLERS = {
       const projectPath = resolvePath(args[0]);
       const dryRun = args.includes('--dry-run');
       return stripJSDoc(projectPath, { dryRun });
+    },
+  },
+
+  'validate-ctx': {
+    requiresArg: true,
+    argError: 'Usage: validate-ctx <path> [--strict]',
+    handler: async (args) => {
+      const projectPath = resolvePath(args[0]);
+      const strict = args.includes('--strict');
+      return validateCtxContracts(projectPath, { strict });
     },
   },
 };

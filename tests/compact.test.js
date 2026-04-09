@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import { mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from 'fs';
 import { join } from 'path';
 import { compactProject, expandProject } from '../src/compact.js';
-import { parseCtxFile, injectJSDoc, stripJSDoc } from '../src/ctx-to-jsdoc.js';
+import { parseCtxFile, injectJSDoc, stripJSDoc, validateCtxContracts } from '../src/ctx-to-jsdoc.js';
 import { parseFile } from '../src/parser.js';
 
 const TEST_DIR = join(import.meta.dirname, '__compact_test__');
@@ -396,6 +396,65 @@ function bar() {}
 
       assert.strictEqual(result.dryRun, true);
       assert.strictEqual(readFileSync(join(dir, 'dr.js'), 'utf-8'), original);
+    });
+  });
+
+  // ============================
+  // CTX Contract Validator
+  // ============================
+
+  describe('validateCtxContracts()', () => {
+
+    it('should validate matching contracts', () => {
+      const dir = join(TEST_DIR, 'validate1');
+      mkdirSync(join(dir, 'src'), { recursive: true });
+      mkdirSync(join(dir, '.context', 'src'), { recursive: true });
+
+      writeFileSync(join(dir, 'src', 'math.js'), `export function add(a, b) { return a + b; }
+`, 'utf-8');
+      writeFileSync(join(dir, '.context', 'src', 'math.ctx'), `--- src/math.js ---
+@sig abc123
+export add(a:number,b:number)→number|addition
+`, 'utf-8');
+
+      const result = validateCtxContracts(dir);
+      assert.strictEqual(result.summary.errors, 0);
+      assert.strictEqual(result.summary.warnings, 0);
+    });
+
+    it('should detect param count mismatch', () => {
+      const dir = join(TEST_DIR, 'validate2');
+      mkdirSync(join(dir, 'src'), { recursive: true });
+      mkdirSync(join(dir, '.context', 'src'), { recursive: true });
+
+      writeFileSync(join(dir, 'src', 'util.js'), `function process(a, b, c) {}
+`, 'utf-8');
+      writeFileSync(join(dir, '.context', 'src', 'util.ctx'), `--- src/util.js ---
+process(a,b)|process items
+`, 'utf-8');
+
+      const result = validateCtxContracts(dir);
+      assert.ok(result.summary.errors > 0);
+      const error = result.violations.find(v => v.message.includes('2 params'));
+      assert.ok(error, 'Should report param count mismatch');
+    });
+
+    it('should detect function missing from source', () => {
+      const dir = join(TEST_DIR, 'validate3');
+      mkdirSync(join(dir, 'src'), { recursive: true });
+      mkdirSync(join(dir, '.context', 'src'), { recursive: true });
+
+      writeFileSync(join(dir, 'src', 'api.js'), `function existing() {}
+`, 'utf-8');
+      writeFileSync(join(dir, '.context', 'src', 'api.ctx'), `--- src/api.js ---
+existing()|exists
+removed()|was deleted
+`, 'utf-8');
+
+      const result = validateCtxContracts(dir);
+      const error = result.violations.find(v => v.message.includes('removed'));
+      assert.ok(error, 'Should report missing function');
+      assert.strictEqual(error.severity, 'error');
     });
   });
 

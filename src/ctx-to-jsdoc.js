@@ -338,3 +338,146 @@ function walkJSFiles(dir) {
   } catch { /* skip unreadable */ }
   return results;
 }
+
+// ============================
+// CTX Contract Validator
+// ============================
+
+/**
+ * Validate .ctx contracts against actual AST of source files.
+ * Zero-dependency alternative to tsc — checks contract consistency.
+ *
+ * @param {string} dir - Project root directory
+ * @param {Object} [options]
+ * @param {boolean} [options.strict=false] - Also warn about missing .ctx entries
+ * @returns {{ files: number, violations: Array<{file: string, severity: string, message: string}>, summary: {errors: number, warnings: number} }}
+ */
+export function validateCtxContracts(dir, options = {}) {
+  const strict = options.strict || false;
+  const jsFiles = walkJSFiles(dir);
+  const violations = [];
+  let filesChecked = 0;
+
+  for (const jsFile of jsFiles) {
+    const relPath = relative(dir, jsFile);
+    const ctxPath = findCtxFile(relPath, dir);
+    if (!ctxPath) continue; // No .ctx — skip
+
+    filesChecked++;
+
+    const ctxContent = readFileSync(ctxPath, 'utf-8');
+    const ctxData = parseCtxFile(ctxContent);
+
+    // Parse source AST to get actual signatures
+    let source;
+    try {
+      source = readFileSync(jsFile, 'utf-8');
+    } catch { continue; }
+
+    let ast;
+    try {
+      ast = parse(source, { ecmaVersion: 'latest', sourceType: 'module', locations: true });
+    } catch { continue; }
+
+    // Extract actual function info from AST
+    const astFunctions = new Map();
+    walk(ast, {
+      FunctionDeclaration(node) {
+        if (!node.id) return;
+        astFunctions.set(node.id.name, {
+          paramCount: node.params.length,
+          params: node.params.map(p => {
+            if (p.type === 'Identifier') return p.name;
+            if (p.type === 'AssignmentPattern' && p.left?.name) return p.left.name;
+            if (p.type === 'RestElement' && p.argument?.name) return p.argument.name;
+            if (p.type === 'ObjectPattern') return 'options';
+            return '?';
+          }),
+          async: node.async || false,
+          line: node.loc.start.line,
+        });
+      },
+    });
+
+    // Check exported status from AST
+    const exportedNames = new Set();
+    walk(ast, {
+      ExportNamedDeclaration(node) {
+        if (node.declaration?.id) exportedNames.add(node.declaration.id.name);
+        if (node.specifiers) {
+          for (const s of node.specifiers) exportedNames.add(s.exported.name);
+        }
+      },
+    });
+
+    // Validate each .ctx function against AST
+    for (const ctxFunc of ctxData.functions) {
+      const astFunc = astFunctions.get(ctxFunc.name);
+
+      if (!astFunc) {
+        violations.push({
+          file: relPath,
+          severity: 'error',
+          message: `Function "${ctxFunc.name}" in .ctx not found in source`,
+        });
+        continue;
+      }
+
+      // Param count check
+      const ctxParams = ctxFunc.params ? ctxFunc.params.split(',').filter(Boolean) : [];
+      if (ctxParams.length !== astFunc.paramCount) {
+        violations.push({
+          file: relPath,
+          severity: 'error',
+          message: `"${ctxFunc.name}": .ctx has ${ctxParams.length} params, AST has ${astFunc.paramCount}`,
+        });
+      }
+
+      // Param name check (strip types for comparison)
+      for (let i = 0; i < Math.min(ctxParams.length, astFunc.params.length); i++) {
+        const ctxName = ctxParams[i].replace(/^\.\.\./, '').replace(/:.*/, '').replace(/=$/, '');
+        const astName = astFunc.params[i];
+        if (ctxName !== astName && ctxName !== '?' && astName !== '?') {
+          violations.push({
+            file: relPath,
+            severity: 'warning',
+            message: `"${ctxFunc.name}" param ${i}: .ctx="${ctxName}", AST="${astName}"`,
+          });
+        }
+      }
+
+      // Export status check
+      const astExported = exportedNames.has(ctxFunc.name);
+      if (ctxFunc.exported !== astExported) {
+        violations.push({
+          file: relPath,
+          severity: 'warning',
+          message: `"${ctxFunc.name}": .ctx says ${ctxFunc.exported ? 'exported' : 'private'}, AST says ${astExported ? 'exported' : 'private'}`,
+        });
+      }
+
+      // Remove from astFunctions to track unmatched
+      astFunctions.delete(ctxFunc.name);
+    }
+
+    // Strict mode: report functions in AST but not in .ctx
+    if (strict && astFunctions.size > 0) {
+      for (const [name] of astFunctions) {
+        violations.push({
+          file: relPath,
+          severity: 'info',
+          message: `Function "${name}" in source (line ${astFunctions.get(name)?.line}) not documented in .ctx`,
+        });
+      }
+    }
+  }
+
+  const errors = violations.filter(v => v.severity === 'error').length;
+  const warnings = violations.filter(v => v.severity === 'warning').length;
+
+  return {
+    files: filesChecked,
+    violations,
+    summary: { errors, warnings },
+  };
+}
