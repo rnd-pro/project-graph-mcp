@@ -59,6 +59,7 @@ get_ai_context({ path: "src/" })
 ```
 
 - **Code compression** — Terser-minified source with export legend headers (20-55% per file)
+- **Compact Code Mode** — project-wide `compact`/`beautify` (preserves all names, strips comments/whitespace)
 - **Doc Dialect** — compact `.context/` documentation format, auto-generated from AST with `{DESCRIBE}` markers
 - **Two-tier `.ctx`** — `.ctx` (machine-generated, AST signatures) + `.ctx.md` (agent notes, TODO, decisions)
 - **Self-enriching** — `@enrich` instructions embedded in `.ctx` files guide any AI agent to fill descriptions
