@@ -600,4 +600,120 @@ function mul(x, y) {
     });
   });
 
+  // ============================
+  // Audit Gap Tests
+  // ============================
+
+  describe('Audit Gap: editCompressed edge cases', () => {
+
+    it('should replace a class declaration', async () => {
+      const dir = join(TEST_DIR, 'gap1');
+      mkdirSync(dir, { recursive: true });
+      const file = join(dir, 'cls.js');
+      writeFileSync(file, 'class Dog {\n  bark() { return "woof"; }\n}\n\nfunction other() {}\n', 'utf-8');
+
+      await editCompressed(file, 'Dog', 'class Dog {\n  bark() { return "woof!"; }\n  run() {}\n}');
+      const result = readFileSync(file, 'utf-8');
+      assert.ok(result.includes('woof!'), 'Class body replaced');
+      assert.ok(result.includes('run'), 'New method added');
+      assert.ok(result.includes('other'), 'Other functions preserved');
+    });
+
+    it('should replace a variable-assigned function', async () => {
+      const dir = join(TEST_DIR, 'gap2');
+      mkdirSync(dir, { recursive: true });
+      const file = join(dir, 'arrow.js');
+      writeFileSync(file, 'const add = (a, b) => a + b;\nconst sub = (a, b) => a - b;\n', 'utf-8');
+
+      await editCompressed(file, 'add', 'const add = (a, b) => a + b + 1;');
+      const result = readFileSync(file, 'utf-8');
+      assert.ok(result.includes('+ 1'), 'Arrow function replaced');
+      assert.ok(result.includes('sub'), 'Other variables preserved');
+    });
+
+    it('should reject invalid syntax in replacement', async () => {
+      const dir = join(TEST_DIR, 'gap3');
+      mkdirSync(dir, { recursive: true });
+      const file = join(dir, 'bad.js');
+      writeFileSync(file, 'function foo() { return 1; }\n', 'utf-8');
+
+      await assert.rejects(
+        () => editCompressed(file, 'foo', 'function foo( { broken syntax'),
+        /invalid syntax/
+      );
+      // File should remain unchanged
+      assert.ok(readFileSync(file, 'utf-8').includes('return 1'), 'File not corrupted');
+    });
+  });
+
+  describe('Audit Gap: validateCtxContracts edge cases', () => {
+
+    it('should handle empty .ctx files gracefully', () => {
+      const dir = join(TEST_DIR, 'gap4');
+      mkdirSync(join(dir, 'src'), { recursive: true });
+      mkdirSync(join(dir, '.context', 'src'), { recursive: true });
+
+      writeFileSync(join(dir, 'src', 'empty.js'), 'function a() {}\n', 'utf-8');
+      writeFileSync(join(dir, '.context', 'src', 'empty.ctx'), '', 'utf-8');
+
+      const result = validateCtxContracts(dir);
+      // Should not crash
+      assert.strictEqual(typeof result.files, 'number');
+    });
+
+    it('should report issues in strict mode', () => {
+      const dir = join(TEST_DIR, 'gap5');
+      mkdirSync(join(dir, 'src'), { recursive: true });
+      mkdirSync(join(dir, '.context', 'src'), { recursive: true });
+
+      writeFileSync(join(dir, 'src', 'fn.js'), 'export function hello(name) {}\n', 'utf-8');
+      writeFileSync(join(dir, '.context', 'src', 'fn.ctx'), `--- src/fn.js ---
+hello(name:string)|greet
+`, 'utf-8');
+
+      const result = validateCtxContracts(dir, { strict: true });
+      assert.strictEqual(typeof result.summary, 'object');
+    });
+  });
+
+  describe('Audit Gap: mode-config edge cases', () => {
+
+    it('should handle corrupted JSON and return defaults', () => {
+      const dir = join(TEST_DIR, 'gap6');
+      mkdirSync(join(dir, '.context'), { recursive: true });
+      writeFileSync(join(dir, '.context', 'config.json'), '{{invalid json', 'utf-8');
+
+      const config = getConfig(dir);
+      assert.strictEqual(config.mode, 2, 'Returns default mode');
+      assert.strictEqual(config.beautify, true, 'Returns default beautify');
+    });
+
+    it('should auto-create .context directory', () => {
+      const dir = join(TEST_DIR, 'gap7');
+      mkdirSync(dir, { recursive: true });
+      // No .context directory exists yet
+
+      setConfig(dir, { mode: 1 });
+      assert.ok(existsSync(join(dir, '.context', 'config.json')), 'Config file created');
+      assert.strictEqual(getConfig(dir).mode, 1);
+    });
+  });
+
+  describe('Audit Gap: splitTopLevelParams via validator', () => {
+
+    it('should handle nested generics', () => {
+      const dir = join(TEST_DIR, 'gap8');
+      mkdirSync(join(dir, 'src'), { recursive: true });
+      mkdirSync(join(dir, '.context', 'src'), { recursive: true });
+
+      writeFileSync(join(dir, 'src', 'gen.js'), 'function transform(data, options) {}\n', 'utf-8');
+      writeFileSync(join(dir, '.context', 'src', 'gen.ctx'), `--- src/gen.js ---
+transform(data:Array<Map<string, number>>,options:{deep: boolean, limit: number})|transform data
+`, 'utf-8');
+
+      const result = validateCtxContracts(dir);
+      assert.strictEqual(result.summary.errors, 0, 'Nested generics should count as 2 params');
+    });
+  });
+
 });

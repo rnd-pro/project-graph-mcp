@@ -134,10 +134,12 @@ const TOOL_HANDLERS = {
     const projectPath = resolvePath(args.path);
     const graph = await getGraph(projectPath);
     const docs = getProjectDocs(graph, projectPath, { file: args.file });
-    // Lazy staleness check
-    const parsed = await parseProject(projectPath);
-    const staleness = checkStaleness(projectPath, parsed);
-    return { docs, staleFiles: staleness.stale, freshCount: staleness.fresh };
+    // Lazy staleness check — wrapped in try-catch for projects with parse errors
+    try {
+      const parsed = await parseProject(projectPath);
+      const staleness = checkStaleness(projectPath, parsed);
+      return { docs, staleFiles: staleness.stale, freshCount: staleness.fresh };
+    } catch { return { docs }; }
   },
   generate_context_docs: async (args) => {
     const projectPath = resolvePath(args.path);
