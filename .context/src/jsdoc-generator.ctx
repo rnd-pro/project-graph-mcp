@@ -1,11 +1,11 @@
 --- src/jsdoc-generator.js ---
-@sig 7ffdf89a
+@sig c2ea2f20
 @enrich: Replace each {DESCRIBE} below. Read src/jsdoc-generator.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-export generateJSDoc()→readFileSync,getWorkspaceRoot,relative,parse,code.split,Math.max|{DESCRIBE}
-buildJSDoc()→lines.push,extractParamName,inferParamType,lines.join|{DESCRIBE}
-inferParamType()|{DESCRIBE}
-export generateJSDocFor()→generateJSDoc,name.endsWith,results.find|{DESCRIBE}
+export generateJSDoc(filePath:string,options:Object=)→JSDocTemplate[]→readFileSync,getWorkspaceRoot,relative,parse,code.split,Math.max|{DESCRIBE}
+buildJSDoc(info:Object)→string→lines.push,extractParamName,inferParamType,lines.join|{DESCRIBE}
+inferParamType(param:Object)→string|{DESCRIBE}
+export generateJSDocFor(filePath:string,functionName:string,options:Object=)→JSDocTemplate|null→generateJSDoc,name.endsWith,results.find|{DESCRIBE}
 PATTERNS: {DESCRIBE}
 EDGE_CASES: {DESCRIBE}

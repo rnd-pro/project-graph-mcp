@@ -3,6 +3,6 @@
 @enrich: Replace each {DESCRIBE} below. Read src/instructions.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-export getInstructions()|{DESCRIBE}
+export getInstructions()→string|{DESCRIBE}
 PATTERNS: {DESCRIBE}
 EDGE_CASES: {DESCRIBE}

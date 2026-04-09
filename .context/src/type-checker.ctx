@@ -1,11 +1,11 @@
 --- src/type-checker.js ---
-@sig ff52b27a
+@sig 1796dd33
 @enrich: Replace each {DESCRIBE} below. Read src/type-checker.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-detectTsc()→execSync|{DESCRIBE}
-parseDiagnosticLine()→line.match,parseInt|{DESCRIBE}
-buildArgs()→join,existsSync,args.push|{DESCRIBE}
-export checkTypes()→resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|{DESCRIBE}
+detectTsc()→{ available: boolean, version: string|null, path: string|null →execSync|{DESCRIBE}
+parseDiagnosticLine(line:string,baseDir:string)→TypeDiagnostic|null→line.match,parseInt|{DESCRIBE}
+buildArgs(dir:string,options:Object=)→string[]→join,existsSync,args.push|{DESCRIBE}
+export checkTypes(dir:string,options:Object=)→Promise<{ available: boolean, version: string|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|{DESCRIBE}
 PATTERNS: {DESCRIBE}
 EDGE_CASES: {DESCRIBE}

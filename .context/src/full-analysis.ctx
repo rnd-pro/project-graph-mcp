@@ -1,15 +1,15 @@
 --- src/full-analysis.js ---
-@sig 60be243f
+@sig cbaabfae
 @enrich: Replace each {DESCRIBE} below. Read src/full-analysis.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-calculateHealthScore()→Math.min,topIssues.push,Math.round,Math.max,topIssues.slice|calculate overall health score 0-100|applies penalties for dead code, complexity
-runCacheableAnalyses()→resolve,getWorkspaceRoot,findJSFiles,relative,readFileSync,computeContentHash|run per-file cacheable metrics|checks complexity, undocumented, jsdoc
-aggregateComplexity()→items.filter,filtered.sort,filtered.filter,filtered.reduce,Math.round,filtered.slice|aggregate complexity items to summary|groups by severity
-aggregateUndocumented()→items.filter,items.slice|aggregate undocumented items to summary|groups by class/function/method
-aggregateJSDoc()→issues.filter|aggregate JSDoc issues to summary|counts errors and warnings
-export getFullAnalysis()→resolve,getWorkspaceRoot,join,runCacheableAnalyses,aggregateComplexity,aggregateUndocumented|run full code health analysis|combines cached and dynamic cross-file metrics
-export getAnalysisSummaryOnly()→getWorkspaceRoot,join,runCacheableAnalyses,aggregateComplexity,aggregateUndocumented,aggregateJSDoc|{DESCRIBE}
-export getFullAnalysisStreaming()→getWorkspaceRoot,join,runCacheableAnalyses,aggregateComplexity,items.slice,aggregateUndocumented|{DESCRIBE}
+calculateHealthScore(results:Object)→{score: number, rating: string, topIssues: string[]→Math.min,topIssues.push,Math.round,Math.max,topIssues.slice|calculate overall health score 0-100|applies penalties for dead code, complexity
+runCacheableAnalyses(dir:string,contextDir:string)→{ complexity: Object[], undocumented: Object[], jsdocIssues: Object[], cacheStats: { hits: number, misses: number →resolve,getWorkspaceRoot,findJSFiles,relative,readFileSync,computeContentHash|run per-file cacheable metrics|checks complexity, undocumented, jsdoc
+aggregateComplexity(items:Object[],minComplexity:number=)→Object→items.filter,filtered.sort,filtered.filter,filtered.reduce,Math.round,filtered.slice|aggregate complexity items to summary|groups by severity
+aggregateUndocumented(items:Object[])→Object→items.filter,items.slice|aggregate undocumented items to summary|groups by class/function/method
+aggregateJSDoc(issues:Object[])→{ issues: Object[], summary: Object →issues.filter|aggregate JSDoc issues to summary|counts errors and warnings
+export getFullAnalysis(dir:string,options:Object=)→Promise<AnalysisResult>→resolve,getWorkspaceRoot,join,runCacheableAnalyses,aggregateComplexity,aggregateUndocumented|run full code health analysis|combines cached and dynamic cross-file metrics
+export getAnalysisSummaryOnly(dir:string)→{healthScore: number, complexity: number, undocumented: number, jsdocIssues: number→getWorkspaceRoot,join,runCacheableAnalyses,aggregateComplexity,aggregateUndocumented,aggregateJSDoc|{DESCRIBE}
+export getFullAnalysisStreaming(dir:string,options:Object=)→AsyncGenerator<{type: string, data: Object→getWorkspaceRoot,join,runCacheableAnalyses,aggregateComplexity,items.slice,aggregateUndocumented|{DESCRIBE}
 PATTERNS: incremental caching for per-file metrics|score aggregation with clamping
 EDGE_CASES: cross-file metrics always dynamic|handles missing cache gracefully

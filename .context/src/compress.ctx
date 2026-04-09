@@ -1,7 +1,7 @@
 --- src/compress.js ---
-@sig d51f1fb0
-estimateTokens()→Math.ceil|estimates token count from str length
-extractLegend()→basename,lines.push,parse,Math.max,source.slice,beforeNode.match|parses AST to extract exports & JSDocs into compact legend string
-export compressFile()→extname,SUPPORTED_EXTENSIONS.has,readFileSync,estimateTokens,source.trim,minify|minifies JS/TS via Terser, prepends JSDoc legend
+@sig 80747049
+estimateTokens(text:string)→number→Math.ceil|estimates token count from str length
+extractLegend(source:string,filePath:string)→string→basename,lines.push,parse,Math.max,source.slice,beforeNode.match|parses AST to extract exports & JSDocs into compact legend string
+export compressFile(filePath:string,options:Object=)→Promise<{code: string, legend: string, original: number, compressed: number, savings: string→extname,SUPPORTED_EXTENSIONS.has,readFileSync,estimateTokens,source.trim,minify|minifies JS/TS via Terser, prepends JSDoc legend
 PATTERNS: AST traversal|regex JSDoc extraction|Terser minification
 EDGE_CASES: empty file→empty code|parse err→fallback to regex strip

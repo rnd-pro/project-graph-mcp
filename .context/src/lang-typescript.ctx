@@ -1,9 +1,9 @@
 --- src/lang-typescript.js ---
-@sig 83a1260e
+@sig a38ff4e1
 @enrich: Replace each {DESCRIBE} below. Read src/lang-typescript.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-export parseTypeScript()→stripStringsAndComments,cleaned.split,line.match,s.trim,imports.push,exports.push|{DESCRIBE}
-extractParams()→line.match,p.trim,p.startsWith|{DESCRIBE}
+export parseTypeScript(code:string,filename:string)→ParseResult→stripStringsAndComments,cleaned.split,line.match,s.trim,imports.push,exports.push|{DESCRIBE}
+extractParams(line:string)→string[]→line.match,p.trim,p.startsWith|{DESCRIBE}
 PATTERNS: {DESCRIBE}
 EDGE_CASES: {DESCRIBE}

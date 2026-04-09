@@ -1,17 +1,17 @@
 --- src/test-annotations.js ---
-@sig a9bd108b
+@sig e7eca503
 @enrich: Replace each {DESCRIBE} below. Read src/test-annotations.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-findCtxMdFiles()→readdirSync,join,statSync,stat.isDirectory,entry.startsWith,findCtxMdFiles|{DESCRIBE}
-export parseAnnotations()→content.split,line.startsWith,groupByName,features.push,line.match,rest.split|{DESCRIBE}
-groupByName()→Object.entries|{DESCRIBE}
-export getAllFeatures()→resolve,join,findCtxMdFiles,readFileSync,parseAnnotations,features.push|{DESCRIBE}
-export getPendingTests()→resolve,getAllFeatures,relative,pending.push|{DESCRIBE}
-export markTestPassed()→testId.split,updateTestState|{DESCRIBE}
-export markTestFailed()→testId.split,updateTestState|{DESCRIBE}
-updateTestState()→process.cwd,join,findCtxMdFiles,testId.split,parseInt,readFileSync|{DESCRIBE}
-export getTestSummary()→getAllFeatures,failures.push,Math.round|{DESCRIBE}
-export resetTestState()→process.cwd,join,findCtxMdFiles,readFileSync,content.replace,writeFileSync|{DESCRIBE}
+findCtxMdFiles(dir:string)→string[]→readdirSync,join,statSync,stat.isDirectory,entry.startsWith,findCtxMdFiles|{DESCRIBE}
+export parseAnnotations(content:string,filePath:string)→Feature[]→content.split,line.startsWith,groupByName,features.push,line.match,rest.split|{DESCRIBE}
+groupByName(tests:Array,filePath:string)→Feature[]→Object.entries|{DESCRIBE}
+export getAllFeatures(dir:string)→Feature[]→resolve,join,findCtxMdFiles,readFileSync,parseAnnotations,features.push|{DESCRIBE}
+export getPendingTests(dir:string)→TestStep[]→resolve,getAllFeatures,relative,pending.push|{DESCRIBE}
+export markTestPassed(testId:string)→{success: boolean, testId: string→testId.split,updateTestState|{DESCRIBE}
+export markTestFailed(testId:string,reason:string)→{success: boolean, testId: string, reason: string→testId.split,updateTestState|{DESCRIBE}
+updateTestState(name:string,testId:string,newState:string,reason:string)→{success: boolean, testId: string, reason?: string→process.cwd,join,findCtxMdFiles,testId.split,parseInt,readFileSync|{DESCRIBE}
+export getTestSummary(dir:string)→Object→getAllFeatures,failures.push,Math.round|{DESCRIBE}
+export resetTestState()→{success: boolean→process.cwd,join,findCtxMdFiles,readFileSync,content.replace,writeFileSync|{DESCRIBE}
 PATTERNS: {DESCRIBE}
 EDGE_CASES: {DESCRIBE}

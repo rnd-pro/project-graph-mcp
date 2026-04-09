@@ -1,17 +1,17 @@
 --- src/filters.js ---
-@sig 8edc53a0
+@sig 3e930485
 @enrich: Replace each {DESCRIBE} below. Read src/filters.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-export getFilters()|{DESCRIBE}
-export setFilters()→getFilters|{DESCRIBE}
-export addExcludes()→getFilters|{DESCRIBE}
-export removeExcludes()→dirs.includes,excludeDirs.filter,getFilters|{DESCRIBE}
-export resetFilters()→getFilters|{DESCRIBE}
-export parseGitignore()→join,existsSync,readFileSync,content.split,line.trim,line.startsWith|{DESCRIBE}
-export shouldExcludeDir()→dirName.startsWith,excludeDirs.includes,matchGitignorePattern|{DESCRIBE}
-export shouldExcludeFile()→matchWildcard,matchGitignorePattern|{DESCRIBE}
-matchWildcard()→pattern.replace|{DESCRIBE}
-matchGitignorePattern()→pattern.includes,matchWildcard,fullPath.includes|{DESCRIBE}
+export getFilters()→Object|{DESCRIBE}
+export setFilters(updates:Object)→Object→getFilters|{DESCRIBE}
+export addExcludes(dirs:string[])→Object→getFilters|{DESCRIBE}
+export removeExcludes(dirs:string[])→Object→dirs.includes,excludeDirs.filter,getFilters|{DESCRIBE}
+export resetFilters()→Object→getFilters|{DESCRIBE}
+export parseGitignore(rootDir:string)→string[]→join,existsSync,readFileSync,content.split,line.trim,line.startsWith|{DESCRIBE}
+export shouldExcludeDir(dirName:string,relativePath:string=)→boolean→dirName.startsWith,excludeDirs.includes,matchGitignorePattern|{DESCRIBE}
+export shouldExcludeFile(fileName:string,relativePath:string=)→boolean→matchWildcard,matchGitignorePattern|{DESCRIBE}
+matchWildcard(pattern:string,str:string)→boolean→pattern.replace|{DESCRIBE}
+matchGitignorePattern(pattern:string,name:string,relativePath:string)→boolean→pattern.includes,matchWildcard,fullPath.includes|{DESCRIBE}
 PATTERNS: {DESCRIBE}
 EDGE_CASES: {DESCRIBE}
