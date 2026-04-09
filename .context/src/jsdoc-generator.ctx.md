@@ -3,7 +3,6 @@
 ## Notes
 - Auto-generates JSDoc templates for functions, methods, and classes by analyzing the AST.
 - Extracts parameter names (including rest/destructured) and infers basic types from default values.
-- Optionally injects `@test` and `@expect` placeholders for Agentic Verification.
 
 ## Edge Cases
 - Skips generating JSDoc for functions that already have one (detects existing `/** ... */` block just above the function).
