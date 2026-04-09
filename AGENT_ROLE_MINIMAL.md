@@ -15,6 +15,7 @@ You have **Project Graph MCP** tools available — 43 tools for code analysis, p
 - `expand(symbol)` — Deep dive into class/function (use symbols from skeleton's `L` field)
 - `deps(symbol)` — Dependency tree (imports, usedBy, calls)
 - `usages(symbol)` — Find all usages across project
+- `invalidate_cache` — Refresh graph after code changes
 
 ### Code Quality
 - `get_full_analysis` — Run ALL checks + Health Score

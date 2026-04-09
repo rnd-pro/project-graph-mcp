@@ -25,7 +25,6 @@ import { getWorkspaceRoot } from './workspace.js';
  * @returns {JSDocTemplate[]}
  */
 export function generateJSDoc(filePath, options = {}) {
-  const includeTests = options.includeTests !== false;
   const results = [];
 
   const code = readFileSync(filePath, 'utf-8');
@@ -71,7 +70,6 @@ export function generateJSDoc(filePath, options = {}) {
         name: node.id.name,
         params: node.params,
         async: node.async,
-        includeTests,
       });
 
       results.push({
@@ -101,7 +99,6 @@ export function generateJSDoc(filePath, options = {}) {
             name: methodName,
             params: funcNode.params,
             async: funcNode.async,
-            includeTests,
           });
 
           results.push({

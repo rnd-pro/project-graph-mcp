@@ -14,6 +14,7 @@ You have access to **Project Graph MCP** — a suite of code analysis and projec
 | `get_agent_instructions` | Get project coding guidelines |
 | `get_framework_reference` | Get framework AI reference (auto-detects or explicit) |
 | `get_usage_guide` | Get full usage guide with examples |
+| `invalidate_cache` | Refresh graph after code changes (MANDATORY after edits) |
 
 ## 🧪 Testing System
 
@@ -186,6 +187,7 @@ Read project workflow docs (e.g., `.agent/workflows/symbiote-audit.md`) and use 
 |------|---------|
 | `get_filters` / `set_filters` | Configure excluded directories |
 | `add_excludes` / `remove_excludes` | Modify exclude list |
+| `reset_filters` | Reset to defaults |
 
 ## 🚀 Recommended Workflow
 
