@@ -166,6 +166,17 @@ export function injectJSDoc(dir, options = {}) {
     // Collect insertion points (reverse order to preserve line numbers)
     const insertions = [];
 
+    // Find the real start position (including export keyword if present)
+    function findExportStart(funcNode) {
+      // Check if this function is inside an ExportNamedDeclaration
+      for (const bodyNode of ast.body) {
+        if (bodyNode.type === 'ExportNamedDeclaration' && bodyNode.declaration === funcNode) {
+          return bodyNode.start;
+        }
+      }
+      return funcNode.start;
+    }
+
     walk(ast, {
       FunctionDeclaration(node) {
         if (!node.id) return;
@@ -173,12 +184,14 @@ export function injectJSDoc(dir, options = {}) {
         const ctxFunc = ctxData.functions.find(f => f.name === funcName);
         if (!ctxFunc) return;
 
+        const realStart = findExportStart(node);
+
         // Check if JSDoc already exists — scan backwards, skipping blank lines
-        const textBefore = source.slice(0, node.start).trimEnd();
+        const textBefore = source.slice(0, realStart).trimEnd();
         if (textBefore.endsWith('*/')) return; // Already has JSDoc
 
         const jsdoc = buildJSDocBlock(ctxFunc);
-        insertions.push({ position: node.start, jsdoc });
+        insertions.push({ position: realStart, jsdoc });
         injectedCount++;
       },
     });
