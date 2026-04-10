@@ -8,7 +8,14 @@ import bus from './event-bus.js';
 import { registerService } from './local-gateway.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const WEB_ROOT = path.join(__dirname, '..', 'web');
+const PKG_ROOT = path.join(__dirname, '..');
+const WEB_ROOT = path.join(PKG_ROOT, 'web');
+
+/** Map /vendor/ requests to node_modules for npm-installed deps */
+const VENDOR_MAP = {
+  'symbiote-node': path.join(PKG_ROOT, 'node_modules', 'symbiote-node'),
+  'symbiote': path.join(PKG_ROOT, 'node_modules', '@symbiotejs', 'symbiote'),
+};
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -24,9 +31,21 @@ const MIME_TYPES = {
 
 function serveStatic(reqPath, res) {
   const safePath = path.normalize(reqPath).replace(/^(\.\.[/\\])+/, '');
-  let filePath = path.join(WEB_ROOT, safePath === '/' ? 'index.html' : safePath);
 
-  if (!filePath.startsWith(WEB_ROOT)) {
+  // Resolve /vendor/<lib>/* from node_modules
+  const vendorMatch = safePath.match(/^[/\\]?vendor[/\\]([^/\\]+)[/\\]?(.*)/);
+  let filePath;
+  let allowedRoot;
+
+  if (vendorMatch && VENDOR_MAP[vendorMatch[1]]) {
+    allowedRoot = VENDOR_MAP[vendorMatch[1]];
+    filePath = path.join(allowedRoot, vendorMatch[2] || 'index.js');
+  } else {
+    allowedRoot = WEB_ROOT;
+    filePath = path.join(WEB_ROOT, safePath === '/' ? 'index.html' : safePath);
+  }
+
+  if (!filePath.startsWith(allowedRoot)) {
     res.writeHead(403);
     res.end('Forbidden');
     return;

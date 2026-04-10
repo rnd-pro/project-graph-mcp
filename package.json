@@ -9,6 +9,7 @@
   },
   "files": [
     "src/",
+    "web/",
     "vendor/",
     "rules/",
     "references/",
@@ -45,6 +46,10 @@
   "author": "RND-PRO",
   "homepage": "https://github.com/rnd-pro/project-graph-mcp",
   "license": "MIT",
+  "dependencies": {
+    "symbiote-node": "^0.2.0",
+    "@symbiotejs/symbiote": "^3.2.1"
+  },
   "engines": {
     "node": ">=18.0.0"
   }
