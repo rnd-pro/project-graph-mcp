@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Graph — Web Explorer</title>
+  <meta name="description" content="Interactive codebase explorer powered by project-graph-mcp">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=account_tree,analytics,arrow_drop_down,chevron_left,chevron_right,close,code,collapse_all,dashboard,description,drag_indicator,expand_less,expand_more,folder,folder_open,fullscreen,fullscreen_exit,insert_drive_file,monitor_heart,search,settings,swap_horiz,swap_vert,tune,visibility,visibility_off&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "@symbiotejs/symbiote": "./vendor/symbiote/core/index.js",
+      "symbiote-node": "./vendor/symbiote-node/index.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-topbar">
+      <div class="topbar-left">
+        <span class="material-symbols-outlined" style="font-size:20px;color:var(--project-accent, var(--sn-node-selected, #4c8bf5))">hub</span>
+        <span class="app-title">Project Graph</span>
+        <span class="topbar-sep">·</span>
+        <span id="project-name" class="project-name">Loading...</span>
+        <span id="project-files" class="project-files"></span>
+      </div>
+      <div class="topbar-right">
+        <span id="agent-badge" class="agent-badge" style="display:none"></span>
+        <span id="status-indicator" class="status connected"></span>
+      </div>
+    </header>
+    <div class="app-workspace">
+      <div class="app-content"></div>
+    </div>
+  </div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

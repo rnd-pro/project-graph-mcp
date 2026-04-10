@@ -234,8 +234,95 @@ export function extractSQLFromCode(code) {
     }
   }
 
+  // ORM detection — extract table references from ORM patterns
+  const orm = extractORMFromCode(code);
+  orm.reads.forEach(t => allReads.add(t));
+  orm.writes.forEach(t => allWrites.add(t));
+
   return {
     reads: [...allReads],
     writes: [...allWrites],
   };
 }
+
+// ORM read methods → R→ edges
+const ORM_READ_METHODS = new Set([
+  'findmany', 'findfirst', 'findunique', 'findraw',
+  'findall', 'findone', 'findbypk', 'findandcountall',
+  'count', 'aggregate', 'groupby',
+  'select', 'where', 'first', 'pluck',
+]);
+
+// ORM write methods → W→ edges
+const ORM_WRITE_METHODS = new Set([
+  'create', 'createmany', 'update', 'updatemany', 'upsert',
+  'delete', 'deletemany', 'destroy', 'bulkcreate',
+  'insert', 'del', 'truncate',
+]);
+
+export function extractORMFromCode(code) {
+  const reads = new Set();
+  const writes = new Set();
+
+  if (!code) return { reads: [], writes: [] };
+
+  // Prisma: prisma.user.findMany(), prisma.order.create()
+  // Pattern: prisma.<model>.<method>(
+  const prismaRegex = /\bprisma\.(\w+)\.(findMany|findFirst|findUnique|findRaw|create|createMany|update|updateMany|upsert|delete|deleteMany|count|aggregate|groupBy)\s*\(/g;
+  let match;
+  while ((match = prismaRegex.exec(code)) !== null) {
+    const model = match[1];
+    const method = match[2].toLowerCase();
+    // Skip prisma internal props ($connect, $transaction, etc.)
+    if (model.startsWith('$')) continue;
+    const table = model; // Prisma uses model name as-is
+    if (ORM_READ_METHODS.has(method)) reads.add(table);
+    else if (ORM_WRITE_METHODS.has(method)) writes.add(table);
+  }
+
+  // Sequelize: User.findAll(), Order.create()
+  // Pattern: <Model>.<method>( where Model starts with uppercase
+  const sequelizeRegex = /\b([A-Z][a-zA-Z]+)\.(findAll|findOne|findByPk|findAndCountAll|create|bulkCreate|update|destroy|count|sum|min|max)\s*\(/g;
+  while ((match = sequelizeRegex.exec(code)) !== null) {
+    const model = match[1];
+    const method = match[2].toLowerCase();
+    // Skip common non-Sequelize classes
+    if (['Promise', 'Object', 'Array', 'Map', 'Set', 'Date', 'Error', 'JSON', 'Math', 'Buffer', 'RegExp', 'Symbol', 'String', 'Number', 'Boolean', 'Request', 'Response', 'Console'].includes(model)) continue;
+    const table = model.toLowerCase(); // Convention: model User → table users (approx)
+    if (ORM_READ_METHODS.has(method)) reads.add(table);
+    else if (ORM_WRITE_METHODS.has(method)) writes.add(table);
+  }
+
+  // Knex: knex('users').where(...), knex.select().from('users'), knex('orders').insert(...)
+  // Pattern 1: knex('table')
+  const knexTableRegex = /\bknex\s*\(\s*['"](\w+)['"]\s*\)/g;
+  while ((match = knexTableRegex.exec(code)) !== null) {
+    const table = match[1];
+    if (isValidTableName(table)) {
+      // Check what follows for write methods
+      const after = code.slice(match.index, match.index + 200);
+      if (/\.(insert|update|del|delete|truncate)\s*\(/i.test(after)) {
+        writes.add(table);
+      } else {
+        reads.add(table); // Default: select/where → read
+      }
+    }
+  }
+
+  // Pattern 2: .from('table'), .into('table'), .table('table')
+  const knexFromRegex = /\.(from|into|table)\s*\(\s*['"](\w+)['"]\s*\)/g;
+  while ((match = knexFromRegex.exec(code)) !== null) {
+    const directive = match[1].toLowerCase();
+    const table = match[2];
+    if (isValidTableName(table)) {
+      if (directive === 'into') writes.add(table);
+      else reads.add(table);
+    }
+  }
+
+  return {
+    reads: [...reads],
+    writes: [...writes],
+  };
+}
+

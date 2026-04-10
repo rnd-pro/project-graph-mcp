@@ -1,4 +1,4 @@
-export const TOOLS = [
+const _TOOL_DEFS = [
   // Graph Tools
   {
     name: 'get_skeleton',
@@ -784,6 +784,200 @@ export const TOOLS = [
         stripJSDoc: { type: 'boolean', description: 'Auto-strip JSDoc when compacting (default: false)' },
       },
       required: ['path', 'mode'],
+    },
+  },
+];
+
+// v2.0: 18 consolidated tools (grouped by domain)
+export const TOOLS = [
+  // === 10 STANDALONE TOOLS (unchanged from expanded mode) ===
+  _TOOL_DEFS.find(t => t.name === 'get_skeleton'),
+  _TOOL_DEFS.find(t => t.name === 'get_focus_zone'),
+  _TOOL_DEFS.find(t => t.name === 'get_ai_context'),
+  _TOOL_DEFS.find(t => t.name === 'invalidate_cache'),
+  _TOOL_DEFS.find(t => t.name === 'get_usage_guide'),
+  _TOOL_DEFS.find(t => t.name === 'get_agent_instructions'),
+  _TOOL_DEFS.find(t => t.name === 'get_custom_rules'),
+  _TOOL_DEFS.find(t => t.name === 'set_custom_rule'),
+  _TOOL_DEFS.find(t => t.name === 'check_custom_rules'),
+  _TOOL_DEFS.find(t => t.name === 'get_framework_reference'),
+
+  // === 8 GROUPED TOOLS ===
+
+  // navigate: expand, deps, usages, call_chain, sub_projects
+  {
+    name: 'navigate',
+    description: 'Navigate the project graph. Actions: expand|deps|usages|call_chain|sub_projects',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['expand', 'deps', 'usages', 'call_chain', 'sub_projects'],
+          description: 'Navigation action to perform',
+        },
+        symbol: { type: 'string', description: 'Symbol name (for expand, deps, usages)' },
+        from: { type: 'string', description: 'Starting symbol (for call_chain)' },
+        to: { type: 'string', description: 'Target symbol (for call_chain)' },
+        path: { type: 'string', description: 'Path to scan (for call_chain, sub_projects)' },
+      },
+      required: ['action'],
+    },
+  },
+
+  // analyze: dead_code, similar_functions, complexity, large_files, outdated_patterns, full_analysis, analysis_summary, undocumented
+  {
+    name: 'analyze',
+    description: 'Code quality analysis. Actions: dead_code|similar_functions|complexity|large_files|outdated_patterns|full_analysis|analysis_summary|undocumented',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['dead_code', 'similar_functions', 'complexity', 'large_files',
+                 'outdated_patterns', 'full_analysis', 'analysis_summary', 'undocumented'],
+          description: 'Analysis type to run',
+        },
+        path: { type: 'string', description: 'Path to scan' },
+        minComplexity: { type: 'number', description: 'For complexity: minimum threshold (default: 1)' },
+        onlyProblematic: { type: 'boolean', description: 'For complexity/large_files: only show issues' },
+        threshold: { type: 'number', description: 'For similar_functions: min similarity % (default: 60)' },
+        includeItems: { type: 'boolean', description: 'For full_analysis: include individual items' },
+        level: { type: 'string', enum: ['tests', 'params', 'all'], description: 'For undocumented: strictness level' },
+        codeOnly: { type: 'boolean', description: 'For outdated_patterns: only check code' },
+        depsOnly: { type: 'boolean', description: 'For outdated_patterns: only check deps' },
+      },
+      required: ['action', 'path'],
+    },
+  },
+
+  // testing: pending, pass, fail, summary, reset
+  {
+    name: 'testing',
+    description: 'Test checklist management. Actions: pending|pass|fail|summary|reset',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['pending', 'pass', 'fail', 'summary', 'reset'],
+          description: 'Test action to perform',
+        },
+        path: { type: 'string', description: 'Path to scan (for pending, summary)' },
+        testId: { type: 'string', description: 'Test ID (for pass, fail)' },
+        reason: { type: 'string', description: 'Failure reason (for fail)' },
+      },
+      required: ['action'],
+    },
+  },
+
+  // filters: get, set, add_excludes, remove_excludes, reset
+  {
+    name: 'filters',
+    description: 'Filter configuration. Actions: get|set|add_excludes|remove_excludes|reset',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['get', 'set', 'add_excludes', 'remove_excludes', 'reset'],
+          description: 'Filter action to perform',
+        },
+        excludeDirs: { type: 'array', items: { type: 'string' }, description: 'For set: directories to exclude' },
+        excludePatterns: { type: 'array', items: { type: 'string' }, description: 'For set: file patterns to exclude' },
+        useGitignore: { type: 'boolean', description: 'For set: use .gitignore patterns' },
+        includeHidden: { type: 'boolean', description: 'For set: include hidden directories' },
+        dirs: { type: 'array', items: { type: 'string' }, description: 'For add_excludes/remove_excludes' },
+      },
+      required: ['action'],
+    },
+  },
+
+  // jsdoc: check_consistency, check_types, generate
+  {
+    name: 'jsdoc',
+    description: 'JSDoc operations. Actions: check_consistency|check_types|generate',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['check_consistency', 'check_types', 'generate'],
+          description: 'JSDoc action to perform',
+        },
+        path: { type: 'string', description: 'Path to scan' },
+        name: { type: 'string', description: 'For generate: specific function name' },
+        files: { type: 'array', items: { type: 'string' }, description: 'For check_types: specific files' },
+        maxDiagnostics: { type: 'number', description: 'For check_types: max diagnostics (default: 50)' },
+      },
+      required: ['action', 'path'],
+    },
+  },
+
+  // docs: get, generate, check_stale, validate_contracts
+  {
+    name: 'docs',
+    description: 'Documentation (.ctx) management. Actions: get|generate|check_stale|validate_contracts',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['get', 'generate', 'check_stale', 'validate_contracts'],
+          description: 'Documentation action to perform',
+        },
+        path: { type: 'string', description: 'Project root path' },
+        file: { type: 'string', description: 'For get: specific file docs' },
+        overwrite: { type: 'boolean', description: 'For generate: overwrite existing (merge preserves descriptions)' },
+        scope: { description: 'For generate: "all", "focus" (git diff), or array of file paths' },
+        strict: { type: 'boolean', description: 'For validate_contracts: report functions missing from .ctx' },
+      },
+      required: ['action', 'path'],
+    },
+  },
+
+  // compact: compress_file, edit, compact_all, beautify, get_mode, set_mode
+  {
+    name: 'compact',
+    description: 'Compact code operations. Actions: compress_file|edit|compact_all|beautify|get_mode|set_mode',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['compress_file', 'edit', 'compact_all', 'beautify', 'get_mode', 'set_mode'],
+          description: 'Compact action to perform',
+        },
+        path: { type: 'string', description: 'Path to file or directory' },
+        symbol: { type: 'string', description: 'For edit: function/class name to replace' },
+        code: { type: 'string', description: 'For edit: new code for the symbol' },
+        beautify: { type: 'boolean', description: 'Beautify output (default: true)' },
+        legend: { type: 'boolean', description: 'For compress_file: include export legend' },
+        dryRun: { type: 'boolean', description: 'Preview without modifying' },
+        mode: { type: 'number', description: 'For set_mode: mode number 1, 2, or 3' },
+        autoValidate: { type: 'boolean', description: 'For set_mode: auto-validate after edits' },
+        stripJSDoc: { type: 'boolean', description: 'For set_mode: strip JSDoc when compacting' },
+      },
+      required: ['action'],
+    },
+  },
+
+  // db: schema, table_usage, dead_tables
+  {
+    name: 'db',
+    description: 'Database analysis. Actions: schema|table_usage|dead_tables',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['schema', 'table_usage', 'dead_tables'],
+          description: 'Database analysis action',
+        },
+        path: { type: 'string', description: 'Path to scan' },
+        table: { type: 'string', description: 'For table_usage: filter to specific table' },
+      },
+      required: ['action', 'path'],
     },
   },
 ];

@@ -1,0 +1,6 @@
+[submodule "web/vendor/symbiote-node"]
+	path = web/vendor/symbiote-node
+	url = git@github.com:rnd-pro/symbiote-node.git
+[submodule "web/vendor/symbiote"]
+	path = web/vendor/symbiote
+	url = git@github.com:symbiotejs/symbiote.js.git

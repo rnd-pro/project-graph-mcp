@@ -8,7 +8,7 @@
 An MCP server that parses your source code into a **10-50x compressed skeleton** — classes, functions, imports, and dependencies in a minified JSON. Agents navigate the graph using `expand`, `deps`, and `usages` without reading irrelevant files. The **AI Context Layer** compresses an entire codebase into ~1700 tokens (97% savings) with a single `get_ai_context` call. Supports **monorepo scanning** and **streaming analysis** for large codebases.
 
 > [!TIP]
-> **132 kB, 47 files, zero external dependencies.** 49 MCP tools. Add one line to your MCP config and the server downloads itself on the next IDE restart.
+> **132 kB, 47 files, zero external dependencies.** 18 MCP tools. Add one line to your MCP config and the server downloads itself on the next IDE restart.
 
 ### Project Skeleton (10-50x compression)
 
@@ -172,6 +172,19 @@ Add to your IDE's MCP configuration:
 ```
 
 Restart your IDE — project-graph-mcp will be downloaded and started automatically.
+
+#### Grouped Tools (v1.6)
+
+v1.6 uses 18 domain-grouped tools instead of 49 individual endpoints. Grouped tools use an `action` parameter:
+
+```javascript
+navigate({ action: "expand", symbol: "MyClass" })
+analyze({ action: "complexity", path: "src/" })
+docs({ action: "generate", path: ".", scope: "focus" })
+compact({ action: "compress_file", path: "src/parser.js" })
+```
+
+10 standalone tools (`get_skeleton`, `get_ai_context`, `invalidate_cache`, etc.) remain unchanged.
 
 <details>
 <summary>Where is my MCP config file?</summary>

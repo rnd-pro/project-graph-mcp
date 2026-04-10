@@ -1,0 +1,144 @@
+/* Project Graph Web UI — Carbon Theme Styles */
+
+/* 
+ * Design tokens come from symbiote-node CARBON theme via applyTheme().
+ * Layout tokens (--bg-*, --text-*) are bridged from --sn-* tokens automatically.
+ * Layout structure mirrors admin-panel: topbar + sidebar + content.
+ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  background: var(--sn-bg, #1a1a1a);
+  color: var(--sn-text, #f0f0f0);
+  font-family: var(--sn-font, 'Inter', -apple-system, sans-serif);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+/* === App shell — full viewport flex column === */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+/* === Topbar === */
+.app-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 40px;
+  background: var(--sn-node-bg, #222222);
+  border-bottom: 1px solid var(--sn-node-border, rgba(255, 255, 255, 0.1));
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sn-text, #f0f0f0);
+  letter-spacing: 0.5px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.project-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--project-accent, var(--sn-text, #f0f0f0));
+}
+
+.project-files {
+  font-size: 11px;
+  color: var(--sn-text-dim, #999999);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.topbar-sep {
+  color: var(--sn-text-dim, #555);
+  font-size: 14px;
+}
+
+/* Agent badge */
+.agent-badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: #4caf50;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.2);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(76, 175, 80, 0.1); }
+  50% { box-shadow: 0 0 8px rgba(76, 175, 80, 0.3); }
+}
+
+/* Status indicator */
+.status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sn-text-dim, #999);
+}
+
+.status.connected {
+  background: #4caf50;
+  box-shadow: 0 0 6px rgba(76, 175, 80, 0.5);
+}
+
+.status.disconnected {
+  background: #f44336;
+}
+
+/* === Workspace: sidebar + content area === */
+.app-workspace {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+}
+
+.app-content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.app-content > panel-layout {
+  width: 100%;
+  height: 100%;
+}
+
+/* === Scrollbar — carbon grey === */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}

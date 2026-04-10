@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { TOOLS } from './tool-defs.js';
+import { emitToolCall, emitToolResult } from './event-bus.js';
 import { getSkeleton, getFocusZone, expand, deps, usages, invalidateCache, getCallChain } from './tools.js';
 import { getPendingTests, markTestPassed, markTestFailed, getTestSummary, resetTestState } from './test-annotations.js';
 import { getFilters, setFilters, addExcludes, removeExcludes, resetFilters } from './filters.js';
@@ -396,6 +397,91 @@ const RESPONSE_HINTS = {
   },
 };
 
+// Consolidated handlers — dispatch grouped tools by action
+const CONSOLIDATED_HANDLERS = {
+  navigate: (args) => {
+    const map = { expand: 'expand', deps: 'deps', usages: 'usages', call_chain: 'get_call_chain', sub_projects: 'discover_sub_projects' };
+    const handler = map[args.action];
+    if (!handler) throw new Error(`Unknown navigate action: ${args.action}`);
+    return TOOL_HANDLERS[handler](args);
+  },
+  analyze: (args) => {
+    const map = { dead_code: 'get_dead_code', similar_functions: 'get_similar_functions', complexity: 'get_complexity', large_files: 'get_large_files', outdated_patterns: 'get_outdated_patterns', full_analysis: 'get_full_analysis', analysis_summary: 'get_analysis_summary', undocumented: 'get_undocumented' };
+    const handler = map[args.action];
+    if (!handler) throw new Error(`Unknown analyze action: ${args.action}`);
+    return TOOL_HANDLERS[handler](args);
+  },
+  testing: (args) => {
+    const map = { pending: 'get_pending_tests', pass: 'mark_test_passed', fail: 'mark_test_failed', summary: 'get_test_summary', reset: 'reset_test_state' };
+    const handler = map[args.action];
+    if (!handler) throw new Error(`Unknown testing action: ${args.action}`);
+    return TOOL_HANDLERS[handler](args);
+  },
+  filters: (args) => {
+    const map = { get: 'get_filters', set: 'set_filters', add_excludes: 'add_excludes', remove_excludes: 'remove_excludes', reset: 'reset_filters' };
+    const handler = map[args.action];
+    if (!handler) throw new Error(`Unknown filters action: ${args.action}`);
+    return TOOL_HANDLERS[handler](args);
+  },
+  jsdoc: (args) => {
+    const map = { check_consistency: 'check_jsdoc_consistency', check_types: 'check_types', generate: 'generate_jsdoc' };
+    const handler = map[args.action];
+    if (!handler) throw new Error(`Unknown jsdoc action: ${args.action}`);
+    return TOOL_HANDLERS[handler](args);
+  },
+  docs: (args) => {
+    const map = { get: 'get_project_docs', generate: 'generate_context_docs', check_stale: 'check_stale_docs', validate_contracts: 'validate_ctx_contracts' };
+    const handler = map[args.action];
+    if (!handler) throw new Error(`Unknown docs action: ${args.action}`);
+    return TOOL_HANDLERS[handler](args);
+  },
+  compact: (args) => {
+    const map = { compress_file: 'get_compressed_file', edit: 'edit_compressed', compact_all: 'compact_project', beautify: 'beautify_project', get_mode: 'get_mode', set_mode: 'set_mode' };
+    const handler = map[args.action];
+    if (!handler) throw new Error(`Unknown compact action: ${args.action}`);
+    return TOOL_HANDLERS[handler](args);
+  },
+  db: (args) => {
+    const map = { schema: 'get_db_schema', table_usage: 'get_table_usage', dead_tables: 'get_db_dead_tables' };
+    const handler = map[args.action];
+    if (!handler) throw new Error(`Unknown db action: ${args.action}`);
+    return TOOL_HANDLERS[handler](args);
+  },
+};
+
+// Consolidated hints — dispatch by group:action to existing hints
+const CONSOLIDATED_HINTS = {
+  navigate: (result, args) => {
+    const hintMap = { expand: 'expand', deps: 'deps', call_chain: 'get_call_chain' };
+    const fn = RESPONSE_HINTS[hintMap[args.action]];
+    return fn ? fn(result) : [];
+  },
+  analyze: (result, args) => {
+    const hintMap = { dead_code: 'get_dead_code', full_analysis: 'get_full_analysis', complexity: 'get_complexity', undocumented: 'get_undocumented', similar_functions: 'get_similar_functions' };
+    const fn = RESPONSE_HINTS[hintMap[args.action]];
+    return fn ? fn(result) : [];
+  },
+  testing: (result, args) => {
+    if (args.action === 'pending') return RESPONSE_HINTS.get_pending_tests?.(result) || [];
+    return [];
+  },
+  docs: (result, args) => {
+    const hintMap = { get: 'get_project_docs', check_stale: 'check_stale_docs', generate: 'generate_context_docs', validate_contracts: 'validate_ctx_contracts' };
+    const fn = RESPONSE_HINTS[hintMap[args.action]];
+    return fn ? fn(result) : [];
+  },
+  compact: (result, args) => {
+    const hintMap = { compress_file: 'get_compressed_file', edit: 'edit_compressed', get_mode: 'get_mode', set_mode: 'set_mode' };
+    const fn = RESPONSE_HINTS[hintMap[args.action]];
+    return fn ? fn(result) : [];
+  },
+  db: (result, args) => {
+    const hintMap = { schema: 'get_db_schema', table_usage: 'get_table_usage', dead_tables: 'get_db_dead_tables' };
+    const fn = RESPONSE_HINTS[hintMap[args.action]];
+    return fn ? fn(result) : [];
+  },
+};
+
 export function createServer(sendToClient) {
   let nextRequestId = 1;
 
@@ -447,7 +533,7 @@ export function createServer(sendToClient) {
               result: {
                 protocolVersion: '2024-11-05',
                 capabilities: { tools: {}, resources: {} },
-                serverInfo: { name: 'project-graph', version: '1.1.0' },
+                serverInfo: { name: 'project-graph', version: '1.6.0' },
               },
             };
 
@@ -494,13 +580,17 @@ export function createServer(sendToClient) {
             const result = await this.executeTool(params.name, params.arguments);
             const content = [{ type: 'text', text: JSON.stringify(result, null, 2) }];
 
-            // Inject contextual hints
-            const hintFn = RESPONSE_HINTS[params.name];
-            if (hintFn) {
-              const hints = hintFn(result);
-              if (hints.length > 0) {
-                content.push({ type: 'text', text: '\n' + hints.join('\n') });
-              }
+            // Inject contextual hints (supports both expanded and consolidated modes)
+            let hints = [];
+            const consolidatedHintFn = CONSOLIDATED_HINTS[params.name];
+            if (consolidatedHintFn && params.arguments?.action) {
+              hints = consolidatedHintFn(result, params.arguments);
+            } else {
+              const hintFn = RESPONSE_HINTS[params.name];
+              if (hintFn) hints = hintFn(result);
+            }
+            if (hints.length > 0) {
+              content.push({ type: 'text', text: '\n' + hints.join('\n') });
             }
 
             return {
@@ -583,11 +673,25 @@ export function createServer(sendToClient) {
     },
 
         async executeTool(name, args) {
-      const handler = TOOL_HANDLERS[name];
-      if (!handler) {
-        throw new Error(`Unknown tool: ${name}`);
+      emitToolCall(name, args);
+      const start = Date.now();
+      try {
+        // Check consolidated handlers first (for grouped tools)
+        const consolidated = CONSOLIDATED_HANDLERS[name];
+        let result;
+        if (consolidated) {
+          result = await consolidated(args);
+        } else {
+          const handler = TOOL_HANDLERS[name];
+          if (!handler) throw new Error(`Unknown tool: ${name}`);
+          result = await handler(args);
+        }
+        emitToolResult(name, args, result, Date.now() - start, true);
+        return result;
+      } catch (err) {
+        emitToolResult(name, args, null, Date.now() - start, false);
+        throw err;
       }
-      return await handler(args);
     },
   };
 }

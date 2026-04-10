@@ -65,12 +65,17 @@ describe('MCP Server', () => {
 
     assert.ok(response.result.tools);
     const toolNames = response.result.tools.map(t => t.name);
+    // v2 consolidated: 18 tools
+    assert.strictEqual(toolNames.length, 18);
+    // Standalone tools
     assert.ok(toolNames.includes('get_skeleton'));
-    assert.ok(toolNames.includes('expand'));
-    assert.ok(toolNames.includes('deps'));
-    // New test tools
-    assert.ok(toolNames.includes('get_pending_tests'));
-    assert.ok(toolNames.includes('mark_test_passed'));
+    assert.ok(toolNames.includes('get_ai_context'));
+    // Grouped tools
+    assert.ok(toolNames.includes('navigate'));
+    assert.ok(toolNames.includes('analyze'));
+    assert.ok(toolNames.includes('testing'));
+    assert.ok(toolNames.includes('docs'));
+    assert.ok(toolNames.includes('compact'));
   });
 
   it('should execute get_skeleton tool', async () => {
