@@ -533,7 +533,7 @@ export function createServer(sendToClient) {
               result: {
                 protocolVersion: '2024-11-05',
                 capabilities: { tools: {}, resources: {} },
-                serverInfo: { name: 'project-graph', version: '1.6.0' },
+                serverInfo: { name: 'project-graph', version: '2.0.0' },
               },
             };
 

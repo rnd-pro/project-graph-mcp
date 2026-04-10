@@ -1,14 +1,13 @@
 [![npm version](https://img.shields.io/npm/v/project-graph-mcp)](https://www.npmjs.com/package/project-graph-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white)](https://nodejs.org)
-[![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](https://www.npmjs.com/package/project-graph-mcp)
 
 # project-graph-mcp
 
 An MCP server that parses your source code into a **10-50x compressed skeleton** — classes, functions, imports, and dependencies in a minified JSON. Agents navigate the graph using `expand`, `deps`, and `usages` without reading irrelevant files. The **AI Context Layer** compresses an entire codebase into ~1700 tokens (97% savings) with a single `get_ai_context` call. Supports **monorepo scanning** and **streaming analysis** for large codebases.
 
 > [!TIP]
-> **132 kB, 47 files, zero external dependencies.** 18 MCP tools. Add one line to your MCP config and the server downloads itself on the next IDE restart.
+> **18 MCP tools.** Add one line to your MCP config and the server downloads itself on the next IDE restart.
 
 ### Project Skeleton (10-50x compression)
 
@@ -173,9 +172,9 @@ Add to your IDE's MCP configuration:
 
 Restart your IDE — project-graph-mcp will be downloaded and started automatically.
 
-#### Grouped Tools (v1.6)
+#### Grouped Tools (v2.0)
 
-v1.6 uses 18 domain-grouped tools instead of 49 individual endpoints. Grouped tools use an `action` parameter:
+v2.0 uses 18 domain-grouped tools instead of 49 individual endpoints. Grouped tools use an `action` parameter:
 
 ```javascript
 navigate({ action: "expand", symbol: "MyClass" })

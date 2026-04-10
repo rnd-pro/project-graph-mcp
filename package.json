@@ -1,8 +1,8 @@
 {
   "name": "project-graph-mcp",
-  "version": "1.6.0",
+  "version": "2.0.0",
   "type": "module",
-  "description": "MCP server for AI agents — multi-language project graph (JS, TS, Python, Go), code quality analysis, and framework-specific lint rules. Zero dependencies.",
+  "description": "MCP server for AI agents — project graph, code quality analysis, visual web explorer. JS, TS, Python, Go.",
   "main": "src/server.js",
   "bin": {
     "project-graph-mcp": "src/server.js"
