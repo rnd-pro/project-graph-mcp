@@ -147,3 +147,16 @@ All tools follow the pattern:
 3. Handler in `src/mcp/mcp-server.js`
 4. CLI command in `src/cli/cli.js`
 5. Test in `tests/*.test.js`
+
+### TDD for New Languages & Compact Targets
+
+When adding a new language parser or compact target (HTML, CSS, etc.):
+
+1. **Write round-trip tests first** (`tests/roundtrip.test.js`):
+   - Cover all syntax constructs of the target language
+   - Verify `original → compact → expand` preserves semantics
+   - Include semantic equivalence checks (eval both, compare output)
+2. **Red → Green → Refactor**: tests fail → implement parser → tests pass
+3. **Size guarantees**: assert `compact.length < original.length`
+4. **Cross-language**: when adding HTML/CSS, test that shared identifiers
+   (class names, IDs) resolve consistently across JS ↔ HTML ↔ CSS
