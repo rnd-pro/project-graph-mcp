@@ -1,5 +1,5 @@
 import e from"@symbiotejs/symbiote";
 import t from"./ProjectItem.css.js";
 import r from"./ProjectItem.tpl.js";
-export class ProjectItem extends e{init$={prefix:"",projectName:"",projectPath:""};renderCallback(){this.sub("prefix",e=>{this.ref.link.href=e?`${e}/`:"#";if(e){fetch(`${e}/api/compression-stats`).then(r=>r.json()).then(r=>{if(r.codeTok&&this.ref.tokenBadge){const t=r.ctxTok?`${(r.codeTok/1e3).toFixed(1)}K + ${(r.ctxTok/1e3).toFixed(1)}K ctx`:`${(r.codeTok/1e3).toFixed(1)}K tok`;this.ref.tokenBadge.textContent=t}}).catch(()=>{})}})}
+export class ProjectItem extends e{init$={prefix:"",projectName:"",projectPath:""};renderCallback(){this.sub("prefix",e=>{this.ref.link.href=e?`${e}/`:"#";if(e){fetch(`${e}/api/compression-stats`).then(r=>r.json()).then(r=>{if(r.codeTok&&this.ref.tokenBadge){const c=(r.codeTok/1e3).toFixed(1),x=(r.ctxTok||0)/1e3,exp=r.expanded||0,expK=(exp/1e3).toFixed(1),codePct=exp>0?Math.round(100*(1-r.codeTok/exp)):0,totalPct=exp>0?Math.round(100*(1-(r.codeTok+(r.ctxTok||0))/exp)):0;let t=r.ctxTok?`${c}K (${codePct}%) + ${x.toFixed(1)}K ctx`:`${c}K tok (${codePct}%)`;if(exp>0){t+=r.ctxTok?` = ${((r.codeTok+r.ctxTok)/1e3).toFixed(1)}K (${totalPct}%) of ${expK}K`:`of ${expK}K`}this.ref.tokenBadge.textContent=t}}).catch(()=>{})}})}
 }ProjectItem.template=r,ProjectItem.rootStyles=t,ProjectItem.reg("pg-project-item");
