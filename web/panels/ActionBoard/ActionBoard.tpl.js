@@ -1,3 +1,1 @@
-export default /*html*/ `
-<div class="list" itemize="eventsItems" item-tag="pg-event-item"></div>
-`;
+export default'\n<div class="list" itemize="eventsItems" item-tag="pg-event-item"></div>\n';

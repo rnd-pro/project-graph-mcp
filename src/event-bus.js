@@ -1,34 +1,8 @@
-import { EventEmitter } from 'node:events';
-
-const bus = new EventEmitter();
-bus.setMaxListeners(50);
-
-export function emitToolCall(tool, args) {
-  bus.emit('tool:call', { type: 'tool_call', tool, args, ts: Date.now() });
-}
-
-export function emitToolResult(tool, args, result, durationMs, success) {
-  bus.emit('tool:result', {
-    type: 'tool_result',
-    tool,
-    args,
-    duration_ms: durationMs,
-    success,
-    result_keys: result ? Object.keys(result) : [],
-    ts: Date.now(),
-  });
-}
-
-export function onToolCall(fn) {
-  bus.on('tool:call', fn);
-}
-
-export function onToolResult(fn) {
-  bus.on('tool:result', fn);
-}
-
-export function removeToolListener(event, fn) {
-  bus.off(event, fn);
-}
-
-export default bus;
+import{EventEmitter as o}from"node:events";
+const t=new o;t.setMaxListeners(50);
+export function emitToolCall(o,e){t.emit("tool:call",{type:"tool_call",tool:o,args:e,ts:Date.now()})}
+export function emitToolResult(o,e,l,n,s){t.emit("tool:result",{type:"tool_result",tool:o,args:e,duration_ms:n,success:s,result_keys:l?Object.keys(l):[],ts:Date.now()})}
+export function onToolCall(o){t.on("tool:call",o)}
+export function onToolResult(o){t.on("tool:result",o)}
+export function removeToolListener(o,e){t.off(o,e)}
+export default t;

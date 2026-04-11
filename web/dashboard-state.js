@@ -1,9 +1,3 @@
-export const state = {
-  projects: [],
-  events: []
-};
-
-export const events = new EventTarget();
-export function emit(name, detail = {}) {
-  events.dispatchEvent(new CustomEvent(name, { detail }));
-}
+export const state={projects:[],events:[]};
+export const events=new EventTarget;
+export function emit(t,e={}){events.dispatchEvent(new CustomEvent(t,{detail:e}))}

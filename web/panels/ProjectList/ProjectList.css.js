@@ -1,15 +1,1 @@
-export default /*css*/ `
-:host {
-  display: block;
-  height: 100%;
-  overflow-y: auto;
-  padding: 16px;
-  background: var(--sn-bg-primary);
-  color: var(--sn-fg-primary);
-}
-.empty {
-  color: var(--sn-fg-muted);
-  padding: 24px;
-  text-align: center;
-}
-`;
+export default"\n:host {\n  display: block;\n  height: 100%;\n  overflow-y: auto;\n  padding: 16px;\n  background: var(--sn-bg-primary);\n  color: var(--sn-fg-primary);\n}\n.empty {\n  color: var(--sn-fg-muted);\n  padding: 24px;\n  text-align: center;\n}\n";

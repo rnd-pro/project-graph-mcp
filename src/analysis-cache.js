@@ -1,49 +1,6 @@
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
-import { createHash } from 'crypto';
-
-
-export function computeContentHash(code) {
-  return createHash('md5').update(code).digest('hex').slice(0, 8);
-}
-
-export function getCachePath(contextDir, relPath) {
-  // src/parser.js → .context/.cache/src/parser.json
-  const cacheName = relPath.replace(/\.[^.]+$/, '.json');
-  return join(contextDir, '.cache', cacheName);
-}
-
-export function readCache(contextDir, relPath) {
-  const cachePath = getCachePath(contextDir, relPath);
-  try {
-    if (!existsSync(cachePath)) return null;
-    return JSON.parse(readFileSync(cachePath, 'utf-8'));
-  } catch (e) {
-    return null;
-  }
-}
-
-export function writeCache(contextDir, relPath, data) {
-  const cachePath = getCachePath(contextDir, relPath);
-  try {
-    mkdirSync(dirname(cachePath), { recursive: true });
-    writeFileSync(cachePath, JSON.stringify({
-      ...data,
-      cachedAt: new Date().toISOString(),
-    }, null, 2));
-  } catch (e) {
-    // Cache write failure is non-fatal
-  }
-}
-
-export function isCacheValid(cached, currentSig, currentContentHash, level = 'content') {
-  if (!cached) return false;
-  if (!cached.sig || !cached.contentHash) return false;
-
-  if (level === 'sig') {
-    return cached.sig === currentSig;
-  }
-
-  // For body-dependent metrics, both hashes must match
-  return cached.sig === currentSig && cached.contentHash === currentContentHash;
-}
+import{readFileSync as t,writeFileSync as e,mkdirSync as n,existsSync as r}from"fs";import{join as c,dirname as o}from"path";import{createHash as a}from"crypto";
+export function computeContentHash(t){return a("md5").update(t).digest("hex").slice(0,8)}
+export function getCachePath(t,e){const n=e.replace(/\.[^.]+$/,".json");return c(t,".cache",n)}
+export function readCache(e,n){const c=getCachePath(e,n);try{return r(c)?JSON.parse(t(c,"utf-8")):null}catch(t){return null}}
+export function writeCache(t,r,c){const a=getCachePath(t,r);try{n(o(a),{recursive:!0}),e(a,JSON.stringify({...c,cachedAt:(new Date).toISOString()},null,2))}catch(t){}}
+export function isCacheValid(t,e,n,r="content"){return!!t&&(!(!t.sig||!t.contentHash)&&("sig"===r?t.sig===e:t.sig===e&&t.contentHash===n))}

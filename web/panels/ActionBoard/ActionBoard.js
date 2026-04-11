@@ -1,25 +1,4 @@
-import Symbiote from '@symbiotejs/symbiote';
-import { state, events } from '../../dashboard-state.js';
-import styles from './ActionBoard.css.js';
-import template from './ActionBoard.tpl.js';
-import '../EventItem/EventItem.js';
-
-export class ActionBoard extends Symbiote {
-  init$ = {
-    eventsItems: [],
-  };
-
-  initCallback() {
-    console.log('[ActionBoard] initCallback, existing events:', state.events.length);
-    events.addEventListener('global-tool-event', (e) => {
-      const items = [...state.events].reverse();
-      console.log('[ActionBoard] global-tool-event received, total:', items.length, 'latest:', e.detail?.type, e.detail?.tool);
-      this.$.eventsItems = items;
-    });
-    this.$.eventsItems = [...state.events].reverse();
-  }
-}
-
-ActionBoard.template = template;
-ActionBoard.rootStyles = styles;
-ActionBoard.reg('pg-action-board');
+import t from"@symbiotejs/symbiote";import{state as e,events as o}from"../../dashboard-state.js";
+import s from"./ActionBoard.css.js";
+import n from"./ActionBoard.tpl.js";import"../EventItem/EventItem.js";
+export class ActionBoard extends t{init$={eventsItems:[]};initCallback(){console.log("[ActionBoard] initCallback, existing events:",e.events.length),o.addEventListener("global-tool-event",t=>{const o=[...e.events].reverse();console.log("[ActionBoard] global-tool-event received, total:",o.length,"latest:",t.detail?.type,t.detail?.tool),this.$.eventsItems=o}),this.$.eventsItems=[...e.events].reverse()}}ActionBoard.template=n,ActionBoard.rootStyles=s,ActionBoard.reg("pg-action-board");
