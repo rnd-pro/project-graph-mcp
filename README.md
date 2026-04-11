@@ -81,37 +81,44 @@ npx project-graph-mcp compress src/core/parser.js
 
 Agents don't need full context for every file. The server provides a **progressive loading model**:
 
-```
-┌──────────────────────────────────────────────┐
-│  get_skeleton()     → Entire project, ~2-5K tokens  │
-│  get_focus_zone()   → Specific files + .ctx, ~1-3K/file  │
-└──────────────────────────────────────────────┘
-```
+| Mode | What agent reads | Token cost | Use case |
+|------|-----------------|------------|----------|
+| **Overview** | `get_skeleton()` + compact code | codeTok only | Understand project structure |
+| **Focus** | compact code + `.ctx` for specific files | codeTok + ctxTok (per file) | Deep work on area of interest |
+| **Traditional** | All raw source files | expanded | Reading source directly |
 
 ```javascript
-// 1. Overview: read entire project structure (cheap)
+// 1. Overview: read entire project structure (cheap, no .ctx)
 get_skeleton({ path: "src/" })
-// → Legend, stats, all classes/functions/exports in minified JSON
+// → Legend, stats, all classes/functions/exports — ~2-5K tokens
 
-// 2. Focus: get enriched context for area of interest
+// 2. Focus: get enriched context ONLY for area of interest
 get_focus_zone({ recentFiles: ["src/core/parser.js", "src/mcp/tools.js"] })
-// → Compact code + .ctx documentation for just those files
+// → Compact code + .ctx documentation for just those 2 files
 
 // 3. Or auto-detect from git diff
 get_focus_zone({ path: ".", useGitDiff: true })
 // → Context for recently changed files only
 ```
 
-**Token budget breakdown** — each file reports separate metrics:
+**Real-world token budget** (45-file project):
+
+```
+Traditional (raw sources):    64K tok — read everything expanded
+Overview (compact, no .ctx):  47K tok — 27% savings, full project
+Focus (compact + 3 files ctx): 47.6K tok — 26% savings + semantic descriptions
+```
+
+The `.ctx` cost is **per-file** (~200 tok each) and only loaded for the focus area. The agent gets **better understanding** (typed signatures, descriptions) while spending **fewer total tokens** than reading raw source code.
+
+**Per-file metrics breakdown:**
 
 | Layer | What | Tokens |
 |-------|------|--------|
 | Code (compact .js) | Minified source, all names preserved | codeTok |
-| Context (.ctx) | AST signatures, descriptions, types | ctxTok |
-| Total (code + ctx) | Full context for focused work | totalTok |
-| Expanded (beautified) | What a human would read | expanded |
-
-Savings = `1 - totalTok / expanded`. Typical: **20-40% savings** per file with full context.
+| Context (.ctx) | AST signatures, types, descriptions | ctxTok |
+| Total (focus mode) | What agent reads when focusing | codeTok + ctxTok |
+| Expanded (beautified) | What a human would read (raw source) | expanded |
 
 ### Compact Code Architecture
 
