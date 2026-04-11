@@ -1,0 +1,9 @@
+--- src/workspace.js ---
+@sig 30b74887
+@vars s=workspaceRoot,a=__dirname,p=selfRoot,c=wsArg
+export setRoots(roots)→uri.startsWith,uri.slice,console.error|set workspace root dirs from MCP client (file:// URI or path)
+export getWorkspaceRoot()→process.cwd|return first workspace root or cwd fallback
+export resolvePath(inputPath)→getWorkspaceRoot,isAbsolute,resolve,resolved.startsWith|resolve relative path to absolute, enforce workspace boundary
+PATTERNS: workspace roots set once via MCP initialize|resolvePath prevents directory traversal attacks
+EDGE_CASES: file:// URIs auto-stripped to path|absolute paths outside workspace rejected|empty roots fall back to process.cwd()
+@names setRoots:r=roots,o=uri resolvePath:t=inputPath,e=root,s=resolved __top__:s=workspaceRoot,a=wsArg

@@ -3,24 +3,22 @@
   "version": "2.0.0",
   "type": "module",
   "description": "MCP server for AI agents — project graph, code quality analysis, visual web explorer. JS, TS, Python, Go.",
-  "main": "src/server.js",
+  "main": "src/network/server.js",
   "bin": {
-    "project-graph-mcp": "src/server.js"
+    "project-graph-mcp": "src/network/server.js"
   },
   "files": [
     "src/",
     "web/",
     "vendor/",
     "rules/",
-    "references/",
-    "AGENT_ROLE.md",
-    "AGENT_ROLE_MINIMAL.md",
+    "docs/",
     "CONFIGURATION.md",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "start": "node src/server.js",
+    "start": "node src/network/server.js",
     "test": "node --test tests/*.test.js"
   },
   "keywords": [

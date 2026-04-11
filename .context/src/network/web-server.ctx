@@ -1,0 +1,2 @@
+
+@names __top__:l=__dirname,d=projectRoot,p=webDir,m=vendorPaths,h=MIME_TYPES serveStatic:a=urlPath,s=vendorMatch,r=filePath,c=baseDir,i=ext,l=contentType,d=body encodeWSFrame:t=payload,o=len,n=header decodeWSFrame:t=opcode,o=maskKey,n=payloadLen,a=offset,s=data startWebServer:l=mcpServer,d=projectName,p=agentCounter,m=absProjectPath,h=projectHash,u=hue,g=state,f=mcpClients,w=wsClients,y=shutdownTimer,S=httpServer,v=wss,b=autoPort,j=port computeWSAccept:e=key broadcastRPC:o=frame patchState:o=parts,n=target handleAPI:s=params,c=projectPath

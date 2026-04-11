@@ -1,0 +1,9 @@
+--- src/framework-references.js ---
+@sig 8315cfb3
+@vars f=__dirname,m=REFERENCES_DIR,l=REMOTE_SOURCES,u=cache,d=CACHE_TTL
+fetchReference(name:string)→join,cache.get,Date.now,AbortSignal.timeout,fetch,response.text|fetch remote markdown reference with caching and local fallback
+listAvailable()→Object.keys,existsSync,readdirSync,f.endsWith,basename,names.add|list available framework references from cache and local dir
+export getFrameworkReference(options:Object=)→listAvailable,available.includes,fetchReference,content.split,detectProjectRuleSets,matchedRefs.includes|get full reference docs for a framework or auto-detect
+PATTERNS: in-memory caching with TTL|fetch with AbortSignal timeout
+EDGE_CASES: gracefully handles fetch timeouts and write failures
+@names fetchReference:t=name,a=url,s=localPath,c=cached,e=response,r=content,r=content listAvailable:e=names,r=f getFrameworkReference:e=options,t=available,o=matchedRefs,e=ruleset,r=refName,a=results,s=contents __top__:f=__dirname,m=REFERENCES_DIR,l=REMOTE_SOURCES,u=cache,d=CACHE_TTL

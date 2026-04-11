@@ -1,0 +1,23 @@
+// @ctx .context/src/network/local-gateway.ctx
+import e from"node:http";
+import t from"node:net";
+import r from"node:fs";
+import n from"node:path";import{registerLocal as o}from"./mdns.js";
+const s=n.join(process.env.HOME||process.env.USERPROFILE||"/tmp",".local-gateway"),i=n.join(s,"services.json"),a=n.join(s,"gateway.pid");function readRegistry(){try{return JSON.parse(r.readFileSync(i,"utf8"))}catch{return{}}}
+function writeRegistry(e){r.mkdirSync(s,{recursive:!0}),r.writeFileSync(i,JSON.stringify(e,null,2))}
+export function registerService(e,t,r={}){const n=`${e}.local`,s=readRegistry();if(r.projectName){s[n]||(s[n]={name:e,routes:{}});
+const o=`/${r.projectName}`;s[n].routes=s[n].routes||{},s[n].routes[o]={port:t,pid:process.pid,projectPath:r.projectPath,projectName:r.projectName}}else s[n]={port:t,pid:process.pid,name:e};writeRegistry(s);
+const i=o(n,80);ensureGateway();
+const cleanup=()=>{i.cleanup();try{const e=readRegistry();r.projectName&&e[n]?.routes?(delete e[n].routes[`/${r.projectName}`],0===Object.keys(e[n].routes).length&&delete e[n]):delete e[n],writeRegistry(e),0===Object.keys(e).length&&stopGateway()}catch{}};process.on("exit",cleanup),process.on("SIGINT",()=>{cleanup(),process.exit()}),process.on("SIGTERM",()=>{cleanup(),process.exit()});
+const a=getGatewayPort(),c=80===a?"":`:${a}`,p=r.projectName?`http://${n}${c}/${r.projectName}/`:`http://${n}${c}/`;return{cleanup:cleanup,url:p,directUrl:`http://localhost:${t}/`}}
+function resolveBackend(e,t,r){const n=r[e];if(!n)return null;if(n.routes){const e=Object.keys(n.routes).sort((e,t)=>t.length-e.length);for(const r of e)if(t===r||t.startsWith(r+"/")){const e=n.routes[r];try{process.kill(e.pid,0)}catch{continue}const o=t.slice(r.length)||"/";return{port:e.port,rewritePath:o,prefix:r}}for(const r of e)try{const e=n.routes[r];process.kill(e.pid,0);
+const o="/"===t||""===t?"/dashboard.html":t;return{port:e.port,rewritePath:o}}catch{continue}}if(n.port){const e="/"===t||""===t?"/dashboard.html":t;return{port:n.port,rewritePath:e}}return null}
+function readGatewayPid(){try{const e=r.readFileSync(a,"utf8");return e.trim().startsWith("{")?JSON.parse(e):{pid:parseInt(e,10),port:80}}catch{return null}}
+function isGatewayRunning(){const e=readGatewayPid();if(!e)return!1;try{return process.kill(e.pid,0),!0}catch{return!1}}
+export function getGatewayPort(){const e=readGatewayPid();return e?.port||80}
+function ensureGateway(){if(!isGatewayRunning())try{const n=e.createServer((t,r)=>{const n=(t.headers.host||"").split(":")[0],o=readRegistry(),s=resolveBackend(n,t.url,o);if(!s)return r.writeHead(404,{"Content-Type":"text/plain"}),void r.end(`Unknown host: ${n}\nRegistered: ${Object.keys(o).join(", ")}`);if("/api/gateway-info"===t.url){const e=JSON.stringify(o["project-graph.local"]||{routes:{}});return r.writeHead(200,{"Content-Type":"application/json"}),void r.end(e)}const i=e.request({hostname:"127.0.0.1",port:s.port,path:s.rewritePath,method:t.method,headers:{...t.headers,host:`localhost:${s.port}`}},e=>{if((e.headers["content-type"]||"").includes("text/html")&&s.prefix){const t=[];e.on("data",e=>t.push(e)),e.on("end",()=>{let n=Buffer.concat(t).toString("utf8");
+const o=`<base href="${s.prefix}/">`;n=n.includes("<head>")?n.replace("<head>",`<head>\n  ${o}`):o+"\n"+n;
+const i=Buffer.from(n,"utf8"),a={...e.headers};a["content-length"]=i.length,delete a["transfer-encoding"],r.writeHead(e.statusCode,a),r.end(i)})}else r.writeHead(e.statusCode,e.headers),e.pipe(r)});i.on("error",()=>{r.writeHead(502,{"Content-Type":"text/plain"}),r.end(`Backend unavailable on port ${s.port}`)}),t.pipe(i)});function startListening(e){n.listen(e,"0.0.0.0",()=>{const e=n.address().port;r.mkdirSync(s,{recursive:!0}),r.writeFileSync(a,JSON.stringify({pid:process.pid,port:e}))})}n.on("upgrade",(e,r,n)=>{const o=(e.headers.host||"").split(":")[0],s=readRegistry(),i=resolveBackend(o,e.url,s);if(!i||i.isDashboard)return void r.destroy();
+const a=t.createConnection({host:"127.0.0.1",port:i.port},()=>{const t=i.rewritePath,o=`${e.method} ${t} HTTP/1.1\r\n`+Object.entries(e.headers).map(([e,t])=>`${e}: ${t}`).join("\r\n")+"\r\n\r\n";a.write(o),n.length&&a.write(n);
+let s=Buffer.alloc(0);a.on("data",function onFirstData(e){s=Buffer.concat([s,e]),-1!==s.indexOf("\r\n\r\n")&&(r.write(s),a.removeListener("data",onFirstData),r.pipe(a),a.pipe(r))})});a.on("error",e=>{console.error("WS PROXY ERROR:",e.message),r.destroy()}),r.on("error",e=>{console.error("WS CLIENT ERROR:",e.message),a.destroy()})}),n.on("error",e=>{"EACCES"===e.code&&!1===n.listening?startListening(8080):"EADDRINUSE"===e.code&&n.listening}),startListening(80)}catch{}}
+function stopGateway(){try{r.unlinkSync(a),r.unlinkSync(i)}catch{}}

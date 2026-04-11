@@ -1,0 +1,2 @@
+
+@names __top__:m=__dirname,g=backendsDir getPortFilePath:r=absPath,o=hash readPortFile:t=portFile,e=data writePortFile:r=absPath,n=info listBackends:e=jsonFiles,t=results ensureBackend:t=absPath,o=existing,n=scriptPath,c=portFile,s=startTime startStdioProxy:o=wsKey,n=sock,c=upgraded,s=buf,i=pending,a=rl encodeClientFrame:r=payload,o=mask,n=masked,c=header,e=text decodeFrame:t=opcode,r=payloadLen,o=offset,e=buf

@@ -1,0 +1,9 @@
+--- src/outdated-patterns.js ---
+@sig 3ad8b704
+@vars f=REDUNDANT_DEPS,m=CODE_PATTERNS
+analyzeFilePatterns(filePath:string,rootDir:string)→readFileSync,relative,parse,walk.simple,pattern.check,matches.push|scan AST against code patterns array, track async context
+analyzePackageJson(dir:string)→join,existsSync,readFileSync,JSON.parse,Object.keys,redundant.push|check package.json dependencies against redundant deps list
+export getOutdatedPatterns(dir:string,options:Object=)→resolve,findJSFiles,analyzeFilePatterns,codePatterns.push,codePatterns.sort,analyzePackageJson|aggregate outdated code patterns and redundant package deps
+PATTERNS: AST ancestor traversal|declarative pattern rules list
+EDGE_CASES: tracks async context to detect sync operations in async functions
+@names findJSFiles:e=dir,n=rootDir,o=files,c=entry,r=fullPath,a=relativePath analyzeFilePatterns:r=filePath,t=rootDir,n=code,s=relPath,o=matches,l=ast,p=context,e=anc,r=pattern analyzePackageJson:r=dir,t=pkgPath,i=redundant,r=pkg,n=allDeps,e=depName getOutdatedPatterns:e=dir,r=options,t=codeOnly,n=depsOnly,s=resolvedDir,i=codePatterns,c=redundantDeps,r=files,e=file,t=severityOrder,a=stats,e=p __top__:f=REDUNDANT_DEPS,m=CODE_PATTERNS

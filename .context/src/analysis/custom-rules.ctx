@@ -1,0 +1,20 @@
+--- src/custom-rules.js ---
+@sig f39de6c1
+@vars p=__dirname,h=RULES_DIR,m=graphignorePatterns
+parseGraphignore(startDir)→dirname,join,existsSync,readFileSync,content.split,line.trim|parse .graphignore patterns by walking up directory tree
+isGraphignored(relativePath)→relativePath.split,pattern.endsWith,pattern.slice,relativePath.startsWith,basename.startsWith,pattern.startsWith|check if relative path matches any graphignore pattern
+loadRuleSets()→existsSync,readdirSync,file.endsWith,join,readFileSync,JSON.parse|load all JSON ruleset configs from rules directory
+saveRuleSet(ruleSet:string)→join,JSON.stringify,writeFileSync|serialize and save ruleset to JSON file
+findFiles(dir:string,filePattern,rootDir:string=)→parseGitignore,parseGraphignore,filePattern.replace,readdirSync,join,relative|recursively find files matching extension, applying ignore filters
+isExcluded(filePath:string,excludePatterns:Array=)→pattern.replace,filePath.endsWith|check if file path matches rule exclusion patterns
+isInStringOrComment(line:string,matchIndex)→line.indexOf|check if match index is inside string literal or comment
+isWithinContext(lines,lineIndex,contextTag)→openTag.replace,line.indexOf|check if line is inside specific HTML-like tag context
+checkFileAgainstRule(filePath:string,rule:Object,rootDir:string)→isExcluded,readFileSync,content.split,relative,regex.exec,isInStringOrComment|test file content against regex or string rule, returning violations
+export getCustomRules()→loadRuleSets,Object.entries,rules.map|load and return summary of all custom rules
+export setCustomRule(ruleSetName,rule:Object)→loadRuleSets,rules.findIndex,rules.push,saveRuleSet|add or update a single rule in a ruleset
+export deleteCustomRule(ruleSetName,ruleId)→loadRuleSets,rules.findIndex,rules.splice,saveRuleSet|remove a rule from a ruleset by ID
+export detectProjectRuleSets(dir:string)→loadRuleSets,join,existsSync,readFileSync,JSON.parse,Object.keys|auto-detect applicable rulesets from package.json and imports
+export checkCustomRules(dir:string,options:Object=)→resolve,loadRuleSets,detectProjectRuleSets,allRules.push,Object.entries,detected.includes|run relevant custom rules against project directory
+PATTERNS: auto-detection via dependencies and imports|regex code scanning
+EDGE_CASES: state machine ignores matches inside strings/comments
+@names parseGraphignore:t=startDir,s=dir,t=ignorePath,s=content isGraphignored:e=relativePath,t=basename,s=pattern,n=prefix,n=suffix loadRuleSets:t=ruleSets,n=file,s=content,r=ruleSet saveRuleSet:e=ruleSet,s=filePath findFiles:e=dir,t=filePattern,n=rootDir,c=files,l=ext,u=entry,s=fullPath,d=relativePath isExcluded:e=filePath,t=excludePatterns,s=pattern,t=ext isInStringOrComment:e=line,t=matchIndex,s=commentIndex,n=inString,r=stringChar,s=i,t=char,o=prevChar isWithinContext:e=lines,t=lineIndex,s=contextTag,n=openTag,r=tagName,o=closeTag,s=depth,t=i,i=line,e=pos,s=openIdx checkFileAgainstRule:t=filePath,s=rule,n=rootDir,r=violations,o=content,c=lines,e=relPath,t=i,n=line,i=matches,e=matchText,r=regex,e=match getCustomRules:e=ruleSets,t=totalRules,s=summary setCustomRule:e=ruleSetName,t=rule,s=ruleSets,n=ruleSet,r=existingIndex deleteCustomRule:e=ruleSetName,t=ruleId,s=ruleSets,n=ruleSet,r=index detectProjectRuleSets:t=dir,s=ruleSets,r=detected,c=reasons,l=packageDeps,s=pkgPath,t=pkg,s=detect,e=dep,o=jsFiles,l=file,o=content,e=pattern,e=pattern checkCustomRules:e=dir,t=options,s=resolvedDir,n=ruleSets,r=allRules,o=detectionResult,e=name,e=ruleSet,i=rulesByPattern,e=rule,t=pattern,c=allViolations,r=files,e=file,t=rule,n=violations,u=seen,t=key,f=deduped,a=filtered,d=severityOrder,s=sevDiff,p=bySeverity,h=byRule,e=v __top__:p=__dirname,h=RULES_DIR,m=graphignorePatterns

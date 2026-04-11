@@ -1,3 +1,4 @@
+// @ctx .context/tests/ws-monitor-test.ctx
 #!/usr/bin/env node
 import e from"node:http";
 import o from"node:net";

@@ -1,0 +1,9 @@
+--- src/type-checker.js ---
+@sig 8ab664fb
+detectTsc()→execSync|null, path: string|null →execSync|null, path: string|null →execSync|null, path: string|null →execSync|detect typescript compiler via local tsc or npx
+parseDiagnosticLine(line:string,baseDir)→line.match,parseInt|null→line.match,parseInt|null→line.match,parseInt|null→line.match,parseInt|regex parse tsc output line into structured error object
+buildArgs(dir:string,options:Object=)→join,existsSync,args.push|build arguments prioritizing local configs over defaults
+export checkTypes(dir:string,options:Object=)→resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|spawn tsc process, collect and parse type diagnostics
+PATTERNS: subprocess spawning|regex CLI output parsing
+EDGE_CASES: falls back to npx if global tsc missing|auto-generates config args
+@names parseDiagnosticLine:t=line,e=baseDir,s=match buildArgs:t=dir,e=options,n=args,r=tsconfig,o=jsconfig checkTypes:t=dir,s=options,i=maxDiagnostics,r=resolvedDir,o=tsc,l=args,a=cmd,c=cmdArgs,s=child,n=stdout,i=stderr,o=timer,u=result,p=output,d=lines,t=diagnostics,e=line,h=diag,m=errors,f=warnings,t=byFile

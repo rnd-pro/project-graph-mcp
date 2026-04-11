@@ -1,0 +1,19 @@
+// @ctx .context/src/network/backend-lifecycle.ctx
+import{createHash as e,randomBytes as t}from"node:crypto";import{existsSync as r,mkdirSync as o,readFileSync as n,writeFileSync as c,unlinkSync as s,readdirSync as i}from"node:fs";import{join as a,resolve as l,basename as f}from"node:path";import{spawn as d}from"node:child_process";import{createInterface as u}from"node:readline";import{createConnection as p}from"node:net";import{fileURLToPath as h}from"node:url";
+const m=a(h(import.meta.url),".."),g=a(process.env.HOME||process.env.USERPROFILE||"/tmp",".local-gateway","backends");function getPortFilePath(t){const r=l(t),o=e("md5").update(r).digest("hex").slice(0,8);return a(g,`${o}.json`)}
+function readPortFile(e){const t=getPortFilePath(e);if(!r(t))return null;try{const e=JSON.parse(n(t,"utf8"));try{process.kill(e.pid,0)}catch{try{s(t)}catch{}return null}return e}catch{return null}}
+export function writePortFile(e,t){o(g,{recursive:!0});
+const r=l(e),n={port:t,pid:process.pid,project:r,name:f(r)||"root",startedAt:Date.now()};c(getPortFilePath(e),JSON.stringify(n,null,2))}
+export function removePortFile(e){try{s(getPortFilePath(e))}catch{}}
+export function listBackends(){if(!r(g))return[];
+const e=i(g).filter(e=>e.endsWith(".json")),t=[];for(const r of e)try{const e=JSON.parse(n(a(g,r),"utf8"));try{process.kill(e.pid,0),t.push(e)}catch{try{s(a(g,r))}catch{}}}catch{}return t}
+export async function ensureBackend(e){const t=l(e),o=readPortFile(t);if(o)return o.port;
+const n=a(m,"backend.js");d(process.execPath,[n,t],{detached:!0,stdio:"ignore",env:{...process.env,PROJECT_GRAPH_BACKEND:"1"}}).unref();
+const c=getPortFilePath(t),s=Date.now();for(;Date.now()-s<1e4;)if(await new Promise(e=>setTimeout(e,200)),r(c)){const e=readPortFile(t);if(e)return e.port}throw new Error("Backend failed to start within 10s")}
+export function startStdioProxy(e,r=[]){const o=t(16).toString("base64"),n=p({host:"127.0.0.1",port:e},()=>{n.write(`GET /mcp-ws HTTP/1.1\r\nHost: 127.0.0.1:${e}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: ${o}\r\nSec-WebSocket-Version: 13\r\n\r\n`)});
+let c=!1,s=Buffer.alloc(0),i=[...r];
+const a=u({input:process.stdin,terminal:!1});function encodeClientFrame(e){const r=Buffer.from(e,"utf8"),o=t(4),n=Buffer.alloc(r.length);for(let e=0;e<r.length;e++)n[e]=r[e]^o[e%4];
+let c;return r.length<126?(c=Buffer.alloc(2),c[0]=129,c[1]=128|r.length):r.length<65536?(c=Buffer.alloc(4),c[0]=129,c[1]=254,c.writeUInt16BE(r.length,2)):(c=Buffer.alloc(10),c[0]=129,c[1]=255,c.writeBigUInt64BE(BigInt(r.length),2)),Buffer.concat([c,o,n])}
+function decodeFrame(e){if(e.length<2)return null;
+const t=15&e[0];
+let r=127&e[1],o=2;if(126===r){if(e.length<4)return null;r=e.readUInt16BE(2),o=4}else if(127===r){if(e.length<10)return null;r=Number(e.readBigUInt64BE(2)),o=10}return e.length<o+r?null:{opcode:t,data:e.slice(o,o+r).toString("utf8"),totalLen:o+r}}a.on("line",e=>{if(c)try{n.write(encodeClientFrame(e))}catch{}else i.push(e)}),a.on("close",()=>{n.end(),process.exit(0)}),n.on("data",e=>{if(c)s=Buffer.concat([s,e]);else{const t=Buffer.concat([s,e]),r=t.indexOf("\r\n\r\n");if(-1===r)return void(s=t);t.slice(0,r).toString().includes("101")||(console.error("[project-graph] WebSocket handshake failed"),process.exit(1)),c=!0,s=t.slice(r+4);for(const e of i)try{n.write(encodeClientFrame(e))}catch{}i=[]}for(;s.length>=2;){const e=decodeFrame(s);if(!e)break;if(s=s.slice(e.totalLen),1===e.opcode)process.stdout.write(e.data+"\n");else if(8===e.opcode)process.exit(0);else if(9===e.opcode){const e=Buffer.alloc(2);e[0]=138,e[1]=0,n.write(e)}}}),n.on("close",()=>process.exit(0)),n.on("error",e=>{console.error(`[project-graph] Proxy connection error: ${e.message}`),process.exit(1)})}

@@ -1,0 +1,11 @@
+// @ctx .context/src/analysis/large-files.ctx
+import{readFileSync as s,readdirSync as e,statSync as t}from"fs";import{join as n,relative as i,resolve as r}from"path";import{parse as o}from"../../vendor/acorn.mjs";import*as l from"../../vendor/walk.mjs";import{shouldExcludeDir as a,shouldExcludeFile as c,parseGitignore as u}from"../core/filters.js";function findJSFiles(s,r=s){s===r&&u(r);
+const o=[];try{for(const l of e(s)){const e=n(s,l),u=i(r,e);t(e).isDirectory()?a(l,u)||o.push(...findJSFiles(e,r)):!l.endsWith(".js")||l.endsWith(".css.js")||l.endsWith(".tpl.js")||c(l,u)||o.push(e)}}catch(s){}return o}
+function analyzeFile(e,t){const n=s(e,"utf-8"),r=i(t,e),a=n.split("\n").length;
+let c,u=0,p=0,f=0;try{c=o(n,{ecmaVersion:"latest",sourceType:"module",locations:!0})}catch(s){return{file:r,lines:a,functions:0,classes:0,exports:0,rating:"ok",reasons:[]}}l.simple(c,{FunctionDeclaration(){u++},ArrowFunctionExpression(s){"BlockStatement"===s.body.type&&u++},ClassDeclaration(){p++},ExportNamedDeclaration(){f++},ExportDefaultDeclaration(){f++}});
+const h=[];
+let d=0;a>500?(d+=2,h.push(`${a} lines (>500)`)):a>300&&(d+=1,h.push(`${a} lines (>300)`)),u>15?(d+=2,h.push(`${u} functions (>15)`)):u>10&&(d+=1,h.push(`${u} functions (>10)`)),p>3?(d+=2,h.push(`${p} classes (>3)`)):p>1&&(d+=1,h.push(`${p} classes (>1)`)),f>10?(d+=2,h.push(`${f} exports (>10)`)):f>5&&(d+=1,h.push(`${f} exports (>5)`));
+let g="ok";return d>=4?g="critical":d>=2&&(g="warning"),{file:r,lines:a,functions:u,classes:p,exports:f,rating:g,reasons:h}}
+export async function getLargeFiles(s,e={}){const t=e.onlyProblematic||!1,n=r(s),i=findJSFiles(s);
+let o=i.map(s=>analyzeFile(s,n));t&&(o=o.filter(s=>"ok"!==s.rating)),o.sort((s,e)=>e.lines-s.lines);
+const l={totalFiles:i.length,ok:o.filter(s=>"ok"===s.rating).length,warning:o.filter(s=>"warning"===s.rating).length,critical:o.filter(s=>"critical"===s.rating).length,totalLines:o.reduce((s,e)=>s+e.lines,0),avgLines:o.length>0?Math.round(o.reduce((s,e)=>s+e.lines,0)/o.length):0};return{total:o.length,stats:l,items:o.slice(0,30)}}

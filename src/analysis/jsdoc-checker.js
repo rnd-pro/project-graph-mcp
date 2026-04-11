@@ -1,0 +1,24 @@
+// @ctx .context/src/analysis/jsdoc-checker.ctx
+import{readFileSync as e,readdirSync as t,statSync as n}from"fs";import{join as r,relative as s,resolve as i}from"path";import{parse as o}from"../../vendor/acorn.mjs";import*as a from"../../vendor/walk.mjs";import{shouldExcludeDir as c,shouldExcludeFile as l,parseGitignore as u}from"../core/filters.js";function findJSFiles(e,i=e){e===i&&u(i);
+const o=[];try{for(const a of t(e)){const t=r(e,a),u=s(i,t);n(t).isDirectory()?c(a,u)||o.push(...findJSFiles(t,i)):!a.endsWith(".js")||a.endsWith(".css.js")||a.endsWith(".tpl.js")||l(a,u)||o.push(t)}}catch(e){}return o}
+function extractJSDocComments(e){const t=[],n=/\/\*\*[\s\S]*?\*\//g;
+let r;for(;null!==(r=n.exec(e));){const n=r[0],s=e.slice(0,r.index+n.length).split("\n").length,i=[],o=/@param\s+\{/g;
+let a;for(;null!==(a=o.exec(n));){let e=1,t=a.index+a[0].length;for(;t<n.length&&e>0;)"{"===n[t]?e++:"}"===n[t]&&e--,t++;if(0!==e)continue;
+const r=n.slice(a.index+a[0].length,t-1),s=n.slice(t).match(/^\s+(\[?\w+(?:\.\w+)*\]?)/);if(!s)continue;
+let o=s[1];o.startsWith("[")&&(o=o.slice(1)),o.endsWith("]")&&(o=o.slice(0,-1)),o.includes(".")||i.push({name:o,type:r})}const c=/@returns?\s/.test(n);t.push({text:n,endLine:s,params:i,hasReturns:c})}return t}
+function findJSDocBefore(e,t){for(const n of e){const e=t-n.endLine;if(e>=0&&e<=2)return n}return null}
+function extractParamName(e){return"Identifier"===e.type?e.name:"AssignmentPattern"===e.type&&"Identifier"===e.left.type?e.left.name:"RestElement"===e.type&&"Identifier"===e.argument.type?e.argument.name:"ObjectPattern"===e.type?"options":"ArrayPattern"===e.type?"args":"param"}
+function inferTypeFromDefault(e){if("AssignmentPattern"!==e.type)return null;
+const t=e.right;if("Literal"===t.type){if("string"==typeof t.value)return"string";if("number"==typeof t.value)return"number";if("boolean"==typeof t.value)return"boolean"}return"ArrayExpression"===t.type?"Array":"ObjectExpression"===t.type?"Object":null}
+function hasReturnValue(e){let t=!1;try{a.simple(e.body,{ReturnStatement(e){e.argument&&(t=!0)},FunctionDeclaration(){},FunctionExpression(){},ArrowFunctionExpression(){}})}catch(e){}return t}
+function validateFunction(e,t,n,r,s,i){const o=[];if(!e)return o;
+const a=e.params;a.length>0&&a.length!==t.length&&o.push({file:s,line:i,name:r,severity:"error",message:`Param count mismatch: JSDoc has ${a.length}, function has ${t.length}`});
+const c=Math.min(a.length,t.length);for(let e=0;e<c;e++){const n=a[e].name,c=extractParamName(t[e]);n!==c&&"options"!==c&&"args"!==c&&"param"!==c&&o.push({file:s,line:i,name:r,severity:"error",message:`Param name mismatch at position ${e}: JSDoc says "${n}", code has "${c}"`})}!e.hasReturns&&hasReturnValue(n)&&o.push({file:s,line:i,name:r,severity:"warning",message:"Function returns a value but JSDoc has no @returns"});for(let e=0;e<c;e++){const n=a[e].type,c=inferTypeFromDefault(t[e]);if(c&&n&&"*"!==n){let t=n.toLowerCase().includes(c.toLowerCase());!t&&"string"===c&&n.includes("'")&&n.includes("|")&&(t=!0),!t&&"Array"===c&&n.includes("[]")&&(t=!0),t||o.push({file:s,line:i,name:r,severity:"warning",message:`Type mismatch for "${a[e].name}": JSDoc says {${n}}, default value suggests {${c}}`})}}return o}
+export function checkJSDocFile(e,t){const n=[];
+let r;try{r=o(e,{ecmaVersion:"latest",sourceType:"module",locations:!0})}catch(e){return n}const s=extractJSDocComments(e);return a.simple(r,{FunctionDeclaration(e){if(!e.id)return;
+const r=findJSDocBefore(s,e.loc.start.line);r&&n.push(...validateFunction(r,e.params,e,e.id.name,t,e.loc.start.line))},VariableDeclaration(e){for(const r of e.declarations){if(!r.init)continue;
+const i="ArrowFunctionExpression"===r.init.type||"FunctionExpression"===r.init.type?r.init:null;if(!i||!r.id?.name)continue;
+const o=findJSDocBefore(s,e.loc.start.line);o&&n.push(...validateFunction(o,i.params,i,r.id.name,t,e.loc.start.line))}},ClassDeclaration(e){const r=e.id?.name||"Anonymous";for(const i of e.body.body){if("MethodDefinition"!==i.type)continue;
+const e=i.key.name||i.key.value;if(!e||"constructor"===e)continue;if("method"!==i.kind)continue;
+const o=i.value,a=findJSDocBefore(s,i.loc.start.line);a&&n.push(...validateFunction(a,o.params,o,`${r}.${e}`,t,i.loc.start.line))}}}),n}
+export function checkJSDocConsistency(t){const n=i(t),r=findJSFiles(t),o=[];for(const t of r){let r;try{r=e(t,"utf-8")}catch(e){continue}const i=checkJSDocFile(r,s(n,t));o.push(...i)}const a=o.filter(e=>"error"===e.severity).length,c=o.filter(e=>"warning"===e.severity).length,l={};for(const e of o)l[e.file]=(l[e.file]||0)+1;return{issues:o,summary:{total:o.length,errors:a,warnings:c,byFile:l}}}

@@ -1,0 +1,11 @@
+--- src/compress.js ---
+@sig f4dd1d72
+@vars o=SUPPORTED_EXTENSIONS
+estimateTokens(text:string)→Math.ceil|estimates token count from str length
+extractLegend(source:string,filePath:string)→basename,lines.push,parse,Math.max,source.slice,beforeNode.match|parses AST to extract exports & JSDocs into compact legend string
+export compressFile(filePath:string,options:Object=)→extname,SUPPORTED_EXTENSIONS.has,readFileSync,estimateTokens,source.trim,minify|minifies JS/TS via Terser, prepends JSDoc legend
+export editCompressed(filePath:string,symbol:string,newCode,options:Object=)→readFileSync,parse,findSymbolRange,source.slice,minify,writeFileSync|find symbol in file and replace its code safely
+findSymbolRange(ast:Object,source:string,symbol:string)→walk|traverse AST to find byte range for a named symbol
+PATTERNS: AST traversal|regex JSDoc extraction|Terser minification
+EDGE_CASES: validates syntax before writing|handles empty files
+@names estimateTokens:e=text extractLegend:e=source,n=filePath,a=lines,t=ast,n=decl,s=jsdoc,n=searchStart,a=beforeNode,e=jsdocMatch,e=gap,t=desc,r=name,e=paramList,t=line,e=name,t=ext,e=method compressFile:t=filePath,s=options,c=ext,l=source,m=originalTokens,d=terserOptions,p=compressedSource,e=result,f=legend,u=compressedCode,y=compressedTokens editCompressed:t=filePath,n=symbol,r=newCode,o=options,l=source,m=ast,d=match,p=before,e=after findSymbolRange:e=ast,t=source,n=symbol,a=match,t=decl,t=decl __top__:o=SUPPORTED_EXTENSIONS

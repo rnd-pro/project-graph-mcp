@@ -1,0 +1,9 @@
+--- src/db-analysis.js ---
+@sig b6493058
+export getDBSchema(dir:string)→parseProject,tables.map,tables.reduce|read parsed project to list all defined SQL tables and columns
+export getTableUsage(dir:string,tableName)→parseProject,buildGraph,readers.some,readers.push,writers.some,writers.push|find readers and writers for tables using parsed graph edges
+export getDBDeadTables(dir:string)→parseProject,buildGraph,referencedTables.add,referencedTables.has,schemaTables.filter,collectReferencedColumns|find schema tables not referenced by any read/write in code
+collectReferencedColumns(parsed)→columns.add|heuristically collect all potential column names from code
+PATTERNS: dependency graph analysis|heuristic DB column extraction
+EDGE_CASES: hardcoded standard columns prevent false positive dead tables
+@names getDBSchema:t=dir,a=parsed getTableUsage:a=dir,s=tableName,n=parsed,o=graph,r=tableMap,n=table,l=fullName,d=node,c=entry,l=tables getDBDeadTables:a=dir,s=parsed,n=graph,o=schemaTables,r=referencedTables,l=deadTables,d=referencedColumns,c=deadColumns,e=table,t=col collectReferencedColumns:e=parsed,t=columns,a=func,e=table,a=cls,e=table

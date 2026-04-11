@@ -1,7 +1,0 @@
---- src/dead-code.js ---
-@sig 2da30581
-findProjectRoot(dir:string)→resolve,dirname,join,existsSync|walks up dir tree to find package.json
-analyzeFileLocals(code:string)→parse,varDecls.push,declSites.add,importDecls.push,walk.simple,topLevelExportedNames.add|parses AST to find unused local vars and imports
-export getDeadCode(dir:string)→resolve,findJSFiles,findProjectRoot,readFileSync,relative,analyzeFile|scans dir for unused fns, classes, exports, vars, imports
-PATTERNS: AST traversal|cross-file dep tracking|heuristic usage regex
-EDGE_CASES: syntax err→skip file|test/css/tpl files→ignored

@@ -1,0 +1,17 @@
+--- src/expand.js ---
+@sig 2d44a20d
+@vars f=SKIP_DIRS,h=SUPPORTED
+parseCtxSignatures(ctxContent:string)→ctxContent.split,line.trim,trimmed.match,sigs.set,parseCtxParams|parse .ctx file into Map of func name → typed signature
+parseCtxParams(paramStr)→paramStr.split,p.trim,trimmed.match|parse param string into [{name, type, optional}] array
+extractReturnType(callChain)→callChain.match|extract return type from →ReturnType arrow chain
+sanitizeJSDocText(text:string)→text.replace|escape */ in JSDoc descriptions to prevent parse errors
+generateJSDoc(sig)→sanitizeJSDocText|build /** */ JSDoc block from .ctx signature
+export expandFile(filePath:string,ctxContent:string,options:Object=)→readFileSync,minify,parseCtxSignatures,parse,walk,generateJSDoc|beautify compact JS + inject JSDoc from .ctx|core hybrid mode expand
+resolveCtx(projectPath,relFile)→basename,extname,dirname,join,existsSync,readFileSync|find .ctx file: colocated or .context/ mirror
+export expandProject(projectPath,options:Object=)→join,existsSync,walkJSFiles,relative,resolveCtx,expandFile,writeFileSync|expand all src/ → .expanded/ with JSDoc injection
+extractDeclarations(code:string)→parse,walk|extract fn/class positions with line numbers from AST
+export buildLineMap(compactCode,fullCode)→extractDeclarations|build Map: fullLine → {compactLine, symbol}|symbol-level mapping
+export mapFullToCompact(compactFilePath,fullFilePath,fullLine:number)→readFileSync,buildLineMap|map .expanded/ line to compact source line|returns null if not found
+PATTERNS: Terser beautify (no compress/mangle)|AST walk for injection points|reverse-order insertion|name-based symbol matching
+EDGE_CASES: */ in descriptions→sanitized|empty files→skip|parse errors→fallback to beautified|unmapped lines→null
+@names __top__:f=SKIP_DIRS,h=SUPPORTED_EXT walkJSFiles:n=results resolveCtx:s=ctxName,r=dir,p=directPath,u=contextPath decompileProject:r=dryRun,a=outDir,c=srcDir,u=jsFiles,m=fileResults,d=errors,h=totalInjected,f=errors,s=relPath,p=ctxContent extractDeclarations:t=declarations,n=ast parseCtxSignatures:t=signatures,n=rawLine,e=line,o=classMatch,s=methodMatch,r=fnMatch,i=description parseCtxParams:t=trimmed,n=typedMatch,o=simpleMatch extractReturnType:t=rtMatch generateJSDoc:t=lines,n=param,e=type,o=nameStr parseCtxVars:t=vars,n=rawLine,e=line parseCtxNames:t=namesMap,n=rawLine,e=line,o=scopeName,s=pairsStr,r=scopeMap restoreNames:s=globalMap,r=usedNames,c=scopes,a=replacements,i=bestScope decompileFile:r=rawCode,i=beautified,a=signatures,c=ast,l=injections,p=result,f=injectedCount,n=nlPos,o=lineStart,s=indent buildLineMap:n=fullDecls,o=compactDecls,s=lineMap,r=nameIndex,t=match

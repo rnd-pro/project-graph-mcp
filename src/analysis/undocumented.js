@@ -1,0 +1,14 @@
+// @ctx .context/src/analysis/undocumented.ctx
+import{readFileSync as e,readdirSync as t,statSync as n}from"fs";import{join as s,relative as o,resolve as c}from"path";import{parse as i}from"../../vendor/acorn.mjs";import*as r from"../../vendor/walk.mjs";import{shouldExcludeDir as l,shouldExcludeFile as a,parseGitignore as u}from"../core/filters.js";function findJSFiles(e,c=e){e===c&&u(c);
+const i=[];try{for(const r of t(e)){const t=s(e,r),u=o(c,t);n(t).isDirectory()?l(r,u)||i.push(...findJSFiles(t,c)):!r.endsWith(".js")||r.endsWith(".css.js")||r.endsWith(".tpl.js")||a(r,u)||i.push(t)}}catch(e){}return i}
+function extractComments(e){const t=[],n=/\/\*\*[\s\S]*?\*\//g;
+let s;for(;null!==(s=n.exec(e));){const n=e.slice(0,s.index+s[0].length).split("\n").length;t.push({text:s[0],endLine:n})}return t}
+function findJSDocBefore(e,t){for(const n of e){const e=t-n.endLine;if(e>=0&&e<=2)return n.text}return null}
+function checkMissing(e,t){const n=[];return e?("params"!==t&&"all"!==t||(e.includes("@param")||n.push("@param"),e.includes("@returns")||e.includes("@return")||n.push("@returns")),n):("all"===t&&n.push("description"),"params"!==t&&"all"!==t||n.push("@param","@returns"),n)}const d=["constructor","connectedCallback","disconnectedCallback","attributeChangedCallback","renderCallback"];
+export function checkUndocumentedFile(e,t,n){const s=[];
+let o;try{o=i(e,{ecmaVersion:"latest",sourceType:"module",locations:!0})}catch(e){return s}const c=extractComments(e);return r.simple(o,{ClassDeclaration(e){const o=e.id?.name||"Anonymous";"all"===n&&(findJSDocBefore(c,e.loc.start.line)||s.push({name:o,type:"class",file:t,line:e.loc.start.line,reason:"No JSDoc"}));for(const i of e.body.body)if("MethodDefinition"===i.type){const e=i.key.name||i.key.value;if("get"===i.kind||"set"===i.kind)continue;if(e?.startsWith("_"))continue;if(d.includes(e))continue;
+const r=checkMissing(findJSDocBefore(c,i.loc.start.line),n);r.length>0&&s.push({name:`${o}.${e}`,type:"method",file:t,line:i.loc.start.line,reason:r.join(", ")})}},FunctionDeclaration(e){if(!e.id)return;
+const o=e.id.name;if(o.startsWith("_"))return;
+const i=checkMissing(findJSDocBefore(c,e.loc.start.line),n);i.length>0&&s.push({name:o,type:"function",file:t,line:e.loc.start.line,reason:i.join(", ")})}}),s}
+export function getUndocumented(t,n="tests"){const s=c(t),i=findJSFiles(t),r=[];for(const t of i){let c;try{c=e(t,"utf-8")}catch(e){continue}const i=checkUndocumentedFile(c,o(s,t),n);r.push(...i)}return r}
+export function getUndocumentedSummary(e,t="tests"){const n=getUndocumented(e,t),s={class:n.filter(e=>"class"===e.type).length,function:n.filter(e=>"function"===e.type).length,method:n.filter(e=>"method"===e.type).length},o={};for(const e of n)o[e.reason]=(o[e.reason]||0)+1;return{total:n.length,byType:s,byReason:o,items:n.slice(0,20)}}

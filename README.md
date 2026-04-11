@@ -180,7 +180,7 @@ v2.0 uses 18 domain-grouped tools instead of 49 individual endpoints. Grouped to
 navigate({ action: "expand", symbol: "MyClass" })
 analyze({ action: "complexity", path: "src/" })
 docs({ action: "generate", path: ".", scope: "focus" })
-compact({ action: "compress_file", path: "src/parser.js" })
+compact({ action: "compact_file", path: "src/parser.js" })
 ```
 
 10 standalone tools (`get_skeleton`, `get_ai_context`, `invalidate_cache`, etc.) remain unchanged.

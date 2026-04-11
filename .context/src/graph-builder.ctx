@@ -1,8 +1,0 @@
---- src/graph-builder.js ---
-@sig a03a3989
-export minifyLegend(names)→createShortName,used.has,used.add|create minified legend from names|handles collisions with numeric suffix
-createShortName(name:string)→name.replace,upperOnly.slice,name.match,name.slice|generate short name from full name|uses PascalCase/camelCase initials
-export buildGraph(parsed)→classes.map,functions.map,classes.flatMap,minifyLegend,Object.entries,Object.fromEntries|build minified graph from parsed data|tracks nodes, edges, orphans, duplicates
-export createSkeleton(graph,allFiles=)→Object.entries,file.push,Object.values,coveredFiles.add,Object.keys,coveredFiles.has|create compact project skeleton|minimizes tokens for AI context
-PATTERNS: adjacency list for edges|minified legend for token savings
-EDGE_CASES: skips empty classes|handles unreferenced functions as orphans

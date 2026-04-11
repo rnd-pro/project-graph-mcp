@@ -1,0 +1,7 @@
+--- src/ai-context.js ---
+@sig 4de57d15
+@vars a=COMPRESSIBLE
+export getAiContext(dirPath:string,options:Object=)→resolve,getSkeleton,estimateTokens,getGraph,getProjectDocs,findJSFiles|get project context including skeleton, docs, and optionally compressed files
+PATTERNS: token estimation heuristic|parallel generation
+EDGE_CASES: gracefully skips unreadable files|handles missing files
+@names estimateTokens:e=value,t=str getAiContext:c=dirPath,l=options,p=projectPath,u=result,g=totalTokens,e=graph,e=allFiles,s=requestedFile,o=match,n=ext,e=compressed,h=allFiles,k=vsOriginal,e=file,y=savings __top__:a=COMPRESSIBLE

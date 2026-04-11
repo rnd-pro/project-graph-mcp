@@ -1,8 +1,0 @@
---- src/type-checker.js ---
-@sig 8ab664fb
-detectTsc()→execSync|null, path: string|null →execSync|null, path: string|null →execSync|null, path: string|null →execSync|detect typescript compiler via local tsc or npx
-parseDiagnosticLine(line:string,baseDir)→line.match,parseInt|null→line.match,parseInt|null→line.match,parseInt|null→line.match,parseInt|regex parse tsc output line into structured error object
-buildArgs(dir:string,options:Object=)→join,existsSync,args.push|build arguments prioritizing local configs over defaults
-export checkTypes(dir:string,options:Object=)→resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|spawn tsc process, collect and parse type diagnostics
-PATTERNS: subprocess spawning|regex CLI output parsing
-EDGE_CASES: falls back to npx if global tsc missing|auto-generates config args

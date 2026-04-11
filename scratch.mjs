@@ -1,4 +1,0 @@
-import o from"http";
-import e from"crypto";
-const t="project-graph.local",r="/project-graph-mcp/ws/monitor",s=e.randomBytes(16).toString("base64");console.log(`Connecting to ws://${t}:80${r}`);
-const n=o.request({method:"GET",port:80,host:t,path:r,headers:{Connection:"Upgrade",Upgrade:"websocket","Sec-WebSocket-Version":"13","Sec-WebSocket-Key":s,Host:t}});n.on("upgrade",(o,e,t)=>{console.log("Success! Got 101 Switching Protocols"),e.end()}),n.on("response",o=>{console.log("Failed! Got normal response with status:",o.statusCode)}),n.on("error",o=>{console.error("Request Error:",o.message)}),n.end();

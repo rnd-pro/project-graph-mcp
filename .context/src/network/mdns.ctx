@@ -1,0 +1,2 @@
+
+@names __top__:r=MULTICAST_ADDR registerDnsSd:n=proc tryAvahi:r=proc,n=failed registerMcast:n=labels,c=qname,o=socket,e=msgOffset,n=qtype,i=qclass,s=response,a=offset

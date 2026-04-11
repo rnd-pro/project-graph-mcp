@@ -1,6 +1,0 @@
---- src/cli.js ---
-@sig b135c417
-export printHelp()→console.log|log usage instructions and available commands to stdout
-export runCLI(command,args)→printHelp,console.error,process.exit,def.handler,console.log,JSON.stringify|parse args, validate, and route to corresponding cli handler
-PATTERNS: generic command router|table help text
-EDGE_CASES: handles unknown commands gracefully|validates required args

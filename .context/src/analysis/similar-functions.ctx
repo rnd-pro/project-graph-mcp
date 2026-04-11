@@ -1,0 +1,11 @@
+--- src/similar-functions.js ---
+@sig 36a3e214
+extractParamName(param)|extract parameter name string from AST node
+extractSignatures(filePath:string,rootDir:string)→readFileSync,relative,parse,buildSignature,signatures.push,name.startsWith|traverse AST to build detailed structural signatures for file
+buildSignature(node:Object,name:string,file:string)→extractParamName,params.map,calls.push,walk.simple,hashBodyStructure|construct signature object with structure hash and calls
+hashBodyStructure(body:Object)→structure.push,walk.simple,structure.join|traverse function body to build structural flow sequence string
+calculateSimilarity(a,b)→reasons.push,paramNames.includes,paramNames.filter,Math.max,Math.round,commonParams.join|compare two signatures to calculate similarity percentage score
+export getSimilarFunctions(dir:string,options:Object=)→resolve,findJSFiles,extractSignatures,allSignatures.push,calculateSimilarity,pairs.push|extract and compare signatures across directory for similar pairs
+PATTERNS: structural hashing of control flow|pair-wise comparison scoring
+EDGE_CASES: skips very small functions|ignores overloads (same name/file)
+@names findJSFiles:t=dir,r=rootDir,i=files,l=entry,e=fullPath,h=relativePath extractSignatures:e=filePath,a=rootDir,n=code,r=relPath,o=signatures,c=ast,e=name buildSignature:t=node,e=name,a=file,n=paramNames,s=calls,r=bodyHash extractParamName:t=param hashBodyStructure:t=body,e=structure calculateSimilarity:t=a,e=b,a=reasons,n=score,s=maxScore,r=commonParams,s=paramSim,s=aTokens,r=bTokens,i=commonTokens,t=structSim,i=commonCalls,s=callSim getSimilarFunctions:t=dir,e=options,a=threshold,n=resolvedDir,s=files,i=allSignatures,t=file,l=pairs,t=i,e=j,n=a,s=b computeSimilarity:i=shorter,j=longer,a=score

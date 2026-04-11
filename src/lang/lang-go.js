@@ -1,0 +1,17 @@
+// @ctx .context/src/lang/lang-go.ctx
+import{stripStringsAndComments as s}from"./lang-utils.js";
+export function parseGo(t,e){const n={file:e,classes:[],functions:[],imports:[],exports:[]},{imports:l,packageNames:o}=extractImports(t);n.imports=l;
+const i=s(t,{singleQuote:!1,backtick:!0,templateInterpolation:!1}),c=new Map,r=/^\s*type\s+([a-zA-Z_]\w*)\s+struct\s*\{/gm;
+let a;for(;null!==(a=r.exec(i));){const s=a[1],n=getBody(i,a.index+a[0].length),l=t.substring(0,a.index).split("\n").length;
+let o=null;
+const r=[],p=n.split("\n").map(s=>s.trim()).filter(s=>s);for(const s of p){const t=s.split(/\s+/);if(1===t.length)o=t[0].replace(/^\*/,"");else if(t.length>=2){const s=t[0].replace(/,$/,"");r.push(s)}}c.set(s,{name:s,extends:o,methods:[],properties:r,calls:[],file:e,line:l})}const p=/^\s*type\s+([a-zA-Z_]\w*)\s+interface\s*\{/gm;for(;null!==(a=p.exec(i));){const s=a[1],n=getBody(i,a.index+a[0].length),l=t.substring(0,a.index).split("\n").length;
+let o=null;
+const r=[],p=n.split("\n").map(s=>s.trim()).filter(s=>s);for(const s of p){const t=s.indexOf("(");if(-1!==t){const e=s.substring(0,t).trim().split(/\s+/),n=e[e.length-1];n&&r.push(n)}else{const t=s.split(/\s+/);1===t.length&&(o=t[0])}}c.set(s,{name:s,extends:o,methods:r,properties:[],calls:[],file:e,line:l})}const u=/^\s*func\s+\(\s*[a-zA-Z_]\w*\s+\*?([a-zA-Z_]\w*)\s*\)\s+([a-zA-Z_]\w*)[^{]*\{/gm;for(;null!==(a=u.exec(i));){const s=a[1],n=a[2],l=getBody(i,a.index+a[0].length),r=t.substring(0,a.index).split("\n").length,p=extractCalls(l,o);c.has(s)||c.set(s,{name:s,extends:null,methods:[],properties:[],calls:[],file:e,line:r});
+const u=c.get(s);u.methods.push(n);for(const s of p)u.calls.includes(s)||u.calls.push(s)}const f=/^\s*func\s+([a-zA-Z_]\w*)\s*\(([^)]*)\)[^{]*\{/gm;for(;null!==(a=f.exec(i));){const s=a[1],l=a[2].split(",").map(s=>s.trim().split(/\s+/)[0]).filter(s=>s),c=/^[A-Z]/.test(s),r=getBody(i,a.index+a[0].length),p=t.substring(0,a.index).split("\n").length,u=extractCalls(r,o);n.functions.push({name:s,exported:c,calls:u,params:l,file:e,line:p})}n.classes=Array.from(c.values());for(const s of n.classes)/^[A-Z]/.test(s.name)&&n.exports.push(s.name);for(const s of n.functions)s.exported&&n.exports.push(s.name);return n}
+function extractImports(s){const t=[],e=new Set,n=s.replace(/\/\/.*/g,"").replace(/\/\*[\s\S]*?\*\//g,""),l=/import\s*\(([\s\S]*?)\)/g;
+let o;for(;null!==(o=l.exec(n));){const s=o[1].split("\n");for(const n of s){const s=n.match(/(?:([a-zA-Z_]\w*)\s+)?"([^"]+)"/);if(s){const n=s[1],l=s[2];if(n)t.includes(n)||(t.push(n),e.add(n));else if(!t.includes(l)){t.push(l);
+const s=l.split("/");e.add(s[s.length-1])}}}}const i=/import\s+(?:([a-zA-Z_]\w*)\s+)?"([^"]+)"/g;for(;null!==(o=i.exec(n));){const s=o[1],n=o[2];if(s)t.includes(s)||(t.push(s),e.add(s));else if(!t.includes(n)){t.push(n);
+const s=n.split("/");e.add(s[s.length-1])}}return{imports:t,packageNames:e}}
+function getBody(s,t){let e=1,n=t;for(;n<s.length&&e>0;)"{"===s[n]?e++:"}"===s[n]&&e--,n++;return s.substring(t,n-1)}
+function extractCalls(s,t){const e=[],n=/([a-zA-Z_]\w*(?:\.[a-zA-Z_]\w*)?)\s*\(/g;
+let l;for(;null!==(l=n.exec(s));){let s=l[1];if(!["if","for","switch","func","panic","recover","len","cap","make","new","append","copy","delete","close","int","string","bool","byte","rune","float32","float64","int32","int64","uint32","uint64","complex64","complex128"].includes(s)){if(s.includes(".")){const e=s.split(".");t.has(e[0])||(s=e[1])}e.includes(s)||e.push(s)}}return e}
