@@ -135,7 +135,7 @@ export class FileTree extends e {
                 const isExpanded = this._expandedDirs && this._expandedDirs.has(childPath);
                 const chevron = isExpanded ? "expand_more" : "chevron_right";
                 const hiddenAttr = isExpanded ? "" : " hidden";
-                l.push(`<div class="pg-tree-dir" data-dir="${childPath}" style="padding-left:${pad + 6}px"><span class="material-symbols-outlined pg-chevron" style="font-size:16px">${chevron}</span> <span class="material-symbols-outlined" style="font-size:16px">folder</span> ${dirName}/</div>`);
+                l.push(`<div class="pg-tree-dir" data-dir="${childPath}" style="padding-left:${pad + 6}px"><span class="material-symbols-outlined pg-chevron" style="font-size:16px">${chevron}</span> <span class="material-symbols-outlined" style="font-size:16px">folder</span> ${dirName}</div>`);
                 l.push(`<div class="pg-tree-children" data-dir="${childPath}"${hiddenAttr}>`);
                 l.push(renderNode(node.children[dirName], childPath, depth + 1));
                 l.push("</div>");
