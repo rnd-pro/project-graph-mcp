@@ -1,5 +1,6 @@
 --- src/compact/mode-config.js ---
 @sig 1929be3d
+@vars r=CONFIG_FILE,n=DEFAULTS
 export getConfig(t)→a,d,e,JSON.parse|read .context/config.json, merge with defaults
 export setConfig(e,c)→a,n,d,o,getConfig,JSON.stringify|save mode config|validates mode 1-4
 export getModeDescription(e)|return human-readable desc for mode 1-4

@@ -1,5 +1,6 @@
 --- src/core/parser.js ---
 @sig 72c52e0d
+@vars x=SOURCE_EXTENSIONS,S=DB_METHODS
 @enrich: Replace each {DESCRIBE} below. Read src/core/parser.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.

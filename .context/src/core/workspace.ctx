@@ -1,5 +1,6 @@
 --- src/core/workspace.js ---
 @sig 895f5c6b
+@vars s=workspaceRoot,a=__dirname,p=selfRoot,c=wsArg
 export setRoots(r)→o.startsWith,o.slice,console.error|set workspace root dirs from MCP client (file:// URI or path)
 export getWorkspaceRoot()|return first workspace root or cwd fallback
 export resolvePath(t)→getWorkspaceRoot,o,r,s.startsWith|resolve relative path to absolute, enforce workspace boundary

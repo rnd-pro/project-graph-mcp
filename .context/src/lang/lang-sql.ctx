@@ -1,5 +1,6 @@
 --- src/lang/lang-sql.js ---
 @sig f561b2a3
+@vars e=SQL_KEYWORDS,t=ORM_READ_METHODS,n=ORM_WRITE_METHODS
 @enrich: Replace each {DESCRIBE} below. Read src/lang/lang-sql.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.

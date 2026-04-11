@@ -1,5 +1,6 @@
 --- src/compact/compact.js ---
 @sig 596f30f0
+@vars d=SUPPORTED,f=SKIP_DIRS
 @enrich: Replace each {DESCRIBE} below. Read src/compact/compact.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.

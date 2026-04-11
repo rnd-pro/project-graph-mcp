@@ -1,5 +1,6 @@
 --- src/compact/compress.js ---
 @sig 4a07a2d1
+@vars o=SUPPORTED_EXTENSIONS
 extractLegend(e,n)→t,a.push,s,Math.max,e.slice,e.replace|parses AST to extract exports & JSDocs into compact legend string
 export compressFile(t,s=)→n,o.has,e,estimateTokens,l.trim,a|minifies JS/TS via Terser, prepends JSDoc legend
 export editCompressed(t,n,r,o=)→e,s,findSymbolRange,l.slice,a|find symbol in file and replace its code safely

@@ -1,5 +1,6 @@
 --- src/compact/ctx-to-jsdoc.js ---
 @sig e378a248
+@vars p=SUPPORTED,f=SKIP_DIRS
 export parseCtxFile(t)→t.split,t.match,r.split,i.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|parse .ctx file into structured fn signatures with params+types
 buildJSDocBlock(t)→e.push,params.split,t.trim,t.match,e.join|build JSDoc /** */ block from ctx fn info with @param/@returns
 findCtxFile(t,e)→t.replace,r,o|null→sourceFile.replace,join,existsSync|null→sourceFile.replace,join,existsSync|null→sourceFile.replace,join,existsSync|locate .ctx file for source: check .context/ dir first, then colocated

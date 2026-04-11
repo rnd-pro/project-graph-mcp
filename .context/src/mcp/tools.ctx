@@ -1,5 +1,6 @@
 --- src/mcp/tools.js ---
 @sig 5f00f628
+@vars h=cachedGraph,d=cachedPath,m=cachedMtimes
 saveDiskCache(e,t)→p,Object.fromEntries,JSON.stringify,a|save graph cache to disk|.project-graph-cache.json
 loadDiskCache(e)→p,l,c,JSON.parse,m.clear,Object.entries|load graph cache from disk|validates version and path
 export getGraph(t)→detectChanges,loadDiskCache,e,s,snapshotMtimes,saveDiskCache|get or build project graph|uses smart mtime-based caching

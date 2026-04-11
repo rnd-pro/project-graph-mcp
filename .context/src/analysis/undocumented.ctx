@@ -1,5 +1,6 @@
 --- src/analysis/undocumented.js ---
 @sig b041c612
+@vars d=SKIP_METHODS
 findJSDocBefore(e,t)|null|null|null|find JSDoc block immediately preceding a line
 extractComments(e)→n.exec,e.slice,t.push|extract all JSDoc blocks and their end lines
 checkMissing(e,t)→e.includes,n.push|check if JSDoc is missing required tags for strictness level
