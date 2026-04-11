@@ -1,6 +1,7 @@
-import{resolve as t,extname as e}from"path";import{getSkeleton as s,getGraph as o}from"./tools.js";import{getProjectDocs as n}from"./doc-dialect.js";import{compressFile as i}from"./compress.js";import{findJSFiles as r}from"./parser.js";
-const c=new Set([".js",".mjs",".ts",".tsx"]);function estimateTokens(t){const e="string"==typeof t?t:JSON.stringify(t);return Math.ceil(e.length/4)}
-export async function getAiContext(a,f={}){const{includeFiles:l=[],includeDocs:m=!0,includeSkeleton:d=!0}=f,p=t(a),u={};
-let h=0;if(d&&(u.skeleton=await s(p),h+=estimateTokens(u.skeleton)),m){const t=await o(p);u.docs=n(t,p),h+=estimateTokens(u.docs)}if(l.length>0){u.files={};
-const t=r(p);for(const s of l){const o=t.find(t=>t.endsWith(s)||t.endsWith("/"+s));if(!o){u.files[s]={error:`File not found: ${s}`};continue}const n=e(o).toLowerCase();if(c.has(n))try{const t=await i(o,{beautify:!0,legend:!0});u.files[s]=t.code,h+=t.compressed}catch(t){u.files[s]={error:t.message}}else u.files[s]={error:`Unsupported file type: ${n}`}}}const g=r(p);
-let k=0;for(const t of g)try{const{readFileSync:e}=await import("fs");k+=estimateTokens(e(t,"utf-8"))}catch{}const y=k>0?Math.round(100*(1-h/k)):0;return u.totalTokens=h,u.vsOriginal=k,u.savings=`${y}%`,u}
+// @ctx .context/src/ai-context.ctx
+import{resolve as e,extname as t}from"path";import{getSkeleton as s,getGraph as o}from"./tools.js";import{getProjectDocs as n}from"./doc-dialect.js";import{compressFile as i}from"./compress.js";import{findJSFiles as r}from"./parser.js";
+const a=new Set([".js",".mjs",".ts",".tsx"]);function estimateTokens(e){const t="string"==typeof e?e:JSON.stringify(e);return Math.ceil(t.length/4)}
+export async function getAiContext(c,l={}){const{includeFiles:f=[],includeDocs:m=!0,includeSkeleton:d=!0}=l,p=e(c),u={};
+let g=0;if(d&&(u.skeleton=await s(p),g+=estimateTokens(u.skeleton)),m){const e=await o(p);u.docs=n(e,p),g+=estimateTokens(u.docs)}if(f.length>0){u.files={};
+const e=r(p);for(const s of f){const o=e.find(e=>e.endsWith(s)||e.endsWith("/"+s));if(!o){u.files[s]={error:`File not found: ${s}`};continue}const n=t(o).toLowerCase();if(a.has(n))try{const e=await i(o,{beautify:!0,legend:!0});u.files[s]=e.code,g+=e.compressed}catch(e){u.files[s]={error:e.message}}else u.files[s]={error:`Unsupported file type: ${n}`}}}const h=r(p);
+let k=0;for(const e of h)try{const{readFileSync:t}=await import("fs");k+=estimateTokens(t(e,"utf-8"))}catch{}const y=k>0?Math.round(100*(1-g/k)):0;return u.totalTokens=g,u.vsOriginal=k,u.savings=`${y}%`,u}

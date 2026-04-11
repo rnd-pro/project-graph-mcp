@@ -1,4 +1,4 @@
 #!/usr/bin/env node
-import{resolve as e}from"node:path";import{startWebServer as o}from"./web-server.js";import{writePortFile as s,removePortFile as r}from"./backend-lifecycle.js";
-const c=e(process.argv[2]||".");function cleanup(){r(c)}process.on("exit",cleanup),process.on("SIGINT",()=>{cleanup(),process.exit()}),process.on("SIGTERM",()=>{cleanup(),process.exit()});
-const n=o(c,0),p=setInterval(()=>{const e=n.address();e&&(clearInterval(p),s(c,e.port))},50);
+import{resolve as e}from"node:path";import{startWebServer as r}from"./web-server.js";import{writePortFile as s,removePortFile as o}from"./backend-lifecycle.js";
+const t=e(process.argv[2]||".");function cleanup(){o(t)}process.on("exit",cleanup),process.on("SIGINT",()=>{cleanup(),process.exit()}),process.on("SIGTERM",()=>{cleanup(),process.exit()});
+const c=r(t,0),a=setInterval(()=>{const e=c.address();e&&(clearInterval(a),s(t,e.port))},50);

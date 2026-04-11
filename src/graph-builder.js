@@ -1,3 +1,4 @@
+// @ctx .context/src/graph-builder.ctx
 export function minifyLegend(e){const s={},t=new Set;for(const o of e){let e=createShortName(o),n=1;for(;t.has(e);)e=createShortName(o)+n,n++;t.add(e),s[o]=e}return s}
 function createShortName(e){const s=e.replace(/[a-z]/g,"");if(s.length>=2)return s.slice(0,3);
 const t=e.match(/[A-Z]/g);return t&&t.length>0?e[0].toLowerCase()+t[0]:e.slice(0,2)}

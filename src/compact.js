@@ -1,15 +1,18 @@
-import{readFileSync as e,writeFileSync as t,readdirSync as n,statSync as o}from"fs";import{join as s,extname as r,relative as c}from"path";import{minify as i}from"../vendor/terser.mjs";
-const a=new Set([".js",".mjs"]),l=new Set(["node_modules",".git","vendor",".context","dev-docs",".agent",".agents"]);function walkJSFiles(e,t=e){const c=[];try{for(const i of n(e)){if(i.startsWith(".")&&"."!==i)continue;
-const n=s(e,i);o(n).isDirectory()?l.has(i)||c.push(...walkJSFiles(n,t)):a.has(r(i).toLowerCase())&&c.push(n)}}catch{}return c}
+// @ctx .context/src/compact.ctx
+import{readFileSync as e,writeFileSync as t,readdirSync as n,statSync as o,existsSync as s}from"fs";import{join as r,extname as c,relative as a,basename as i,dirname as l}from"path";import{minify as u}from"../vendor/terser.mjs";
+const d=new Set([".js",".mjs"]),f=new Set(["node_modules",".git","vendor",".context","dev-docs",".agent",".agents"]);function walkJSFiles(e,t=e){const s=[];try{for(const a of n(e)){if(a.startsWith(".")&&"."!==a)continue;
+const n=r(e,a);o(n).isDirectory()?f.has(a)||s.push(...walkJSFiles(n,t)):d.has(c(a).toLowerCase())&&s.push(n)}}catch{}return s}
 function addTopLevelNewlines(e){return e.replace(/;(import )/g,";\n$1").replace(/;(export )/g,";\n$1").replace(/\}(export )/g,"}\n$1").replace(/\}(function )/g,"}\n$1").replace(/\}(async function )/g,"}\n$1").replace(/\}(class )/g,"}\n$1").replace(/;(const |let |var )/g,";\n$1")}
-async function compactFile(n){const o=e(n,"utf-8"),s=o.length;if(!o.trim())return{original:0,compacted:0};
-const r=await i(o,{compress:{dead_code:!0,drop_console:!1,passes:1,reduce_funcs:!1,inline:!1},mangle:{keep_fnames:!0,module:!0},module:!0,output:{beautify:!1,comments:!1,semicolons:!0}});if(r.error)throw r.error;
-const c=addTopLevelNewlines(r.code);return t(n,c,"utf-8"),{original:s,compacted:c.length}}
+function resolveCtxPath(e,t){const n=a(t,e),o=i(n,c(n))+".ctx",u=l(n),d=r(t,".context",u,o);if(s(d))return".context/"+u+"/"+o;
+const f=r(t,u,o);return s(f)?u+"/"+o:null}
+async function compactFile(n,o){const s=e(n,"utf-8"),r=s.length;if(!s.trim())return{original:0,compacted:0};
+const c=await u(s,{compress:{dead_code:!0,drop_console:!1,passes:1,reduce_funcs:!1,inline:!1},mangle:{keep_fnames:!0,module:!0},module:!0,output:{beautify:!1,comments:!1,semicolons:!0}});if(c.error)throw c.error;
+let a=addTopLevelNewlines(c.code);if(o){const e=resolveCtxPath(n,o);e&&(a="// @ctx "+e+"\n"+a)}return t(n,a,"utf-8"),{original:r,compacted:a.length}}
 async function beautifyFile(n){const o=e(n,"utf-8"),s=o.length;if(!o.trim())return{original:0,beautified:0};
-const r=await i(o,{compress:!1,mangle:!1,module:!0,output:{beautify:!0,comments:!1,indent_level:2,semicolons:!0}});if(r.error)throw r.error;return t(n,r.code+"\n","utf-8"),{original:s,beautified:r.code.length}}
+const r=await u(o,{compress:!1,mangle:!1,module:!0,output:{beautify:!0,comments:!1,indent_level:2,semicolons:!0}});if(r.error)throw r.error;return t(n,r.code+"\n","utf-8"),{original:s,beautified:r.code.length}}
 export async function compactProject(t,n={}){const{dryRun:o=!1}=n,s=walkJSFiles(t);
-let r=0,a=0;
-const l=[],u=[];for(const n of s){const s=c(t,n);try{const t=e(n,"utf-8");if(r+=t.length,o){a+=addTopLevelNewlines((await i(t,{compress:{dead_code:!0,drop_console:!1,passes:1,reduce_funcs:!1,inline:!1},mangle:{keep_fnames:!0,module:!0},module:!0,output:{beautify:!1,comments:!1}})).code||"").length||t.length}else{const{compacted:e}=await compactFile(n);a+=e}l.push(s)}catch(e){u.push({file:s,error:e.message})}}const d=r>0?Math.round(100*(1-a/r)):0;return{files:l.length,fileList:l,originalBytes:r,compactedBytes:a,savings:`${d}%`,errors:u.length>0?u:void 0,dryRun:o}}
+let r=0,c=0;
+const i=[],l=[];for(const n of s){const s=a(t,n);try{const a=e(n,"utf-8");if(r+=a.length,o)c+=addTopLevelNewlines((await u(a,{compress:{dead_code:!0,drop_console:!1,passes:1,reduce_funcs:!1,inline:!1},mangle:{keep_fnames:!0,module:!0},module:!0,output:{beautify:!1,comments:!1}})).code||"").length||a.length;else{const{compacted:e}=await compactFile(n,t);c+=e}i.push(s)}catch(e){l.push({file:s,error:e.message})}}const d=r>0?Math.round(100*(1-c/r)):0;return{files:i.length,fileList:i,originalBytes:r,compactedBytes:c,savings:`${d}%`,errors:l.length>0?l:void 0,dryRun:o}}
 export async function expandProject(t,n={}){const{dryRun:o=!1}=n,s=walkJSFiles(t);
-let r=0,a=0;
-const l=[],u=[];for(const n of s){const s=c(t,n);try{const t=e(n,"utf-8");if(r+=t.length,o){const e=await i(t,{compress:!1,mangle:!1,module:!0,output:{beautify:!0,comments:!1,indent_level:2}});a+=e.code?.length||t.length}else{const{beautified:e}=await beautifyFile(n);a+=e}l.push(s)}catch(e){u.push({file:s,error:e.message})}}return{files:l.length,fileList:l,originalBytes:r,beautifiedBytes:a,errors:u.length>0?u:void 0,dryRun:o}}
+let r=0,c=0;
+const i=[],l=[];for(const n of s){const s=a(t,n);try{const t=e(n,"utf-8");if(r+=t.length,o){const e=await u(t,{compress:!1,mangle:!1,module:!0,output:{beautify:!0,comments:!1,indent_level:2}});c+=e.code?.length||t.length}else{const{beautified:e}=await beautifyFile(n);c+=e}i.push(s)}catch(e){l.push({file:s,error:e.message})}}return{files:i.length,fileList:i,originalBytes:r,beautifiedBytes:c,errors:l.length>0?l:void 0,dryRun:o}}

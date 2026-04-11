@@ -1,7 +1,8 @@
+// @ctx .context/src/tools.ctx
 import{parseProject as e,parseFile as t,findJSFiles as n,findAllProjectFiles as r}from"./parser.js";import{buildGraph as s,createSkeleton as o}from"./graph-builder.js";import{readFileSync as c,statSync as i,writeFileSync as a,existsSync as l,unlinkSync as f}from"fs";import{execSync as u}from"child_process";import{join as p}from"path";
 let h=null,d=null,m=new Map;function saveDiskCache(e,t){try{const n=p(e,".project-graph-cache.json"),r={version:1,path:e,mtimes:Object.fromEntries(m),graph:t};a(n,JSON.stringify(r),"utf-8")}catch(e){}}
 function loadDiskCache(e){try{const t=p(e,".project-graph-cache.json");if(!l(t))return!1;
-const n=c(t,"utf-8"),r=JSON.parse(n);if(1!==r.version||r.path!==e)return!1;m.clear();for(const[e,t]of Object.entries(r.mtimes))m.set(e,t);h=r.graph,d=e;return!detectChanges(e)||(h=null,d=null,m.clear(),!1)}catch(e){return!1}}
+const n=c(t,"utf-8"),r=JSON.parse(n);if(1!==r.version||r.path!==e)return!1;m.clear();for(const[e,t]of Object.entries(r.mtimes))m.set(e,t);return h=r.graph,d=e,!detectChanges(e)||(h=null,d=null,m.clear(),!1)}catch(e){return!1}}
 export async function getGraph(t){if(h&&d===t){if(!detectChanges(t))return h}else if(!h&&loadDiskCache(t))return h;
 const n=await e(t);return h=s(n),d=t,snapshotMtimes(t),saveDiskCache(t,h),h}
 function detectChanges(e){if(0===m.size)return!0;try{const t=n(e),r=new Set(t),s=new Set(m.keys());if(t.length!==m.size)return!0;for(const e of t)if(!s.has(e))return!0;for(const e of s)if(!r.has(e))return!0;for(const e of t)try{if(i(e).mtimeMs!==m.get(e))return!0}catch{return!0}return!1}catch{return!0}}
@@ -19,6 +20,6 @@ const r=n.index;
 let s=0,o=n.index+n[0].length-1;for(;o<e.length;){if("{"===e[o])s++;else if("}"===e[o]&&(s--,0===s))return e.slice(r,o+1);o++}return e.slice(r)}
 export async function getCallChain(e={}){const{from:t,to:n,path:r}=e;if(!t||!n)return{error:'Both "from" and "to" parameters are required'};
 const s=r||d||"src/components",o=await getGraph(s),c=o.legend[t]||t,i=o.legend[n]||n,a={};for(const[e,t,n]of o.edges)a[e]||(a[e]=[]),a[e].push(n);
-const l=[{current:c,path:[c]}],f=new Set,u=new Set;for(f.add(c);l.length>0;){const{current:e,path:t}=l.shift(),n=e.split(".")[0],r=e.split(".")[1];if(e===i||n===i||r===i){return t.map(e=>{const t=e.split("."),n=o.reverseLegend[t[0]]||t[0];if(2===t.length){return`${n}.${o.reverseLegend[t[1]]||t[1]}`}return n})}if(u.has(n))continue;u.add(n);
+const l=[{current:c,path:[c]}],f=new Set,u=new Set;for(f.add(c);l.length>0;){const{current:e,path:t}=l.shift(),n=e.split(".")[0],r=e.split(".")[1];if(e===i||n===i||r===i)return t.map(e=>{const t=e.split("."),n=o.reverseLegend[t[0]]||t[0];return 2===t.length?`${n}.${o.reverseLegend[t[1]]||t[1]}`:n});if(u.has(n))continue;u.add(n);
 const s=a[n]||[];for(const e of s)f.has(e)||(f.add(e),l.push({current:e,path:[...t,e]}))}return{error:`No call path found from "${t}" to "${n}"`}}
 export function invalidateCache(){if(d)try{const e=p(d,".project-graph-cache.json");l(e)&&f(e)}catch(e){}h=null,d=null,m.clear()}

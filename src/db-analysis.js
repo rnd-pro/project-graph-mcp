@@ -1,3 +1,4 @@
+// @ctx .context/src/db-analysis.ctx
 import{parseProject as e}from"./parser.js";import{buildGraph as t}from"./graph-builder.js";
 export async function getDBSchema(t){const a=(await e(t)).tables||[];return{tables:a.map(e=>({name:e.name,columns:e.columns,file:e.file,line:e.line})),totalTables:a.length,totalColumns:a.reduce((e,t)=>e+t.columns.length,0)}}
 export async function getTableUsage(a,s){const n=await e(a),o=t(n),r={};for(const[e,t,a]of o.edges){if("R→"!==t&&"W→"!==t)continue;

@@ -1,3 +1,4 @@
+// @ctx .context/src/jsdoc-generator.ctx
 import{readFileSync as t}from"fs";import{relative as e}from"path";import{parse as r}from"../vendor/acorn.mjs";import*as n from"../vendor/walk.mjs";import{getWorkspaceRoot as a}from"./workspace.js";
 export function generateJSDoc(i,o={}){const s=[],c=t(i,"utf-8"),m=e(a(),i);
 let f;try{f=r(c,{ecmaVersion:"latest",sourceType:"module",locations:!0})}catch(t){return s}const hasJSDocAt=t=>{const e=c.split("\n");for(let r=t-2;r>=Math.max(0,t-15);r--){const t=e[r]?.trim();if(t){if("*/"===t||t.endsWith("*/")){for(let t=r-1;t>=Math.max(0,r-20);t--){const r=e[t]?.trim();if(r?.startsWith("/**"))return!0;if(r&&!r.startsWith("*"))break}return!1}if(!t.startsWith("*")&&!t.startsWith("//"))break}}return!1};return n.simple(f,{FunctionDeclaration(t){if(!t.id)return;if(hasJSDocAt(t.loc.start.line))return;

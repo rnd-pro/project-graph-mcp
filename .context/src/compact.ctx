@@ -1,6 +1,7 @@
 --- src/compact.js ---
 @sig 4cc8ddab
-compactFile(filePath)→readFileSync,source.trim,minify,writeFileSync|minify single JS file via Terser (mangle:false)
+resolveCtxPath(filePath,rootDir)→relative,basename,extname,dirname,join,existsSync|resolve .ctx file path for a source file
+compactFile(filePath,rootDir)→readFileSync,source.trim,minify,addTopLevelNewlines,resolveCtxPath,writeFileSync|minify single JS file, prepend @ctx header if .ctx exists
 beautifyFile(filePath)→readFileSync,source.trim,minify,writeFileSync|format single JS file with proper indentation
 export compactProject(dir,options=)→walkJSFiles,relative,readFileSync,compactFile,minify,processed.push|compact all JS files in dir, per-file error handling, ret stats+savings%
 export expandProject(dir,options=)→walkJSFiles,relative,readFileSync,beautifyFile,minify,processed.push|beautify all JS files in dir, inverse of compactProject

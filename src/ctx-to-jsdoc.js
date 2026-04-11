@@ -1,3 +1,4 @@
+// @ctx .context/src/ctx-to-jsdoc.ctx
 import{readFileSync as t,writeFileSync as e,readdirSync as n,statSync as s,existsSync as o}from"fs";import{join as r,extname as i,relative as a}from"path";import{parse as c}from"../vendor/acorn.mjs";import{simple as l}from"../vendor/walk.mjs";
 const p=new Set([".js",".mjs"]),f=new Set(["node_modules",".git","vendor",".context","dev-docs",".agent",".agents"]);
 export function parseCtxFile(t){const e=t.split("\n"),n={file:null,functions:[]};for(const t of e){const e=t.match(/^--- (.+) ---$/);if(e){n.file=e[1];continue}const s=t.match(/^(export\s+)?(\w+)\(([^)]*)\)((?:→[^→|]+)*)(?:\|(.*))?$/);if(s){const[,t,e,o,r,i]=s;
@@ -7,10 +8,10 @@ function findCtxFile(t,e){const n=t.replace(/\.[^.]+$/,".ctx"),s=r(e,".context",
 const i=r(e,n);return o(i)?i:null}
 export function injectJSDoc(n,s={}){const{dryRun:o=!1}=s,r=n,i=walkJSFiles(n);
 let p=0,f=0;
-const u=[];for(const m of i){const d=a(r,m),h=findCtxFile(d,r);if(!h){f++;continue}const g=parseCtxFile(t(h,"utf-8"));if(0===g.functions.length){f++;continue}let y,x=t(m,"utf-8"),$=!1,v=0;try{y=c(x,{ecmaVersion:"latest",sourceType:"module",locations:!0})}catch{f++;continue}const w=[];function findExportStart(t){for(const e of y.body)if("ExportNamedDeclaration"===e.type&&e.declaration===t)return e.start;return t.start}l(y,{FunctionDeclaration(t){if(!t.id)return;
-const e=t.id.name,n=g.functions.find(t=>t.name===e);if(!n)return;
+const u=[];for(const m of i){const d=a(r,m),h=findCtxFile(d,r);if(!h){f++;continue}const y=parseCtxFile(t(h,"utf-8"));if(0===y.functions.length){f++;continue}let g,x=t(m,"utf-8"),$=!1,S=0;try{g=c(x,{ecmaVersion:"latest",sourceType:"module",locations:!0})}catch{f++;continue}const v=[];function findExportStart(t){for(const e of g.body)if("ExportNamedDeclaration"===e.type&&e.declaration===t)return e.start;return t.start}l(g,{FunctionDeclaration(t){if(!t.id)return;
+const e=t.id.name,n=y.functions.find(t=>t.name===e);if(!n)return;
 const s=findExportStart(t);if(x.slice(0,s).trimEnd().endsWith("*/"))return;
-const o=buildJSDocBlock(n);w.push({position:s,jsdoc:o}),v++}}),w.sort((t,e)=>e.position-t.position);for(const{position:S,jsdoc:F}of w){const C=x.slice(0,S).lastIndexOf("\n")+1,j=x.slice(C,S).match(/^(\s*)/)?.[1]||"",k=F.split("\n").map(t=>j+t).join("\n")+"\n";x=x.slice(0,S)+k+x.slice(S),$=!0}$&&!o&&e(m,x,"utf-8"),v>0&&(p+=v,u.push({file:d,injected:v}))}return{files:i.length,injected:p,skipped:f,dryRun:o,details:u}}
+const o=buildJSDocBlock(n);v.push({position:s,jsdoc:o}),S++}}),v.sort((t,e)=>e.position-t.position);for(const{position:w,jsdoc:F}of v){const j=x.slice(0,w).lastIndexOf("\n")+1,C=x.slice(j,w).match(/^(\s*)/)?.[1]||"",k=F.split("\n").map(t=>C+t).join("\n")+"\n";x=x.slice(0,w)+k+x.slice(w),$=!0}$&&!o&&e(m,x,"utf-8"),S>0&&(p+=S,u.push({file:d,injected:S}))}return{files:i.length,injected:p,skipped:f,dryRun:o,details:u}}
 export function stripJSDoc(n,s={}){const{dryRun:o=!1}=s,r=walkJSFiles(n);
 let i=0,l=0;
 const p=[];for(const s of r){const r=t(s,"utf-8"),f=[];

@@ -1,10 +1,11 @@
-import{readFileSync as t,readdirSync as s,statSync as e}from"fs";import{join as n,relative as i,resolve as r}from"path";import{parse as o}from"../vendor/acorn.mjs";import*as l from"../vendor/walk.mjs";import{shouldExcludeDir as a,shouldExcludeFile as c,parseGitignore as p}from"./filters.js";function findJSFiles(t,r=t){t===r&&p(r);
-const o=[];try{for(const l of s(t)){const s=n(t,l),p=i(r,s);e(s).isDirectory()?a(l,p)||o.push(...findJSFiles(s,r)):!l.endsWith(".js")||l.endsWith(".css.js")||l.endsWith(".tpl.js")||c(l,p)||o.push(s)}}catch(t){}return o}
-function analyzeFile(s,e){const n=t(s,"utf-8"),r=i(e,s),a=n.split("\n").length;
-let c,p=0,u=0,f=0;try{c=o(n,{ecmaVersion:"latest",sourceType:"module",locations:!0})}catch(t){return{file:r,lines:a,functions:0,classes:0,exports:0,rating:"ok",reasons:[]}}l.simple(c,{FunctionDeclaration(){p++},ArrowFunctionExpression(t){"BlockStatement"===t.body.type&&p++},ClassDeclaration(){u++},ExportNamedDeclaration(){f++},ExportDefaultDeclaration(){f++}});
+// @ctx .context/src/large-files.ctx
+import{readFileSync as s,readdirSync as t,statSync as e}from"fs";import{join as n,relative as i,resolve as r}from"path";import{parse as l}from"../vendor/acorn.mjs";import*as o from"../vendor/walk.mjs";import{shouldExcludeDir as a,shouldExcludeFile as c,parseGitignore as u}from"./filters.js";function findJSFiles(s,r=s){s===r&&u(r);
+const l=[];try{for(const o of t(s)){const t=n(s,o),u=i(r,t);e(t).isDirectory()?a(o,u)||l.push(...findJSFiles(t,r)):!o.endsWith(".js")||o.endsWith(".css.js")||o.endsWith(".tpl.js")||c(o,u)||l.push(t)}}catch(s){}return l}
+function analyzeFile(t,e){const n=s(t,"utf-8"),r=i(e,t),a=n.split("\n").length;
+let c,u=0,p=0,f=0;try{c=l(n,{ecmaVersion:"latest",sourceType:"module",locations:!0})}catch(s){return{file:r,lines:a,functions:0,classes:0,exports:0,rating:"ok",reasons:[]}}o.simple(c,{FunctionDeclaration(){u++},ArrowFunctionExpression(s){"BlockStatement"===s.body.type&&u++},ClassDeclaration(){p++},ExportNamedDeclaration(){f++},ExportDefaultDeclaration(){f++}});
 const h=[];
-let g=0;a>500?(g+=2,h.push(`${a} lines (>500)`)):a>300&&(g+=1,h.push(`${a} lines (>300)`)),p>15?(g+=2,h.push(`${p} functions (>15)`)):p>10&&(g+=1,h.push(`${p} functions (>10)`)),u>3?(g+=2,h.push(`${u} classes (>3)`)):u>1&&(g+=1,h.push(`${u} classes (>1)`)),f>10?(g+=2,h.push(`${f} exports (>10)`)):f>5&&(g+=1,h.push(`${f} exports (>5)`));
-let m="ok";return g>=4?m="critical":g>=2&&(m="warning"),{file:r,lines:a,functions:p,classes:u,exports:f,rating:m,reasons:h}}
-export async function getLargeFiles(t,s={}){const e=s.onlyProblematic||!1,n=r(t),i=findJSFiles(t);
-let o=i.map(t=>analyzeFile(t,n));e&&(o=o.filter(t=>"ok"!==t.rating)),o.sort((t,s)=>s.lines-t.lines);
-const l={totalFiles:i.length,ok:o.filter(t=>"ok"===t.rating).length,warning:o.filter(t=>"warning"===t.rating).length,critical:o.filter(t=>"critical"===t.rating).length,totalLines:o.reduce((t,s)=>t+s.lines,0),avgLines:o.length>0?Math.round(o.reduce((t,s)=>t+s.lines,0)/o.length):0};return{total:o.length,stats:l,items:o.slice(0,30)}}
+let d=0;a>500?(d+=2,h.push(`${a} lines (>500)`)):a>300&&(d+=1,h.push(`${a} lines (>300)`)),u>15?(d+=2,h.push(`${u} functions (>15)`)):u>10&&(d+=1,h.push(`${u} functions (>10)`)),p>3?(d+=2,h.push(`${p} classes (>3)`)):p>1&&(d+=1,h.push(`${p} classes (>1)`)),f>10?(d+=2,h.push(`${f} exports (>10)`)):f>5&&(d+=1,h.push(`${f} exports (>5)`));
+let g="ok";return d>=4?g="critical":d>=2&&(g="warning"),{file:r,lines:a,functions:u,classes:p,exports:f,rating:g,reasons:h}}
+export async function getLargeFiles(s,t={}){const e=t.onlyProblematic||!1,n=r(s),i=findJSFiles(s);
+let l=i.map(s=>analyzeFile(s,n));e&&(l=l.filter(s=>"ok"!==s.rating)),l.sort((s,t)=>t.lines-s.lines);
+const o={totalFiles:i.length,ok:l.filter(s=>"ok"===s.rating).length,warning:l.filter(s=>"warning"===s.rating).length,critical:l.filter(s=>"critical"===s.rating).length,totalLines:l.reduce((s,t)=>s+t.lines,0),avgLines:l.length>0?Math.round(l.reduce((s,t)=>s+t.lines,0)/l.length):0};return{total:l.length,stats:o,items:l.slice(0,30)}}
