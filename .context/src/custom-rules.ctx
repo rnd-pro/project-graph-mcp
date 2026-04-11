@@ -1,5 +1,6 @@
 --- src/custom-rules.js ---
 @sig f39de6c1
+@vars p=__dirname,h=RULES_DIR,m=graphignorePatterns
 parseGraphignore(startDir)→dirname,join,existsSync,readFileSync,content.split,line.trim|parse .graphignore patterns by walking up directory tree
 isGraphignored(relativePath)→relativePath.split,pattern.endsWith,pattern.slice,relativePath.startsWith,basename.startsWith,pattern.startsWith|check if relative path matches any graphignore pattern
 loadRuleSets()→existsSync,readdirSync,file.endsWith,join,readFileSync,JSON.parse|load all JSON ruleset configs from rules directory

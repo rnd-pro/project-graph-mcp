@@ -1,5 +1,6 @@
 --- src/tools.js ---
 @sig 7a1f98f4
+@vars h=cachedGraph,d=cachedPath,m=cachedMtimes
 saveDiskCache(path,graph)→join,Object.fromEntries,JSON.stringify,writeFileSync|save graph cache to disk|.project-graph-cache.json
 loadDiskCache(path)→join,existsSync,readFileSync,JSON.parse,cachedMtimes.clear,Object.entries|load graph cache from disk|validates version and path
 export getGraph(path)→detectChanges,loadDiskCache,parseProject,buildGraph,snapshotMtimes,saveDiskCache|get or build project graph|uses smart mtime-based caching

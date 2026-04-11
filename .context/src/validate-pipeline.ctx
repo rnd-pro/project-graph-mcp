@@ -1,5 +1,6 @@
 --- src/validate-pipeline.js ---
 @sig 4d7aa91a
+@vars f=SUPPORTED,m=SKIP_DIRS
 estimateTokens(text)→Math.ceil|estimate token count from char length (÷4)
 walkJSFiles(dir)→readdirSync,statSync,SKIP_DIRS.has|walk dir for .js/.mjs files, skip vendor/node_modules
 export validatePipeline(projectPath,options=)→validateCtxContracts,decompileProject,walkJSFiles,parse,readFileSync|run full Mode 4 validation pipeline|returns PASS/FAIL with contract, AST, token reports

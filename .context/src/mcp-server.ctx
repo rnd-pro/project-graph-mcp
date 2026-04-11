@@ -1,5 +1,6 @@
 --- src/mcp-server.js ---
 @sig 10257428
+@vars ue=__dirname,me=TOOL_HANDLERS,_e=RESPONSE_HINTS,ge=CONSOLIDATED_HANDLERS,he=CONSOLIDATED_HINTS
 export createServer(sendToClient)→pendingRequests.get,pendingRequests.delete,pending.reject,pending.resolve,handleNotification,setRoots|create MCP server instance|handles JSON-RPC 2.0 messages
 export startStdioServer(bufferedLines=)→JSON.stringify,console.log,createServer,readline.createInterface,JSON.parse,server.handleMessage|start MCP server with stdio transport
 PATTERNS: JSON-RPC 2.0|bidirectional stdio communication

@@ -1,5 +1,6 @@
 --- src/compress.js ---
 @sig f4dd1d72
+@vars o=SUPPORTED_EXTENSIONS
 estimateTokens(text)→Math.ceil|estimates token count from str length
 extractLegend(source,filePath)→basename,lines.push,parse,Math.max,source.slice,beforeNode.match|parses AST to extract exports & JSDocs into compact legend string
 export compressFile(filePath,options=)→extname,SUPPORTED_EXTENSIONS.has,readFileSync,estimateTokens,source.trim,minify|minifies JS/TS via Terser, prepends JSDoc legend

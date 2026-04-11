@@ -1,5 +1,6 @@
 --- src/filters.js ---
 @sig 97377999
+@vars i=DEFAULT_EXCLUDES,n=DEFAULT_EXCLUDE_PATTERNS,s=config
 export getFilters()|return current filter configuration
 export setFilters(updates)→getFilters|update filter configuration state
 export addExcludes(dirs)→getFilters|add directories to exclude list

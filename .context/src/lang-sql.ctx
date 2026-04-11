@@ -1,5 +1,6 @@
 --- src/lang-sql.js ---
 @sig 56d4c310
+@vars e=SQL_KEYWORDS,t=ORM_READ_METHODS,n=ORM_WRITE_METHODS
 export isSQLString(str)|test if string looks like a SQL query
 isValidTableName(name)→name.toLowerCase,SQL_KEYWORDS.has|validate table name against SQL keywords and casing rules
 export extractSQLFromString(sql)→sql.replace,fromRegex.exec,normalized.slice,afterMatch.startsWith,isValidTableName,reads.add|extract table READs and WRITEs from SQL string

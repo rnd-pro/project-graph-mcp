@@ -1,5 +1,6 @@
 --- src/undocumented.js ---
 @sig fd17b822
+@vars d=SKIP_METHODS
 findJSFiles(dir,rootDir=)→parseGitignore,readdirSync,join,relative,statSync,stat.isDirectory|recursively find JS files applying filter rules
 findJSDocBefore(comments,targetLine)|null|null|null|find JSDoc block immediately preceding a line
 extractComments(code)→regex.exec,code.slice,comments.push|extract all JSDoc blocks and their end lines

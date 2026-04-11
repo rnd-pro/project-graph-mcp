@@ -1,5 +1,6 @@
 --- src/mode-config.js ---
 @sig 59f3a19d
+@vars r=CONFIG_FILE,n=DEFAULTS
 export getConfig(projectDir)→join,existsSync,readFileSync,JSON.parse|read .context/config.json, merge with defaults
 export setConfig(projectDir,config)→join,dirname,existsSync,mkdirSync,getConfig,writeFileSync|save mode config|validates mode 1-4
 export getModeDescription(mode)|return human-readable desc for mode 1-4

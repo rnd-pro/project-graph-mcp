@@ -1,5 +1,6 @@
 --- src/decompile.js ---
 @sig 2d44a20d
+@vars f=SKIP_DIRS,h=SUPPORTED
 parseCtxSignatures(ctxContent)→ctxContent.split,line.trim,trimmed.match,sigs.set,parseCtxParams|parse .ctx file into Map of func name → typed signature
 parseCtxParams(paramStr)→paramStr.split,p.trim,trimmed.match|parse param string into [{name, type, optional}] array
 extractReturnType(callChain)→callChain.match|extract return type from →ReturnType arrow chain

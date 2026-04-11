@@ -1,5 +1,6 @@
 --- src/parser.js ---
 @sig 2a983638
+@vars x=SOURCE_EXTENSIONS,S=DB_METHODS
 export parseFile(code,filename)→parse,console.warn,buildJSDocTypeMap,imports.push,exportedNames.add,methods.push|parse single JS file to AST|extracts classes,functions,imports,exports
 extractCallsAndSQL(node,calls,dbReads,dbWrites)→calls.includes,calls.push,getCallMethodName,DB_METHODS.has,extractStringValue,isSQLString|walk AST to extract method calls and SQL queries
 getTagName(tag)|null|null|null|extract tag name from tagged template expr|handles sql,Prisma.sql,db.sql

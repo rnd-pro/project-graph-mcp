@@ -1,5 +1,6 @@
 --- src/compact.js ---
 @sig 4cc8ddab
+@vars d=SUPPORTED,f=SKIP_DIRS
 resolveCtxPath(filePath,rootDir)→relative,basename,extname,dirname,join,existsSync|resolve .ctx file path for a source file
 compactFile(filePath,rootDir)→readFileSync,source.trim,minify,addTopLevelNewlines,resolveCtxPath,writeFileSync|minify single JS file, prepend @ctx header if .ctx exists
 beautifyFile(filePath)→readFileSync,source.trim,minify,writeFileSync|format single JS file with proper indentation
