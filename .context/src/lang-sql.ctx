@@ -2,11 +2,11 @@
 @sig 56d4c310
 @vars e=SQL_KEYWORDS,t=ORM_READ_METHODS,n=ORM_WRITE_METHODS
 export isSQLString(str)|test if string looks like a SQL query
-isValidTableName(name)→name.toLowerCase,SQL_KEYWORDS.has|validate table name against SQL keywords and casing rules
+isValidTableName(name:string)→name.toLowerCase,SQL_KEYWORDS.has|validate table name against SQL keywords and casing rules
 export extractSQLFromString(sql)→sql.replace,fromRegex.exec,normalized.slice,afterMatch.startsWith,isValidTableName,reads.add|extract table READs and WRITEs from SQL string
-export parseSQL(code=,filename=)→createTableRegex.exec,code.substring,parseColumns,tables.push|parse CREATE TABLE statements into table objects
+export parseSQL(code:string=,filename:string=)→createTableRegex.exec,code.substring,parseColumns,tables.push|parse CREATE TABLE statements into table objects
 parseColumns(block)→splitByTopLevelComma,part.trim,trimmed.match,name.toLowerCase,SQL_KEYWORDS.has,columns.push|extract column names and types from CREATE TABLE block
 splitByTopLevelComma(str)→parts.push,current.trim|split string by top-level commas respecting parentheses
-export extractSQLFromCode(code)→pattern.exec,isSQLString,extractSQLFromString,allReads.add,reads.forEach,allWrites.add|extract SQL queries and ORM calls from source code
+export extractSQLFromCode(code:string)→pattern.exec,isSQLString,extractSQLFromString,allReads.add,reads.forEach,allWrites.add|extract SQL queries and ORM calls from source code
 PATTERNS: ORM pattern matching (prisma, sequelize, knex)|regex SQL parsing
 EDGE_CASES: ignores PostgreSQL keywords|ignores DELETE target in reads

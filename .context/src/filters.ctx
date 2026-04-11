@@ -3,13 +3,13 @@
 @vars i=DEFAULT_EXCLUDES,n=DEFAULT_EXCLUDE_PATTERNS,s=config
 export getFilters()|return current filter configuration
 export setFilters(updates)→getFilters|update filter configuration state
-export addExcludes(dirs)→getFilters|add directories to exclude list
-export removeExcludes(dirs)→dirs.includes,excludeDirs.filter,getFilters|remove directories from exclude list
+export addExcludes(dirs:Array)→getFilters|add directories to exclude list
+export removeExcludes(dirs:Array)→dirs.includes,excludeDirs.filter,getFilters|remove directories from exclude list
 export resetFilters()→getFilters|restore default filter configuration
-export parseGitignore(rootDir)→join,existsSync,readFileSync,content.split,line.trim,line.startsWith|parse and load patterns from .gitignore
+export parseGitignore(rootDir:string)→join,existsSync,readFileSync,content.split,line.trim,line.startsWith|parse and load patterns from .gitignore
 export shouldExcludeDir(dirName,relativePath=)→dirName.startsWith,excludeDirs.includes,matchGitignorePattern|check if directory should be excluded by rules
 export shouldExcludeFile(fileName,relativePath=)→matchWildcard,matchGitignorePattern|check if file should be excluded by rules
-matchWildcard(pattern,str)→pattern.replace|check if string matches wildcard pattern
-matchGitignorePattern(pattern,name,relativePath)→pattern.includes,matchWildcard,fullPath.includes|check string against gitignore pattern rules
+matchWildcard(pattern:string,str)→pattern.replace|check if string matches wildcard pattern
+matchGitignorePattern(pattern:string,name:string,relativePath)→pattern.includes,matchWildcard,fullPath.includes|check string against gitignore pattern rules
 PATTERNS: mutable module state|regex wildcard matching
 EDGE_CASES: ignores gitignore comments|handles hidden files option

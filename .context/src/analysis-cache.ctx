@@ -1,9 +1,9 @@
 --- src/analysis-cache.js ---
 @sig ddbbcd64
-export computeContentHash(code)→createHash|compute full source code hash|for body-dependent metrics
-export getCachePath(contextDir,relPath)→relPath.replace,join|get cache file path for source file|.context/.cache/path.json
-export readCache(contextDir,relPath)→getCachePath,existsSync,readFileSync,JSON.parse|read cached analysis file|returns CacheEntry or null
-export writeCache(contextDir,relPath,data)→getCachePath,dirname,mkdirSync,JSON.stringify,writeFileSync|write analysis cache entry|includes timestamp
-export isCacheValid(cached,currentSig,currentContentHash,level=)|check if cache is valid|supports interface or content hash level
+export computeContentHash(code:string)→createHash|compute full source code hash|for body-dependent metrics
+export getCachePath(contextDir:string,relPath:string)→relPath.replace,join|get cache file path for source file|.context/.cache/path.json
+export readCache(contextDir:string,relPath:string)→getCachePath,existsSync,readFileSync,JSON.parse|read cached analysis file|returns CacheEntry or null
+export writeCache(contextDir:string,relPath:string,data:Object)→getCachePath,dirname,mkdirSync,JSON.stringify,writeFileSync|write analysis cache entry|includes timestamp
+export isCacheValid(cached:Object,currentSig,currentContentHash,level:string=)|check if cache is valid|supports interface or content hash level
 PATTERNS: dual-hashing (sig vs content)|persistent file-based cache
 EDGE_CASES: ignores read/write cache errors|handles missing directories

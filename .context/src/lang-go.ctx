@@ -1,8 +1,8 @@
 --- src/lang-go.js ---
 @sig 7ce14b2b
-export parseGo(code,filename)→extractImports,stripStringsAndComments,structRegex.exec,getBody,code.substring,body.split|parse Go structs, interfaces, methods, and functions
-extractImports(text)→text.replace,importBlockRegex.exec,block.split,line.match,imports.includes,imports.push|extract Go imports and package names
-getBody(code,startIndex)→code.substring|extract block body using brace counting
-extractCalls(body,packageNames)→callRegex.exec,keywords.includes,callName.includes,callName.split,packageNames.has,calls.includes|extract function calls ignoring Go keywords
+export parseGo(code:string,filename:string)→extractImports,stripStringsAndComments,structRegex.exec,getBody,code.substring,body.split|parse Go structs, interfaces, methods, and functions
+extractImports(text:string)→text.replace,importBlockRegex.exec,block.split,line.match,imports.includes,imports.push|extract Go imports and package names
+getBody(code:string,startIndex)→code.substring|extract block body using brace counting
+extractCalls(body:Object,packageNames)→callRegex.exec,keywords.includes,callName.includes,callName.split,packageNames.has,calls.includes|extract function calls ignoring Go keywords
 PATTERNS: regex string extraction|brace counting for block scope
 EDGE_CASES: ignores Go keywords|strips package prefix if alias matches

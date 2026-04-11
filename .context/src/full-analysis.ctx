@@ -1,11 +1,11 @@
 --- src/full-analysis.js ---
 @sig ba8c1587
 calculateHealthScore(results)→Math.min,topIssues.push,Math.round,Math.max,topIssues.slice|calculate overall health score 0-100|applies penalties for dead code, complexity
-runCacheableAnalyses(dir,contextDir)→resolve,getWorkspaceRoot,findJSFiles,relative,readFileSync,computeContentHash|run per-file cacheable metrics|checks complexity, undocumented, jsdoc
-aggregateComplexity(items,minComplexity=)→items.filter,filtered.sort,filtered.filter,filtered.reduce,Math.round,filtered.slice|aggregate complexity items to summary|groups by severity
-aggregateUndocumented(items)→items.filter,items.slice|aggregate undocumented items to summary|groups by class/function/method
+runCacheableAnalyses(dir:string,contextDir:string)→resolve,getWorkspaceRoot,findJSFiles,relative,readFileSync,computeContentHash|run per-file cacheable metrics|checks complexity, undocumented, jsdoc
+aggregateComplexity(items:Array,minComplexity:number=)→items.filter,filtered.sort,filtered.filter,filtered.reduce,Math.round,filtered.slice|aggregate complexity items to summary|groups by severity
+aggregateUndocumented(items:Array)→items.filter,items.slice|aggregate undocumented items to summary|groups by class/function/method
 aggregateJSDoc(issues)→issues.filter|aggregate JSDoc issues to summary|counts errors and warnings
-export getFullAnalysis(dir,options=)→resolve,getWorkspaceRoot,join,runCacheableAnalyses,aggregateComplexity,aggregateUndocumented|run full code health analysis|combines cached and dynamic cross-file metrics
-export getAnalysisSummaryOnly(dir)→getWorkspaceRoot,join,runCacheableAnalyses,aggregateComplexity,aggregateUndocumented,aggregateJSDoc|get partial fast health score skipping cross-file analyses
+export getFullAnalysis(dir:string,options:Object=)→resolve,getWorkspaceRoot,join,runCacheableAnalyses,aggregateComplexity,aggregateUndocumented|run full code health analysis|combines cached and dynamic cross-file metrics
+export getAnalysisSummaryOnly(dir:string)→getWorkspaceRoot,join,runCacheableAnalyses,aggregateComplexity,aggregateUndocumented,aggregateJSDoc|get partial fast health score skipping cross-file analyses
 PATTERNS: incremental caching for per-file metrics|score aggregation with clamping
 EDGE_CASES: cross-file metrics always dynamic|handles missing cache gracefully

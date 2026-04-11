@@ -1,10 +1,10 @@
 --- src/compact.js ---
 @sig 4cc8ddab
 @vars d=SUPPORTED,f=SKIP_DIRS
-resolveCtxPath(filePath,rootDir)→relative,basename,extname,dirname,join,existsSync|resolve .ctx file path for a source file
-compactFile(filePath,rootDir)→readFileSync,source.trim,minify,addTopLevelNewlines,resolveCtxPath,writeFileSync|minify single JS file, prepend @ctx header if .ctx exists
-beautifyFile(filePath)→readFileSync,source.trim,minify,writeFileSync|format single JS file with proper indentation
-export compactProject(dir,options=)→walkJSFiles,relative,readFileSync,compactFile,minify,processed.push|compact all JS files in dir, per-file error handling, ret stats+savings%
-export expandProject(dir,options=)→walkJSFiles,relative,readFileSync,beautifyFile,minify,processed.push|beautify all JS files in dir, inverse of compactProject
+resolveCtxPath(filePath:string,rootDir:string)→relative,basename,extname,dirname,join,existsSync|resolve .ctx file path for a source file
+compactFile(filePath:string,rootDir:string)→readFileSync,source.trim,minify,addTopLevelNewlines,resolveCtxPath,writeFileSync|minify single JS file, prepend @ctx header if .ctx exists
+beautifyFile(filePath:string)→readFileSync,source.trim,minify,writeFileSync|format single JS file with proper indentation
+export compactProject(dir:string,options:Object=)→walkJSFiles,relative,readFileSync,compactFile,minify,processed.push|compact all JS files in dir, per-file error handling, ret stats+savings%
+export expandProject(dir:string,options:Object=)→walkJSFiles,relative,readFileSync,beautifyFile,minify,processed.push|beautify all JS files in dir, inverse of compactProject
 PATTERNS: Terser mangle:false preserves all names|per-file try/catch collects errors array|dryRun mode estimates without writing|skips node_modules,vendor,.git,.context
 EDGE_CASES: empty files return 0/0|syntax errors collected in errors[] not thrown|files with only comments become empty (correct behavior)

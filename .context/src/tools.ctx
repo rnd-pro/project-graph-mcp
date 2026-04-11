@@ -1,18 +1,18 @@
 --- src/tools.js ---
 @sig 7a1f98f4
 @vars h=cachedGraph,d=cachedPath,m=cachedMtimes
-saveDiskCache(path,graph)→join,Object.fromEntries,JSON.stringify,writeFileSync|save graph cache to disk|.project-graph-cache.json
-loadDiskCache(path)→join,existsSync,readFileSync,JSON.parse,cachedMtimes.clear,Object.entries|load graph cache from disk|validates version and path
-export getGraph(path)→detectChanges,loadDiskCache,parseProject,buildGraph,snapshotMtimes,saveDiskCache|get or build project graph|uses smart mtime-based caching
-detectChanges(path)→findJSFiles,cachedMtimes.keys,cachedSet.has,currentSet.has,statSync,cachedMtimes.get|detect if any JS files changed via mtime
-snapshotMtimes(path)→cachedMtimes.clear,findJSFiles,statSync,cachedMtimes.set|snapshot mtimes for all JS files in path
-export getSkeleton(path)→getGraph,createSkeleton|get compact project skeleton
-export getFocusZone(options=)→getGraph,execSync,diff.split,f.endsWith,readFileSync,parseFile|get enriched focus zone|auto-detects from git diff or recent files
-export expand(symbol)→getGraph,symbol.split,parseProject,classes.find,functions.find,readFileSync|expand minified symbol to full details|extracts method code if specified
-export deps(symbol)→getGraph,edges.filter|get dependency tree for a symbol|shows imports, usedBy, calls
-export usages(symbol)→getGraph,parseProject,calls.includes,c.includes,calls.some,results.push|find all usages of a symbol across project
-extractMethod(content,methodName)→regex.exec,content.slice|extract method code from file content using regex
-export getCallChain(options=)→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|Object>→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|Object>→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|Object>→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|find shortest call path between two symbols|uses BFS
+saveDiskCache(path:string,graph)→join,Object.fromEntries,JSON.stringify,writeFileSync|save graph cache to disk|.project-graph-cache.json
+loadDiskCache(path:string)→join,existsSync,readFileSync,JSON.parse,cachedMtimes.clear,Object.entries|load graph cache from disk|validates version and path
+export getGraph(path:string)→detectChanges,loadDiskCache,parseProject,buildGraph,snapshotMtimes,saveDiskCache|get or build project graph|uses smart mtime-based caching
+detectChanges(path:string)→findJSFiles,cachedMtimes.keys,cachedSet.has,currentSet.has,statSync,cachedMtimes.get|detect if any JS files changed via mtime
+snapshotMtimes(path:string)→cachedMtimes.clear,findJSFiles,statSync,cachedMtimes.set|snapshot mtimes for all JS files in path
+export getSkeleton(path:string)→getGraph,createSkeleton|get compact project skeleton
+export getFocusZone(options:Object=)→getGraph,execSync,diff.split,f.endsWith,readFileSync,parseFile|get enriched focus zone|auto-detects from git diff or recent files
+export expand(symbol:string)→getGraph,symbol.split,parseProject,classes.find,functions.find,readFileSync|expand minified symbol to full details|extracts method code if specified
+export deps(symbol:string)→getGraph,edges.filter|get dependency tree for a symbol|shows imports, usedBy, calls
+export usages(symbol:string)→getGraph,parseProject,calls.includes,c.includes,calls.some,results.push|find all usages of a symbol across project
+extractMethod(content:string,methodName)→regex.exec,content.slice|extract method code from file content using regex
+export getCallChain(options:Object=)→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|Object>→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|Object>→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|Object>→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|find shortest call path between two symbols|uses BFS
 export invalidateCache()→join,existsSync,unlinkSync,cachedMtimes.clear|delete cache file and clear memory cache
 PATTERNS: smart mtime caching|BFS for call chain|regex for method extraction
 EDGE_CASES: gracefully handles unreadable files/mtimes|handles missing symbols
