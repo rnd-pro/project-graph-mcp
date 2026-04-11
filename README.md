@@ -104,12 +104,12 @@ get_focus_zone({ path: ".", useGitDiff: true })
 **Real-world token budget** (45-file project):
 
 ```
-Traditional (raw sources):    64K tok — read everything expanded
-Overview (compact, no .ctx):  47K tok — 27% savings, full project
-Focus (compact + 3 files ctx): 47.6K tok — 26% savings + semantic descriptions
+Traditional (raw sources):     64K tok — read everything expanded
+Overview (compact, no .ctx):   47K tok — 27% savings, full project
+Focus (compact + 3 files ctx): 47.6K tok — same savings + semantic descriptions
 ```
 
-The `.ctx` cost is **per-file** (~200 tok each) and only loaded for the focus area. The agent gets **better understanding** (typed signatures, descriptions) while spending **fewer total tokens** than reading raw source code.
+Compact code saves **27% on average** (34-38% for typical files) by stripping whitespace and comments while preserving all names. The `.ctx` cost is **per-file** (~200 tok each) and only loaded for the focus area — the agent gets typed signatures and descriptions that the raw source never had.
 
 **Per-file metrics breakdown:**
 
