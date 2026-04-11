@@ -1,0 +1,10 @@
+--- web/components/code-block.js ---
+@sig f1e683b5
+@enrich: Replace each {DESCRIBE} below. Read web/components/code-block.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+class CodeBlock extends o|1m,3$|{DESCRIBE}
+  .renderCallback()|{DESCRIBE}
+  CALLS→n,o.split,t.push,t.join,sub
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

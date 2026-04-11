@@ -1,2 +1,20 @@
-
-@names __top__:l=__dirname,d=projectRoot,p=webDir,m=vendorPaths,h=MIME_TYPES serveStatic:a=urlPath,s=vendorMatch,r=filePath,c=baseDir,i=ext,l=contentType,d=body encodeWSFrame:t=payload,o=len,n=header decodeWSFrame:t=opcode,o=maskKey,n=payloadLen,a=offset,s=data startWebServer:l=mcpServer,d=projectName,p=agentCounter,m=absProjectPath,h=projectHash,u=hue,g=state,f=mcpClients,w=wsClients,y=shutdownTimer,S=httpServer,v=wss,b=autoPort,j=port computeWSAccept:e=key broadcastRPC:o=frame patchState:o=parts,n=target handleAPI:s=params,c=projectPath
+--- src/network/web-server.js ---
+@sig 777321a3
+@enrich: Replace each {DESCRIBE} below. Read src/network/web-server.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+serveStatic(e,n)→o.normalize,a.match,o.join,r.startsWith,n.writeHead,n.end|{DESCRIBE}
+computeWSAccept(e)→n.createHash|{DESCRIBE}
+encodeWSFrame(e)→Buffer.from,Buffer.alloc,n.writeUInt16BE,BigInt,n.writeBigUInt64BE,Buffer.concat|{DESCRIBE}
+decodeWSFrame(e)→e.readUInt16BE,e.readBigUInt64BE,Number,e.slice,s.toString|{DESCRIBE}
+broadcastRPC(e,t)→JSON.stringify,e.send,y.delete|{DESCRIBE}
+patchState(e,t)→e.split,broadcastRPC|{DESCRIBE}
+ensureSkeleton()→d.executeTool|{DESCRIBE}
+hasActiveClients()|{DESCRIBE}
+resetShutdownTimer()→clearTimeout|{DESCRIBE}
+startShutdownTimer()→hasActiveClients,resetShutdownTimer,console.log,process.exit,setTimeout|{DESCRIBE}
+touchActivity()→resetShutdownTimer,startShutdownTimer|{DESCRIBE}
+handleAPI(e,a,s,r)→a.get,d.executeTool,n,s,a,o.dirname|{DESCRIBE}
+export startWebServer(t,a)→r,o.resolve,o.basename,n.createHash,u.slice,parseInt|{DESCRIBE}
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

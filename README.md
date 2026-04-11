@@ -74,7 +74,7 @@ npx project-graph-mcp generate-ctx src/
 npx project-graph-mcp docs src/
 
 # Compress a single file for AI
-npx project-graph-mcp compress src/parser.js
+npx project-graph-mcp compress src/core/parser.js
 ```
 
 ### Compact Code Architecture
@@ -207,7 +207,7 @@ See **[CONFIGURATION.md](CONFIGURATION.md)** for all supported IDEs (Antigravity
 git clone https://github.com/rnd-pro/project-graph-mcp
 cd project-graph-mcp
 # No npm install needed — zero dependencies
-# Use "node /path/to/project-graph-mcp/src/server.js" as the command in MCP config
+# Use "node /path/to/project-graph-mcp/src/network/server.js" as the command in MCP config
 ```
 
 </details>
@@ -262,8 +262,9 @@ Best used together with [**agent-pool-mcp**](https://www.npmjs.com/package/agent
 
 - [CONFIGURATION.md](CONFIGURATION.md) — Setup for all supported IDEs
 - [ARCHITECTURE.md](ARCHITECTURE.md) — Source code structure
-- [AGENT_ROLE.md](AGENT_ROLE.md) — Full system prompt for agents
-- [AGENT_ROLE_MINIMAL.md](AGENT_ROLE_MINIMAL.md) — Minimal variant (agent self-discovers)
+- [AGENT_ROLE.md](docs/examples/AGENT_ROLE.md) — Full system prompt for agents
+- [AGENT_ROLE_MINIMAL.md](docs/examples/AGENT_ROLE_MINIMAL.md) — Minimal variant (agent self-discovers)
+- [ROADMAP.md](docs/ROADMAP.md) — Feature roadmap and backlog
 
 ## Related Projects
 - [agent-pool-mcp](https://github.com/rnd-pro/agent-pool-mcp) — Multi-agent orchestration via Gemini CLI

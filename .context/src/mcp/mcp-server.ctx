@@ -1,8 +1,6 @@
---- src/mcp-server.js ---
-@sig 10257428
-@vars ue=__dirname,me=TOOL_HANDLERS,_e=RESPONSE_HINTS,ge=CONSOLIDATED_HANDLERS,he=CONSOLIDATED_HINTS
-export createServer(sendToClient)→pendingRequests.get,pendingRequests.delete,pending.reject,pending.resolve,handleNotification,setRoots|create MCP server instance|handles JSON-RPC 2.0 messages
-export startStdioServer(bufferedLines=)→JSON.stringify,console.log,createServer,readline.createInterface,JSON.parse,server.handleMessage|start MCP server with stdio transport
+--- src/mcp/mcp-server.js ---
+@sig 112b580b
+export createServer(s)→i.get,i.delete,e.reject,e.resolve,handleNotification,q|create MCP server instance|handles JSON-RPC 2.0 messages
+export startStdioServer(e=)→JSON.stringify,console.log,createServer,JSON.parse,t.handleMessage,sendToClient|start MCP server with stdio transport
 PATTERNS: JSON-RPC 2.0|bidirectional stdio communication
 EDGE_CASES: handles timeout for roots/list|graceful parse error handling
-@names createServer:s=handler,n=nextRequestId,i=pendingRequests,c=clientSupportsRoots,e=roots,t=hints,o=id,r=timeout startStdioServer:t=server,s=rl,o=message,processLine=response,a=transport __top__:ue=__dirname,me=TOOL_HANDLERS,_e=RESPONSE_HINTS handleToolCall:o=toolName,a=args,i=startTime,c=result

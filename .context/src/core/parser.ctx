@@ -1,19 +1,22 @@
---- src/parser.js ---
-@sig 2a983638
-@vars x=SOURCE_EXTENSIONS,S=DB_METHODS
-export parseFile(code:string,filename:string)→parse,console.warn,buildJSDocTypeMap,imports.push,exportedNames.add,methods.push|parse single JS file to AST|extracts classes,functions,imports,exports
-extractCallsAndSQL(node:Object,calls:Array,dbReads:Array,dbWrites:Array)→calls.includes,calls.push,getCallMethodName,DB_METHODS.has,extractStringValue,isSQLString|walk AST to extract method calls and SQL queries
-getTagName(tag:Object)|null|null|null|extract tag name from tagged template expr|handles sql,Prisma.sql,db.sql
-getCallMethodName(callNode:Object)|null|null|null|extract method name from CallExpression callee
-extractStringValue(node:Object)→templateToString|null→templateToString|null→templateToString|null→templateToString|extract string from Literal or TemplateLiteral|replaces $N placeholders
-templateToString(tplNode:Object)|convert TemplateLiteral AST node to string with $N
-export discoverSubProjects(rootDir:string)→resolve,join,existsSync,readdirSync,statSync,readFileSync|find sub-projects in known monorepo directories
-export parseProject(dir:string,options:Object=)→resolve,findJSFiles,readFileSync,relative,parseFileByExtension,files.push|parse all JS files in dir|returns aggregated ParseResult
-parseFileByExtension(code:string,filename:string)→filename.endsWith,parseSQL,parsePython,parseGo,parseTypeScript,parseFile|route file to correct parser based on extension
-isSourceFile(filename:string)→filename.endsWith,SOURCE_EXTENSIONS.some|check if file extension is supported|excludes .css.js,.tpl.js
-buildJSDocTypeMap(comments:Array,code:string)→value.startsWith,code.slice,paramStartRegex.exec,text.slice,afterType.match,name.startsWith|build map of line numbers to JSDoc param/return types
-findJSDocForNode(jsdocMap:Map,funcLine)→jsdocMap.get|lookup JSDoc entry for AST node by line number
-enrichParamsWithTypes(rawParams:Array,jsdoc:Object)→typeMap.set,param.startsWith,param.endsWith,cleanName.slice,typeMap.get,type.startsWith|merge raw AST params with parsed JSDoc type info
+--- src/core/parser.js ---
+@sig 72c52e0d
+@enrich: Replace each {DESCRIBE} below. Read src/core/parser.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+export findJSFiles(e,n=)→u,t,r,s,o,l.isDirectory|{DESCRIBE}
+export parseFile(e,t)→i,console.warn,buildJSDocTypeMap,imports.push,a.add,methods.push|parse single JS file to AST|extracts classes,functions,imports,exports
+extractCallsAndSQL(e,t,s,n)→t.includes,t.push,getCallMethodName,S.has,extractStringValue,g|walk AST to extract method calls and SQL queries
+getTagName(e)|null|null|null|extract tag name from tagged template expr|handles sql,Prisma.sql,db.sql
+getCallMethodName(e)|null|null|null|extract method name from CallExpression callee
+extractStringValue(e)→templateToString|null→templateToString|null→templateToString|null→templateToString|extract string from Literal or TemplateLiteral|replaces $N placeholders
+templateToString(e)|convert TemplateLiteral AST node to string with $N
+export discoverSubProjects(i)→a,r,n,t,s,e|find sub-projects in known monorepo directories
+export parseProject(t,s=)→a,findJSFiles,e,o,parseFileByExtension,files.push|parse all JS files in dir|returns aggregated ParseResult
+parseFileByExtension(e,t)→t.endsWith,h,d,m,f,parseFile|route file to correct parser based on extension
+isSourceFile(e)→e.endsWith,x.some|check if file extension is supported|excludes .css.js,.tpl.js
+export findAllProjectFiles(e,n=)→u,a,t,r,s,o|{DESCRIBE}
+buildJSDocTypeMap(e,t)→value.startsWith,t.slice,a.exec,e.slice,a.startsWith,a.slice|build map of line numbers to JSDoc param/return types
+findJSDocForNode(e,t)→e.get|lookup JSDoc entry for AST node by line number
+enrichParamsWithTypes(e,t)→s.set,e.startsWith,e.endsWith,r.slice,s.get,o.startsWith|merge raw AST params with parsed JSDoc type info
 PATTERNS: AST visitor via walk.simple|extension-based parser routing
 EDGE_CASES: ignores parse errors (returns empty)|excludes specific presentation files
-@names parseFile:e=code,t=filename,s=result,n=comments,r=ast,o=jsdocMap,i=exportedNames,t=spec,t=decl,t=spec,n=classInfo,t=element,e=propName,n=prop,r=rawParams,i=jsdoc,a=typedParams,e=funcInfo extractCallsAndSQL:e=node,t=calls,s=dbReads,n=dbWrites,r=callee,e=object,s=property,n=call,n=call,e=call,e=call,t=methodName,t=sqlStr,e=ext,t=tagName,t=sqlStr,e=ext,t=sqlStr,e=ext,t=ext getTagName:e=tag getCallMethodName:e=callNode,t=callee extractStringValue:e=node templateToString:e=tplNode,t=result,s=i discoverSubProjects:a=rootDir,c=resolvedRoot,l=subProjects,p=MONO_DIRS,i=monoDir,a=monoPath,i=entry,t=entryPath,p=pkgPath,s=pkg parseProject:t=dir,s=options,n=result,a=resolvedDir,c=files,t=file,s=content,r=relPath,i=parsed,e=subs,t=sub,e=subResult,s=f,s=c,s=fn parseFileByExtension:e=code,t=filename isSourceFile:e=filename findJSFiles:e=dir,n=rootDir,i=files,a=entry,t=fullPath,c=stat,u=relativePath buildJSDocTypeMap:e=comments,t=code,s=map,n=comment,e=text,r=endLine,o=params,i=paramStartRegex,a=paramStart,t=depth,s=i,n=type,r=afterType,i=nameMatch,c=name,l=returns findJSDocForNode:e=jsdocMap,t=funcLine,s=offset,n=entry enrichParamsWithTypes:e=rawParams,t=jsdoc,s=typeMap,e=p,t=isRest,n=hasDefault,r=cleanName,o=type __top__:x=SOURCE_EXTENSIONS,S=DB_METHODS parseAST:i=astCache,a=cached buildGraph:t=graph

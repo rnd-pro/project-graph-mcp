@@ -1,9 +1,8 @@
---- src/graph-builder.js ---
-@sig a03a3989
-export minifyLegend(names)→createShortName,used.has,used.add|create minified legend from names|handles collisions with numeric suffix
-createShortName(name:string)→name.replace,upperOnly.slice,name.match,name.slice|generate short name from full name|uses PascalCase/camelCase initials
-export buildGraph(parsed)→classes.map,functions.map,classes.flatMap,minifyLegend,Object.entries,Object.fromEntries|build minified graph from parsed data|tracks nodes, edges, orphans, duplicates
-export createSkeleton(graph,allFiles=)→Object.entries,file.push,Object.values,coveredFiles.add,Object.keys,coveredFiles.has|create compact project skeleton|minimizes tokens for AI context
+--- src/core/graph-builder.js ---
+@sig 165d2590
+export minifyLegend(e)→createShortName,t.has,t.add|create minified legend from names|handles collisions with numeric suffix
+createShortName(e)→e.replace,s.slice,e.match,e.slice|generate short name from full name|uses PascalCase/camelCase initials
+export buildGraph(e)→s.map,t.map,s.flatMap,minifyLegend,Object.entries,Object.fromEntries|build minified graph from parsed data|tracks nodes, edges, orphans, duplicates
+export createSkeleton(e,s=)→Object.entries,e.push,Object.values,c.add,Object.keys,c.has|create compact project skeleton|minimizes tokens for AI context
 PATTERNS: adjacency list for edges|minified legend for token savings
 EDGE_CASES: skips empty classes|handles unreferenced functions as orphans
-@names minifyLegend:e=names,s=legend,t=used,o=name,e=short,n=suffix createShortName:e=name,s=upperOnly,t=firstUpper buildGraph:e=parsed,s=classes,t=functions,o=allNames,n=legend,c=reverseLegend,f=graph,e=cls,s=shortName,t=call,t=edge,e=edge,e=func,s=shortName,t=table,t=table,e=cls,s=shortName,t=table,t=table,s=table,r=hasIncoming,e=edge,s=target,e=name,l=methodLocations,e=cls,s=method createSkeleton:e=graph,t=legend,o=nodes,c=node,e=methodCount,f=propCount,r=entry,n=exportsByFile,c=node,e=file,c=coveredFiles,e=v,e=file,f=fileTree,s=filePath,e=lastSlash,t=dir,o=file,r=result

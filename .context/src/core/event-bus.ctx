@@ -1,2 +1,12 @@
-
-@names __top__:t=bus
+--- src/core/event-bus.js ---
+@sig f4e3c62d
+@enrich: Replace each {DESCRIBE} below. Read src/core/event-bus.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+export emitToolCall(o,e)→Date.now,t.emit|{DESCRIBE}
+export emitToolResult(o,e,l,n,s)→Object.keys,Date.now,t.emit|{DESCRIBE}
+export onToolCall(o)→t.on|{DESCRIBE}
+export onToolResult(o)→t.on|{DESCRIBE}
+export removeToolListener(o,e)→t.off|{DESCRIBE}
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

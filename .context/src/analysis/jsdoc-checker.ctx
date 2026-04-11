@@ -1,11 +1,10 @@
---- src/jsdoc-checker.js ---
-@sig c14efb0f
-extractJSDocComments(code:string)→regex.exec,code.slice,paramStartRegex.exec,text.slice,afterType.match,name.startsWith|extract JSDoc comments and params|handles nested braces and optional params
-inferTypeFromDefault(param)|null|null|null|infer param type from AST default value|supports primitive, Array, Object
-hasReturnValue(node:Object)→walk.simple|check if function body has return value
-validateFunction(jsdoc:Object,astParams,funcNode:Object,name:string,file:string,line:string)→issues.push,Math.min,extractParamName,hasReturnValue,inferTypeFromDefault,docType.includes|validate JSDoc vs AST for single function|checks count, names, returns, types
-export checkJSDocFile(code:string,filePath:string)→parse,extractJSDocComments,findJSDocBefore,validateFunction,issues.push,walk.simple|check JSDoc consistency in single file
-export checkJSDocConsistency(dir:string)→resolve,findJSFiles,readFileSync,relative,checkJSDocFile,allIssues.push|check JSDoc consistency in directory|aggregates errors and warnings
+--- src/analysis/jsdoc-checker.js ---
+@sig 9fac9b83
+extractJSDocComments(e)→n.exec,e.slice,o.exec,n.slice,o.startsWith,o.slice|extract JSDoc comments and params|handles nested braces and optional params
+inferTypeFromDefault(e)|null|null|null|infer param type from AST default value|supports primitive, Array, Object
+hasReturnValue(e)→a.simple|check if function body has return value
+validateFunction(e,t,n,r,s,i)→o.push,Math.min,extractParamName,hasReturnValue,inferTypeFromDefault,n.toLowerCase|validate JSDoc vs AST for single function|checks count, names, returns, types
+export checkJSDocFile(e,t)→o,extractJSDocComments,findJSDocBefore,validateFunction,n.push,a.simple|check JSDoc consistency in single file
+export checkJSDocConsistency(t)→i,findJSFiles,e,s,checkJSDocFile,o.push|check JSDoc consistency in directory|aggregates errors and warnings
 PATTERNS: AST parsing|regex for initial JSDoc extraction|AST type inference
 EDGE_CASES: handles optional param [] syntax|handles union types in JSDoc
-@names findJSFiles:e=dir,i=rootDir,o=files,a=entry,t=fullPath,u=relativePath extractJSDocComments:e=code,t=comments,n=regex,r=match,n=text,s=endLine,i=params,o=paramStartRegex,a=paramStart,e=depth,t=i,r=type,s=afterType,o=nameMatch,c=name findJSDocBefore:e=comments,t=targetLine,n=comment,e=gap extractParamName:e=param inferTypeFromDefault:e=param,t=def hasReturnValue:e=node,t=found validateFunction:e=jsdoc,t=astParams,n=funcNode,r=name,s=file,i=line,o=issues,a=docParams,c=minLen,e=i,n=docName,c=astName,e=i,n=docType,c=inferredType,t=compatible checkJSDocFile:e=code,t=filePath,n=issues,r=ast,s=comments,r=jsdoc,r=decl,i=func,o=jsdoc,r=className,i=element,e=methodName,o=funcNode,a=jsdoc checkJSDocConsistency:t=dir,n=resolvedDir,r=files,o=allIssues,t=file,r=content,i=relPath,a=issues,c=errors,l=warnings,e=byFile

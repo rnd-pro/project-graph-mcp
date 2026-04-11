@@ -1,0 +1,14 @@
+--- web/panels/code-viewer.js ---
+@sig f0164df7
+@enrich: Replace each {DESCRIBE} below. Read web/panels/code-viewer.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+class CodeViewer extends e|5m,5$|{DESCRIBE}
+  .initCallback()|{DESCRIBE}
+  .renderCallback()|{DESCRIBE}
+  ._getCodeBlock()|{DESCRIBE}
+  ._showCurrentMode()|{DESCRIBE}
+  ._loadFile()|{DESCRIBE}
+  CALLS→_loadFile,t.addEventListener,toggleAttribute,sub,querySelector,_getCodeBlock,n,JSON.stringify
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

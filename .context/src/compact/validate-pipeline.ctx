@@ -1,9 +1,7 @@
---- src/validate-pipeline.js ---
-@sig 4d7aa91a
-@vars f=SUPPORTED,m=SKIP_DIRS
-estimateTokens(text:string)→Math.ceil|estimate token count from char length (÷4)
-walkJSFiles(dir:string)→readdirSync,statSync,SKIP_DIRS.has|walk dir for .js/.mjs files, skip vendor/node_modules
-export validatePipeline(projectPath,options:Object=)→validateCtxContracts,decompileProject,walkJSFiles,parse,readFileSync|run full Mode 4 validation pipeline|returns PASS/FAIL with contract, AST, token reports
+--- src/compact/validate-pipeline.js ---
+@sig 57fd5bfc
+estimateTokens(s)→Math.ceil|estimate token count from char length (÷4)
+walkJSFiles(s)→e,n.startsWith,r,t,d.has,walkJSFiles|walk dir for .js/.mjs files, skip vendor/node_modules
+export validatePipeline(e,t=)→Date.now,c,l,r,o,walkJSFiles|run full Mode 4 validation pipeline|returns PASS/FAIL with contract, AST, token reports
 PATTERNS: 4-step pipeline (contracts→decompile→AST verify→tokens)|single-call validation
 EDGE_CASES: missing .full/→skip AST verify|missing src/→skip tokens|strict mode for extra contract checks
-@names __top__:f=SUPPORTED_EXT,m=SKIP_DIRS walkJSFiles:o=results validatePipeline:m=startTime,d=contractResult,u=decompileResult,p=fullDir,S=astResult,j=srcDir,y=tokenStats,w=duration,h=contractErrors,v=astErrors,g=totalErrors

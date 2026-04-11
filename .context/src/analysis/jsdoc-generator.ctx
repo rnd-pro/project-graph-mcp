@@ -1,9 +1,7 @@
---- src/jsdoc-generator.js ---
-@sig a78cc241
-export generateJSDoc(filePath:string,options:Object=)→readFileSync,getWorkspaceRoot,relative,parse,code.split,Math.max|parse AST to generate missing JSDoc blocks for functions and methods
-buildJSDoc(info)→lines.push,extractParamName,inferParamType,lines.join|construct JSDoc string with inferred parameters
-inferParamType(param)|infer primitive or collection types from AST parameter defaults
-export generateJSDocFor(filePath:string,functionName,options:Object=)→generateJSDoc,name.endsWith,results.find|null→generateJSDoc,name.endsWith,results.find|null→generateJSDoc,name.endsWith,results.find|null→generateJSDoc,name.endsWith,results.find|generate JSDoc for a specific named function
+--- src/analysis/jsdoc-generator.js ---
+@sig ac83acd9
+buildJSDoc(t)→e.push,extractParamName,inferParamType,e.join|construct JSDoc string with inferred parameters
+inferParamType(t)|infer primitive or collection types from AST parameter defaults
+export generateJSDocFor(t,e,r=)→generateJSDoc,name.endsWith|null→generateJSDoc,name.endsWith,results.find|null→generateJSDoc,name.endsWith,results.find|null→generateJSDoc,name.endsWith,results.find|generate JSDoc for a specific named function
 PATTERNS: AST tree walking via Acorn|reverse line scanning for existing JSDoc
 EDGE_CASES: skips getters/setters/constructors|infers types from AST defaults
-@names generateJSDoc:i=filePath,o=options,s=results,c=code,m=relPath,f=ast,e=lines,r=i,t=trimmed,t=j,r=upper,e=jsdoc,e=element,r=methodName,n=funcNode,a=jsdoc buildJSDoc:t=info,e=lines,r=param,t=paramName,n=paramType extractParamName:t=param inferParamType:t=param,e=defaultVal generateJSDocFor:t=filePath,e=functionName,r=options

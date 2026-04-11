@@ -1,1 +1,16 @@
-
+--- web/state.js ---
+@sig d321147f
+@enrich: Replace each {DESCRIBE} below. Read web/state.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+i(e,t)→e.split,o|{DESCRIBE}
+l(e)→Object.assign,o,Object.keys|{DESCRIBE}
+o(e,n)→t.get,t,e.indexOf,e.slice,e|{DESCRIBE}
+u(e)→JSON.parse,c.get,c.delete,e.reject,e.resolve,e|{DESCRIBE}
+export subscribe(e,n)→t.has,t.set,t.get|{DESCRIBE}
+export onEvent(e)→n.add,n.delete|{DESCRIBE}
+export call(e,t=)→a,c.set,JSON.stringify,s.send,c.has,c.delete|{DESCRIBE}
+export connect()→e.replace,o,clearTimeout,u,t,c.clear|{DESCRIBE}
+export disconnect()→clearTimeout,s.close|{DESCRIBE}
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

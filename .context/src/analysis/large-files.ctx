@@ -1,7 +1,6 @@
---- src/large-files.js ---
-@sig 536d260c
-analyzeFile(filePath:string,rootDir:string)→readFileSync,relative,code.split,parse,walk.simple,reasons.push|parse file, count structures, and assign size rating
-export getLargeFiles(dir:string,options:Object=)→resolve,findJSFiles,analyzeFile,files.map,items.filter,items.sort|analyze directory to find overly large and complex files
+--- src/analysis/large-files.js ---
+@sig 8675b153
+analyzeFile(e,t)→s,i,n.split,o,l.simple,h.push|parse file, count structures, and assign size rating
+export getLargeFiles(s,e=)→r,findJSFiles,analyzeFile,i.map,o.filter,o.sort|analyze directory to find overly large and complex files
 PATTERNS: AST visitor via Acorn|threshold-based scoring
 EDGE_CASES: ignores parse errors gracefully
-@names findJSFiles:s=dir,r=rootDir,l=files,o=entry,t=fullPath,u=relativePath analyzeFile:t=filePath,e=rootDir,n=code,r=relPath,a=lines,c=functions,u=classes,p=exports,f=ast,h=reasons,d=score,g=rating getLargeFiles:s=dir,t=options,e=onlyProblematic,n=resolvedDir,i=files,l=items,o=stats

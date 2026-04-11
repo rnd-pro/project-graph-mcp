@@ -1,7 +1,6 @@
---- src/cli-handlers.js ---
-@sig d3d56e0c
-getArg(args,name:string)→a.startsWith,args.find,arg.split|undefined→a.startsWith,args.find,arg.split|undefined→a.startsWith,args.find,arg.split|undefined→a.startsWith,args.find,arg.split|extract flag argument value from args array
-getPath(args)→a.startsWith,args.find,resolvePath|extract and resolve first non-flag path argument
+--- src/cli/cli-handlers.js ---
+@sig 7ab8a0e8
+getArg(r,e)→r.startsWith,r.find,s.split|undefined→a.startsWith,args.find,arg.split|undefined→a.startsWith,args.find,arg.split|undefined→a.startsWith,args.find,arg.split|extract flag argument value from args array
+getPath(r)→r.startsWith,r.find,q|extract and resolve first non-flag path argument
 PATTERNS: command definition map|lazy execution
 EDGE_CASES: falls back to cwd if no path given|validates required args
-@names getArg:r=args,e=name,s=arg getPath:r=args,e=raw

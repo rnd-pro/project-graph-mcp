@@ -1,4 +1,4 @@
---- src/instructions.js ---
+--- src/compact/instructions.js ---
 @sig 7e055438
 export getInstructions()|return constant string containing AI agent guidelines
 PATTERNS: constant export

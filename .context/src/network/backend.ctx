@@ -1,2 +1,8 @@
-
-@names __top__:t=projectPath,c=httpServer,a=checkInterval
+--- src/network/backend.js ---
+@sig d1e9720c
+@enrich: Replace each {DESCRIBE} below. Read src/network/backend.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+cleanup()→o|{DESCRIBE}
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

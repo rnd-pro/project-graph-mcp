@@ -1,9 +1,8 @@
---- src/complexity.js ---
-@sig ddd77195
-calculateComplexity(body:Object)→walk.simple|compute cyclomatic complexity from AST body
-getRating(complexity)|return severity rating from complexity score
-export analyzeComplexityFile(code:string,relPath:string)→parse,calculateComplexity,getRating,items.push,walk.simple|analyze complexity for all functions in a single file
-export getComplexity(dir:string,options:Object=)→resolve,findJSFiles,analyzeFile,allItems.push,allItems.filter,allItems.sort|scan directory, filter and sort complexity results
+--- src/analysis/complexity.js ---
+@sig 78ef701d
+calculateComplexity(t)→l.simple|compute cyclomatic complexity from AST body
+getRating(t)|return severity rating from complexity score
+export analyzeComplexityFile(t,e)→a,calculateComplexity,getRating,i.push,l.simple|analyze complexity for all functions in a single file
+export getComplexity(t,e=)→r,findJSFiles,analyzeFile,l.push,l.filter,l.sort|scan directory, filter and sort complexity results
 PATTERNS: AST tree walking via Acorn|cyclomatic complexity counting
 EDGE_CASES: parses arrow functions with blocks|ignores unparseable files
-@names findJSFiles:t=dir,r=rootDir,a=files,l=entry,e=fullPath,m=relativePath calculateComplexity:t=body,e=complexity getRating:t=complexity analyzeComplexityFile:t=code,e=relPath,i=items,n=ast,n=complexity,n=complexity,n=name,o=complexity analyzeFile:e=filePath,i=rootDir,n=code getComplexity:t=dir,e=options,i=minComplexity,n=onlyProblematic,o=resolvedDir,a=files,l=allItems,t=file,s=stats

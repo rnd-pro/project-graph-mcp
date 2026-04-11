@@ -1,7 +1,6 @@
---- src/lang-typescript.js ---
-@sig d9c237b0
-export parseTypeScript(code:string,filename:string)→stripStringsAndComments,cleaned.split,line.match,s.trim,imports.push,exports.push|regex parsing of TypeScript classes, methods, and functions
-extractParams(line:string)→line.match,p.trim,p.startsWith|extract and clean parameters from signature line
+--- src/lang/lang-typescript.js ---
+@sig 9b26807c
+export parseTypeScript(t,e)→s,t.match,s.trim,imports.push,exports.push,classes.push|regex parsing of TypeScript classes, methods, and functions
+extractParams(s)→s.match,s.trim,s.startsWith|extract and clean parameters from signature line
 PATTERNS: regex line-by-line parsing|string/comment stripping preprocessing
 EDGE_CASES: ignores type-only declarations|cleans generics and optional marks
-@names parseTypeScript:t=code,e=filename,r=result,c=cleaned,n=lines,a=currentClass,s=currentFunc,t=i,o=line,i=lineNum,t=importFromMatch,l=name,p=importStarMatch,u=exportMatch,t=exportBraceMatch,f=name,s=classMatch,e=methodMatch,s=propMatch,c=fnMatch,m=arrowMatch,h=callRegex,s=callMatch extractParams:s=line,t=match

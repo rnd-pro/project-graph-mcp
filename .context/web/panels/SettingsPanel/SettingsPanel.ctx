@@ -1,0 +1,13 @@
+--- web/panels/SettingsPanel/SettingsPanel.js ---
+@sig e9a8968c
+@enrich: Replace each {DESCRIBE} below. Read web/panels/SettingsPanel/SettingsPanel.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+class SettingsPanel extends t|3m|{DESCRIBE}
+  .renderCallback()|{DESCRIBE}
+  .restartServer()|{DESCRIBE}
+  .fetchInfo()|{DESCRIBE}
+  CALLS→fetchInfo,restartServer,fetch,clearInterval,setTimeout,setInterval,t.json,Promise.all
+r(t,e,n=)|{DESCRIBE}
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

@@ -1,0 +1,10 @@
+--- web/panels/EventItem/EventItem.js ---
+@sig 68b18a72
+@enrich: Replace each {DESCRIBE} below. Read web/panels/EventItem/EventItem.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+class EventItem extends t|1m,13$|{DESCRIBE}
+  .renderCallback()|{DESCRIBE}
+  CALLS→sub,Object.keys,JSON.stringify,setAttribute,removeAttribute
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

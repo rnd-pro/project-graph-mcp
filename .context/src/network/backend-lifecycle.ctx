@@ -1,2 +1,16 @@
-
-@names __top__:m=__dirname,g=backendsDir getPortFilePath:r=absPath,o=hash readPortFile:t=portFile,e=data writePortFile:r=absPath,n=info listBackends:e=jsonFiles,t=results ensureBackend:t=absPath,o=existing,n=scriptPath,c=portFile,s=startTime startStdioProxy:o=wsKey,n=sock,c=upgraded,s=buf,i=pending,a=rl encodeClientFrame:r=payload,o=mask,n=masked,c=header,e=text decodeFrame:t=opcode,r=payloadLen,o=offset,e=buf
+--- src/network/backend-lifecycle.js ---
+@sig 403cd9d0
+@enrich: Replace each {DESCRIBE} below. Read src/network/backend-lifecycle.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+getPortFilePath(t)→l,e,a|{DESCRIBE}
+readPortFile(e)→getPortFilePath,r,n,JSON.parse,process.kill,s|{DESCRIBE}
+export writePortFile(e,t)→o,l,f,Date.now,getPortFilePath,JSON.stringify|{DESCRIBE}
+export removePortFile(e)→getPortFilePath,s|{DESCRIBE}
+export listBackends()→r,i,e.endsWith,a,n,JSON.parse|{DESCRIBE}
+export ensureBackend(e)→l,readPortFile,a,d,getPortFilePath,Date.now|{DESCRIBE}
+encodeClientFrame(e)→Buffer.from,t,Buffer.alloc,c.writeUInt16BE,BigInt,c.writeBigUInt64BE|{DESCRIBE}
+decodeFrame(e)→e.readUInt16BE,e.readBigUInt64BE,Number,e.slice|{DESCRIBE}
+export startStdioProxy(e,r=)→t,n.write,p,Buffer.alloc,u,Buffer.from|{DESCRIBE}
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

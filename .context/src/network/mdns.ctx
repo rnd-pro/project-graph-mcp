@@ -1,2 +1,11 @@
-
-@names __top__:r=MULTICAST_ADDR registerDnsSd:n=proc tryAvahi:r=proc,n=failed registerMcast:n=labels,c=qname,o=socket,e=msgOffset,n=qtype,i=qclass,s=response,a=offset
+--- src/network/mdns.js ---
+@sig 313a9654
+@enrich: Replace each {DESCRIBE} below. Read src/network/mdns.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+export registerLocal(t,e)→registerDnsSd,tryAvahi,registerMcast|{DESCRIBE}
+registerDnsSd(e,r)→String,t,n.unref,n.kill|{DESCRIBE}
+tryAvahi(e)→t,r.on,r.unref,r.kill|{DESCRIBE}
+registerMcast(t)→t.split,Buffer.alloc,e.write,n.map,Buffer.from,Buffer.concat|{DESCRIBE}
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

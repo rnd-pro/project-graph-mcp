@@ -1,0 +1,11 @@
+--- web/panels/ProjectList/ProjectList.js ---
+@sig 698604ad
+@enrich: Replace each {DESCRIBE} below. Read web/panels/ProjectList/ProjectList.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+class ProjectList extends t|2m,2$|{DESCRIBE}
+  .initCallback()|{DESCRIBE}
+  .renderCallback()|{DESCRIBE}
+  CALLS→e.addEventListener,sub
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

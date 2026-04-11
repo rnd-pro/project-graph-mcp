@@ -1,11 +1,11 @@
---- src/compact.js ---
-@sig 4cc8ddab
-@vars d=SUPPORTED,f=SKIP_DIRS
-resolveCtxPath(filePath:string,rootDir:string)→relative,basename,extname,dirname,join,existsSync|resolve .ctx file path for a source file
-compactFile(filePath:string,rootDir:string)→readFileSync,source.trim,minify,addTopLevelNewlines,resolveCtxPath,writeFileSync|minify single JS file, prepend @ctx header if .ctx exists
-beautifyFile(filePath:string)→readFileSync,source.trim,minify,writeFileSync|format single JS file with proper indentation
-export compactProject(dir:string,options:Object=)→walkJSFiles,relative,readFileSync,compactFile,minify,processed.push|compact all JS files in dir, per-file error handling, ret stats+savings%
-export expandProject(dir:string,options:Object=)→walkJSFiles,relative,readFileSync,beautifyFile,minify,processed.push|beautify all JS files in dir, inverse of compactProject
+--- src/compact/compact.js ---
+@sig 596f30f0
+@enrich: Replace each {DESCRIBE} below. Read src/compact/compact.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+addTopLevelNewlines(e)→e.replace|{DESCRIBE}
+compactFile(n,o)→e,s.trim,u,addTopLevelNewlines,resolveCtxPath,a.startsWith|minify single JS file, prepend @ctx header if .ctx exists
+beautifyFile(n)→e,o.trim,u,t|format single JS file with proper indentation
+export compactProject(t,n=)→walkJSFiles,a,e,u,addTopLevelNewlines,compactFile|compact all JS files in dir, per-file error handling, ret stats+savings%
 PATTERNS: Terser mangle:false preserves all names|per-file try/catch collects errors array|dryRun mode estimates without writing|skips node_modules,vendor,.git,.context
 EDGE_CASES: empty files return 0/0|syntax errors collected in errors[] not thrown|files with only comments become empty (correct behavior)
-@names walkJSFiles:e=dir,t=rootDir,s=results,a=entry,n=full,f=fullPath compactFile:n=filePath,f=source,p=original,origAST=result,t=result beautifyFile:n=filePath,o=source,s=original,r=result compactProject:t=dir,n=options,s=files,r=totalOriginal,c=totalCompacted,i=processed,l=errors,n=filePath,s=rel,a=source,d=result expandProject:t=dir,n=options,s=files,r=totalOriginal,c=totalBeautified,i=processed,l=errors,n=filePath,s=rel,t=source,e=result __top__:d=SUPPORTED,f=SKIP_DIRS compressFile:m=rawCode,t=beautified,h=names compactAll:o=results,e=files,f=errors

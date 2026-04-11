@@ -1,15 +1,14 @@
---- src/test-annotations.js ---
-@sig e05b5440
-findCtxMdFiles(dir:string)→readdirSync,join,statSync,stat.isDirectory,entry.startsWith,findCtxMdFiles|recursively find .ctx.md files in dir
-export parseAnnotations(content:string,filePath:string)→content.split,line.startsWith,groupByName,features.push,line.match,rest.split|parse checklist lines into test feature objects
-groupByName(tests,filePath:string)→Object.entries|group parsed tests by feature name
-export getAllFeatures(dir:string)→resolve,join,findCtxMdFiles,readFileSync,parseAnnotations,features.push|read and parse all test features from context dir
-export getPendingTests(dir:string)→resolve,getAllFeatures,relative,pending.push|return list of pending tests with file paths
-export markTestPassed(testId:string)→testId.split,updateTestState|mark specific test id as passed [x]
-export markTestFailed(testId:string,reason:string)→testId.split,updateTestState|mark specific test id as failed [!] with reason
-updateTestState(name:string,testId:string,newState,reason:string)→process.cwd,join,findCtxMdFiles,testId.split,parseInt,readFileSync|update test state string in .ctx.md file
-export getTestSummary(dir:string)→getAllFeatures,failures.push,Math.round|compute total, passed, failed, pending counts
-export resetTestState()→process.cwd,join,findCtxMdFiles,readFileSync,content.replace,writeFileSync|reset all test states to pending [ ]
+--- src/analysis/test-annotations.js ---
+@sig bf632f9a
+findCtxMdFiles(t)→e,o,s,r.startsWith,findCtxMdFiles,n.push|recursively find .ctx.md files in dir
+export parseAnnotations(t,e)→t.split,t.startsWith,groupByName,n.push,t.match,c.split|parse checklist lines into test feature objects
+groupByName(t,e)→Object.entries|group parsed tests by feature name
+export getAllFeatures(e)→a,o,findCtxMdFiles,t,parseAnnotations,n.push|read and parse all test features from context dir
+export getPendingTests(t)→a,getAllFeatures,r,n.push|return list of pending tests with file paths
+export markTestPassed(t)→t.split,updateTestState|mark specific test id as passed [x]
+export markTestFailed(t,e)→t.split,updateTestState|mark specific test id as failed [!] with reason
+updateTestState(e,s,r,a)→process.cwd,o,findCtxMdFiles,s.split,parseInt,t|update test state string in .ctx.md file
+export getTestSummary(t)→getAllFeatures,a.push,Math.round|compute total, passed, failed, pending counts
+export resetTestState()→process.cwd,o,findCtxMdFiles,t,s.replace,n|reset all test states to pending [ ]
 PATTERNS: regex markdown checklist parsing|file rewriting for state
 EDGE_CASES: handles unreadable files gracefully|handles missing failure reasons
-@names findCtxMdFiles:t=dir,n=files,r=entry,e=fullPath parseAnnotations:t=content,e=filePath,s=lines,n=features,o=inTests,r=currentTests,t=line,s=match,f=parts,u=action,l=expected,p=failReason,d=status,t=failMatch groupByName:t=tests,e=filePath,s=map,n=indexMap,e=t getAllFeatures:e=dir,s=contextDir,n=files,e=features,s=file getPendingTests:t=dir,e=resolvedDir,s=features,n=pending,t=feature,s=test markTestPassed:t=testId markTestFailed:t=testId,e=reason updateTestState:e=name,s=testId,r=newState,a=reason,i=cwd,c=contextDir,f=files,o=testIndex,i=file,c=content,u=lines,t=inTests,l=nameIndex,c=i,f=match getTestSummary:t=dir,e=features,s=total,n=passed,o=failed,r=pending,a=failures,t=feature,e=test resetTestState:e=cwd,s=contextDir,e=files,s=file,o=content

@@ -1,0 +1,13 @@
+--- web/panels/ctx-panel.js ---
+@sig 3fd462b3
+@enrich: Replace each {DESCRIBE} below. Read web/panels/ctx-panel.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+class CtxPanel extends n|4m,2$|{DESCRIBE}
+  .initCallback()|{DESCRIBE}
+  ._loadOutline()|{DESCRIBE}
+  ._loadCtx()|{DESCRIBE}
+  ._formatCtx()|{DESCRIBE}
+  CALLS→_loadCtx,_loadOutline,e.addEventListener,a.map,t,_formatCtx,JSON.stringify,n.split
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

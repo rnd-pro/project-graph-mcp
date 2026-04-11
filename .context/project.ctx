@@ -1,4 +1,4 @@
-=== PROJECT: . ===
+=== PROJECT: project-graph-mcp ===
 ARCH: {DESCRIBE}
 FLOW: {DESCRIBE}
-STATS: 37 files|200 functions
+STATS: 65 files|13 classes|291 functions

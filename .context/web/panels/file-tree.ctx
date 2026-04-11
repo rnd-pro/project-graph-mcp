@@ -1,0 +1,14 @@
+--- web/panels/file-tree.js ---
+@sig 2f8165db
+@enrich: Replace each {DESCRIBE} below. Read web/panels/file-tree.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+class FileTree extends e|5m,3$|{DESCRIBE}
+  .initCallback()|{DESCRIBE}
+  ._highlightFile()|{DESCRIBE}
+  ._renderTree()|{DESCRIBE}
+  ._getFileIcon()|{DESCRIBE}
+  ._applyFilter()|{DESCRIBE}
+  CALLS→_renderTree,_highlightFile,requestAnimationFrame,s.addEventListener,target.closest,querySelectorAll,classList.remove,classList.add
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}

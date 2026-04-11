@@ -1,10 +1,8 @@
---- src/mode-config.js ---
-@sig 59f3a19d
-@vars r=CONFIG_FILE,n=DEFAULTS
-export getConfig(projectDir)→join,existsSync,readFileSync,JSON.parse|read .context/config.json, merge with defaults
-export setConfig(projectDir,config:Object)→join,dirname,existsSync,mkdirSync,getConfig,writeFileSync|save mode config|validates mode 1-4
-export getModeDescription(mode:string)|return human-readable desc for mode 1-4
-export getModeWorkflow(mode:string)|return read/edit/docs/validate workflow per mode
+--- src/compact/mode-config.js ---
+@sig 1929be3d
+export getConfig(t)→a,d,e,JSON.parse|read .context/config.json, merge with defaults
+export setConfig(e,c)→a,n,d,o,getConfig,JSON.stringify|save mode config|validates mode 1-4
+export getModeDescription(e)|return human-readable desc for mode 1-4
+export getModeWorkflow(e)|return read/edit/docs/validate workflow per mode
 PATTERNS: config merge with DEFAULTS|.context/config.json storage
 EDGE_CASES: missing config→defaults|invalid mode→throw error|missing dir→mkdirSync
-@names getConfig:t=projectDir,c=configPath,t=raw,i=parsed setConfig:e=projectDir,n=config,d=configPath,s=dir,l=existing getModeDescription:e=mode getModeWorkflow:e=mode __top__:r=CONFIG_FILE,n=DEFAULTS

@@ -1,12 +1,11 @@
---- src/full-analysis.js ---
-@sig ba8c1587
-calculateHealthScore(results)→Math.min,topIssues.push,Math.round,Math.max,topIssues.slice|calculate overall health score 0-100|applies penalties for dead code, complexity
-runCacheableAnalyses(dir:string,contextDir:string)→resolve,getWorkspaceRoot,findJSFiles,relative,readFileSync,computeContentHash|run per-file cacheable metrics|checks complexity, undocumented, jsdoc
-aggregateComplexity(items:Array,minComplexity:number=)→items.filter,filtered.sort,filtered.filter,filtered.reduce,Math.round,filtered.slice|aggregate complexity items to summary|groups by severity
-aggregateUndocumented(items:Array)→items.filter,items.slice|aggregate undocumented items to summary|groups by class/function/method
-aggregateJSDoc(issues)→issues.filter|aggregate JSDoc issues to summary|counts errors and warnings
-export getFullAnalysis(dir:string,options:Object=)→resolve,getWorkspaceRoot,join,runCacheableAnalyses,aggregateComplexity,aggregateUndocumented|run full code health analysis|combines cached and dynamic cross-file metrics
-export getAnalysisSummaryOnly(dir:string)→getWorkspaceRoot,join,runCacheableAnalyses,aggregateComplexity,aggregateUndocumented,aggregateJSDoc|get partial fast health score skipping cross-file analyses
+--- src/analysis/full-analysis.js ---
+@sig 85f69e39
+calculateHealthScore(t)→Math.min,s.push,Math.round,Math.max,s.slice|calculate overall health score 0-100|applies penalties for dead code, complexity
+runCacheableAnalyses(e,s)→n,C,findJSFiles,o,t,y|run per-file cacheable metrics|checks complexity, undocumented, jsdoc
+aggregateComplexity(t,e=)→t.filter,s.sort,s.filter,s.reduce,Math.round,s.slice|aggregate complexity items to summary|groups by severity
+aggregateUndocumented(t)→t.filter,t.slice|aggregate undocumented items to summary|groups by class/function/method
+aggregateJSDoc(t)→t.filter|aggregate JSDoc issues to summary|counts errors and warnings
+export getFullAnalysis(t,e=)→n,C,a,runCacheableAnalyses,aggregateComplexity,aggregateUndocumented|run full code health analysis|combines cached and dynamic cross-file metrics
+export getAnalysisSummaryOnly(t)→C,a,runCacheableAnalyses,aggregateComplexity,aggregateUndocumented,aggregateJSDoc|get partial fast health score skipping cross-file analyses
 PATTERNS: incremental caching for per-file metrics|score aggregation with clamping
 EDGE_CASES: cross-file metrics always dynamic|handles missing cache gracefully
-@names calculateHealthScore:t=results,e=score,s=topIssues,a=deadPenalty,o=undocPenalty,n=similarPenalty,i=criticalCount,l=highCount,r=complexityPenalty,a=largeCritical,o=largeWarning,c=largePenalty findJSFiles:t=dir,n=rootDir,i=files,l=entry,e=fullPath,r=relativePath runCacheableAnalyses:e=dir,s=contextDir,a=resolvedDir,i=wsRoot,r=files,d=allComplexity,u=allUndocumented,m=allJsdocIssues,x=cacheHits,j=cacheMisses,e=file,n=relPath,r=cacheKey,b=code,C=contentHash,S=cached,t=complexity,e=undocumented,a=jsdocIssues aggregateComplexity:t=items,e=minComplexity,s=filtered,a=stats aggregateUndocumented:t=items,e=byType aggregateJSDoc:t=issues,e=errors,s=warnings,a=byFile,e=issue getFullAnalysis:t=dir,e=options,s=includeItems,o=resolvedDir,l=contextDir,c=cached,h=complexity,j=undocumented,b=jsdocCheck getAnalysisSummaryOnly:t=dir,e=contextDir,s=cached,o=complexity,n=undocumented,i=jsdocCheck

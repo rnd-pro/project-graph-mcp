@@ -1,2 +1,17 @@
-
-@names __top__:s=gatewayDir,i=registryPath,a=pidFile registerService:n=hostname,s=registry,i=mdnsHandle,a=gatewayPort,c=portSuffix,p=publicUrl resolveBackend:n=entry,o=rewritePath readGatewayPid:e=content ensureGateway:n=gateway,s=backend,i=proxyReq,a=backendSock
+--- src/network/local-gateway.js ---
+@sig 27d921c5
+@enrich: Replace each {DESCRIBE} below. Read src/network/local-gateway.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+readRegistry()→r.readFileSync,JSON.parse|{DESCRIBE}
+writeRegistry(e)→r.mkdirSync,JSON.stringify,r.writeFileSync|{DESCRIBE}
+export registerService(e,t,r=)→readRegistry,writeRegistry,o,ensureGateway,i.cleanup,Object.keys|{DESCRIBE}
+resolveBackend(e,t,r)→Object.keys,t.startsWith,process.kill,t.slice|{DESCRIBE}
+readGatewayPid()→r.readFileSync,e.trim,JSON.parse,parseInt|{DESCRIBE}
+isGatewayRunning()→readGatewayPid,process.kill|{DESCRIBE}
+export getGatewayPort()→readGatewayPid|{DESCRIBE}
+startListening(e)→n.address,r.mkdirSync,JSON.stringify,r.writeFileSync,n.listen|{DESCRIBE}
+ensureGateway()→isGatewayRunning,readRegistry,resolveBackend,r.writeHead,Object.keys,r.end|{DESCRIBE}
+stopGateway()→r.unlinkSync|{DESCRIBE}
+PATTERNS: {DESCRIBE}
+EDGE_CASES: {DESCRIBE}
