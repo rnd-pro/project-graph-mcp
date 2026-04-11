@@ -1,18 +1,15 @@
 --- web/components/quick-open.js ---
 @sig 1845e119
-@enrich: Replace each {DESCRIBE} below. Read web/components/quick-open.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-class QuickOpen extends e|9m,4$|{DESCRIBE}
-  .renderCallback()|{DESCRIBE}
-  ._collectFiles()|{DESCRIBE}
-  ._toggle()|{DESCRIBE}
-  ._close()|{DESCRIBE}
-  ._onInput()|{DESCRIBE}
-  ._onKeydown()|{DESCRIBE}
-  ._search()|{DESCRIBE}
-  ._fuzzyScore()|{DESCRIBE}
-  ._renderResults()|{DESCRIBE}
+class QuickOpen extends e|9m,4$|Symbiote component for Cmd+K quick open dialog
+  .renderCallback()|bind skeleton events|bind keyboard shortcuts|manage focus
+  ._collectFiles()|extract all file paths from skeleton into flat array
+  ._toggle()|toggle dialog visibility|reset search state
+  ._close()|hide dialog overlay
+  ._onInput()|update search query|reset selection|trigger search
+  ._onKeydown()|handle arrow navigation|handle enter selection|update router
+  ._search()|filter files using fuzzy score|sort results|update UI state
+  ._fuzzyScore()|calculate fuzzy match score for search query
+  ._renderResults()|generate HTML for top search results
   CALLS→_collectFiles,t.addEventListener,querySelector,_close,_overlay.addEventListener,e.preventDefault,_toggle,document.addEventListener
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+PATTERNS: global keyboard shortcuts|fuzzy search|custom dropdown navigation
+EDGE_CASES: empty skeleton|no files matching query|rapid keydown events

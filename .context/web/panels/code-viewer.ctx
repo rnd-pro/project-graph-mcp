@@ -1,14 +1,11 @@
 --- web/panels/code-viewer.js ---
 @sig f0164df7
-@enrich: Replace each {DESCRIBE} below. Read web/panels/code-viewer.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-class CodeViewer extends e|5m,5$|{DESCRIBE}
-  .initCallback()|{DESCRIBE}
-  .renderCallback()|{DESCRIBE}
-  ._getCodeBlock()|{DESCRIBE}
-  ._showCurrentMode()|{DESCRIBE}
-  ._loadFile()|{DESCRIBE}
+class CodeViewer extends e|5m,5$|Symbiote component for rendering file source code
+  .initCallback()|bind file-selected event to load file
+  .renderCallback()|toggle DOM attributes based on state
+  ._getCodeBlock()|get child code-block element
+  ._showCurrentMode()|update code-block content based on view mode
+  ._loadFile()|fetch file code|fetch raw file fallback|update stats and code block
   CALLS→_loadFile,t.addEventListener,toggleAttribute,sub,querySelector,_getCodeBlock,n,JSON.stringify
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+PATTERNS: Symbiote reactive state|API data fetching|event-driven loading
+EDGE_CASES: file fetch error|raw file fetch error|missing token stats

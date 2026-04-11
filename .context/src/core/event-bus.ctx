@@ -1,12 +1,8 @@
---- src/core/event-bus.js ---
 @sig f4e3c62d
-@enrich: Replace each {DESCRIBE} below. Read src/core/event-bus.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-export emitToolCall(o,e)→Date.now,t.emit|{DESCRIBE}
-export emitToolResult(o,e,l,n,s)→Object.keys,Date.now,t.emit|{DESCRIBE}
-export onToolCall(o)→t.on|{DESCRIBE}
-export onToolResult(o)→t.on|{DESCRIBE}
-export removeToolListener(o,e)→t.off|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+export emitToolCall(o,e)→Date.now,t.emit|emit tool:call event with timestamp and arguments
+export emitToolResult(o,e,l,n,s)→Object.keys,Date.now,t.emit|emit tool:result event with duration, success status, and result keys
+export onToolCall(o)→t.on|register listener for tool:call events
+export onToolResult(o)→t.on|register listener for tool:result events
+export removeToolListener(o,e)→t.off|remove specific event listener from bus
+PATTERNS: Singleton EventEmitter|event name namespacing tool:*
+EDGE_CASES: max listeners increased to 50 to prevent warnings

@@ -1,10 +1,7 @@
 --- web/panels/ActionBoard/ActionBoard.js ---
 @sig 5e74f370
-@enrich: Replace each {DESCRIBE} below. Read web/panels/ActionBoard/ActionBoard.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-class ActionBoard extends t|1m,1$|{DESCRIBE}
-  .initCallback()|{DESCRIBE}
+class ActionBoard extends t|1m,1$|Symbiote component for dashboard action board
+  .initCallback()|bind global-tool-event|reverse event order|update UI state
   CALLS→console.log,o.addEventListener
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+PATTERNS: reactive state binding|global event listener
+EDGE_CASES: empty events array|missing event detail

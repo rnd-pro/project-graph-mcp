@@ -1,13 +1,10 @@
 --- web/panels/ctx-panel.js ---
 @sig 3fd462b3
-@enrich: Replace each {DESCRIBE} below. Read web/panels/ctx-panel.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-class CtxPanel extends n|4m,2$|{DESCRIBE}
-  .initCallback()|{DESCRIBE}
-  ._loadOutline()|{DESCRIBE}
-  ._loadCtx()|{DESCRIBE}
-  ._formatCtx()|{DESCRIBE}
+class CtxPanel extends n|4m,2$|Symbiote component for file documentation and outline
+  .initCallback()|bind file-selected event to load docs
+  ._loadOutline()|parse skeleton exports|render file outline
+  ._loadCtx()|fetch file docs from API|format docs
+  ._formatCtx()|parse text docs|render styled HTML doc elements
   CALLS→_loadCtx,_loadOutline,e.addEventListener,a.map,t,_formatCtx,JSON.stringify,n.split
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+PATTERNS: custom doc formatter|skeleton export parsing
+EDGE_CASES: missing docs API|unsupported doc format|empty skeleton

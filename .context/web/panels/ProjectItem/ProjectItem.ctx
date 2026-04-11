@@ -1,10 +1,7 @@
 --- web/panels/ProjectItem/ProjectItem.js ---
 @sig a6c9278f
-@enrich: Replace each {DESCRIBE} below. Read web/panels/ProjectItem/ProjectItem.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-class ProjectItem extends e|1m,3$|{DESCRIBE}
-  .renderCallback()|{DESCRIBE}
+class ProjectItem extends e|1m,3$|Symbiote component for single project item
+  .renderCallback()|bind prefix state|fetch compression stats|update token badge
   CALLS→sub
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+PATTERNS: reactive state binding|async stats fetching
+EDGE_CASES: fetch error|missing token stats

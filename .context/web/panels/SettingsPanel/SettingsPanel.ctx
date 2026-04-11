@@ -1,13 +1,10 @@
 --- web/panels/SettingsPanel/SettingsPanel.js ---
 @sig e9a8968c
-@enrich: Replace each {DESCRIBE} below. Read web/panels/SettingsPanel/SettingsPanel.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-class SettingsPanel extends t|3m|{DESCRIBE}
-  .renderCallback()|{DESCRIBE}
-  .restartServer()|{DESCRIBE}
-  .fetchInfo()|{DESCRIBE}
+class SettingsPanel extends t|3m|Symbiote component for server settings and status
+  .renderCallback()|bind button clicks|trigger initial data fetch
+  .restartServer()|call restart API|poll for server recovery|update status UI
+  .fetchInfo()|fetch project info and instances|render backend metrics and cards
   CALLS→fetchInfo,restartServer,fetch,clearInterval,setTimeout,setInterval,t.json,Promise.all
-r(t,e,n=)|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+r(t,e,n=)|render HTML for single setting metric row
+PATTERNS: API polling|concurrent data fetching|dynamic HTML generation
+EDGE_CASES: server fails to restart|fetch instances error|missing project info

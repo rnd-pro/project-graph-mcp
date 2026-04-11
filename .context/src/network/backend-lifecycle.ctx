@@ -1,16 +1,12 @@
---- src/network/backend-lifecycle.js ---
 @sig 403cd9d0
-@enrich: Replace each {DESCRIBE} below. Read src/network/backend-lifecycle.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-getPortFilePath(t)→l,e,a|{DESCRIBE}
-readPortFile(e)→getPortFilePath,r,n,JSON.parse,process.kill,s|{DESCRIBE}
-export writePortFile(e,t)→o,l,f,Date.now,getPortFilePath,JSON.stringify|{DESCRIBE}
-export removePortFile(e)→getPortFilePath,s|{DESCRIBE}
-export listBackends()→r,i,e.endsWith,a,n,JSON.parse|{DESCRIBE}
-export ensureBackend(e)→l,readPortFile,a,d,getPortFilePath,Date.now|{DESCRIBE}
-encodeClientFrame(e)→Buffer.from,t,Buffer.alloc,c.writeUInt16BE,BigInt,c.writeBigUInt64BE|{DESCRIBE}
-decodeFrame(e)→e.readUInt16BE,e.readBigUInt64BE,Number,e.slice|{DESCRIBE}
-export startStdioProxy(e,r=)→t,n.write,p,Buffer.alloc,u,Buffer.from|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+getPortFilePath(t)→l,e,a|generate md5 hash path for project port file in ~/.local-gateway
+readPortFile(e)→getPortFilePath,r,n,JSON.parse,process.kill,s|read and validate project port file, cleanup if process dead
+export writePortFile(e,t)→o,l,f,Date.now,getPortFilePath,JSON.stringify|write active backend port and PID to project port file
+export removePortFile(e)→getPortFilePath,s|delete project port file on exit
+export listBackends()→r,i,e.endsWith,a,n,JSON.parse|read all valid backend port files in registry directory
+export ensureBackend(e)→l,readPortFile,a,d,getPortFilePath,Date.now|check if backend running or spawn detached backend.js process
+encodeClientFrame(e)→Buffer.from,t,Buffer.alloc,c.writeUInt16BE,BigInt,c.writeBigUInt64BE|encode and mask WebSocket client frame
+decodeFrame(e)→e.readUInt16BE,e.readBigUInt64BE,Number,e.slice|decode unmasked WebSocket frame from server
+export startStdioProxy(e,r=)→t,n.write,p,Buffer.alloc,u,Buffer.from|proxy stdin/stdout to WebSocket connection via TCP
+PATTERNS: detached process spawning|manual WebSocket client protocol via stdio
+EDGE_CASES: stale port file cleanup|timeout waiting for backend spawn

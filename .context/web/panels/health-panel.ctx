@@ -1,12 +1,9 @@
 --- web/panels/health-panel.js ---
 @sig 704e9048
-@enrich: Replace each {DESCRIBE} below. Read web/panels/health-panel.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-class HealthPanel extends e|3m,2$|{DESCRIBE}
-  .initCallback()|{DESCRIBE}
-  ._loadHealth()|{DESCRIBE}
-  ._metric()|{DESCRIBE}
+class HealthPanel extends e|3m,2$|Symbiote component for project health dashboard
+  .initCallback()|bind skeleton-loaded event|trigger initial load
+  ._loadHealth()|fetch analysis summary|render health metrics grid
+  ._metric()|render single health metric row
   CALLS→_loadHealth,s.addEventListener,setTimeout,t,Object.keys,Object.values,_metric,Math.round
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+PATTERNS: API data fetching|dynamic HTML rendering|skeleton data usage
+EDGE_CASES: missing analysis API|empty skeleton|missing cache stats

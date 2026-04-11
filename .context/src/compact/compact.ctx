@@ -1,10 +1,6 @@
---- src/compact/compact.js ---
 @sig 596f30f0
 @vars d=SUPPORTED,f=SKIP_DIRS
-@enrich: Replace each {DESCRIBE} below. Read src/compact/compact.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-addTopLevelNewlines(e)→e.replace|{DESCRIBE}
+addTopLevelNewlines(e)→e.replace|insert newlines after minified semicolons to format top-level statements
 compactFile(n,o)→e,s.trim,u,addTopLevelNewlines,resolveCtxPath,a.startsWith|minify single JS file, prepend @ctx header if .ctx exists
 beautifyFile(n)→e,o.trim,u,t|format single JS file with proper indentation
 export compactProject(t,n=)→walkJSFiles,a,e,u,addTopLevelNewlines,compactFile|compact all JS files in dir, per-file error handling, ret stats+savings%

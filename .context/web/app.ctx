@@ -1,12 +1,9 @@
 --- web/app.js ---
 @sig 75da53d6
-@enrich: Replace each {DESCRIBE} below. Read web/app.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-export api(t,n=)→t.startsWith,p,t.replace,fetch,r.json|{DESCRIBE}
-g()→o,document.querySelector,document.createElement,t.prepend,t.querySelector,i.setAttribute|{DESCRIBE}
-f()→g,l,document.getElementById,style.setProperty,h,i|{DESCRIBE}
-h(t)→document.getElementById,document.querySelector,document.createElement,t.appendChild|{DESCRIBE}
-y()→document.querySelector,document.createElement,body.appendChild|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+export api(t,n=)→t.startsWith,p,t.replace,fetch,r.json|call API via WS RPC or HTTP fetch
+g()→o,document.querySelector,document.createElement,t.prepend,t.querySelector,i.setAttribute|init UI layout|bind router to hashchange|register panels
+f()→g,l,document.getElementById,style.setProperty,h,i|init app|bind state changes to DOM|load compression stats
+h(t)→document.getElementById,document.querySelector,document.createElement,t.appendChild|render agent count badge in topbar
+y()→document.querySelector,document.createElement,body.appendChild|lazy load quick open component
+PATTERNS: Symbiote layout|event-driven routing|WS over HTTP fallback
+EDGE_CASES: missing layout storage|unsupported API route|skeleton loading errors

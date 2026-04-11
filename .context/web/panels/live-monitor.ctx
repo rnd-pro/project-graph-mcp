@@ -1,13 +1,10 @@
 --- web/panels/live-monitor.js ---
 @sig 7e409261
-@enrich: Replace each {DESCRIBE} below. Read web/panels/live-monitor.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-class LiveMonitor extends n|4m,2$|{DESCRIBE}
-  .initCallback()|{DESCRIBE}
-  ._addEvent()|{DESCRIBE}
-  ._esc()|{DESCRIBE}
-  ._formatTime()|{DESCRIBE}
+class LiveMonitor extends n|4m,2$|Symbiote component for real-time WS event monitor
+  .initCallback()|bind tool-event to add event to list
+  ._addEvent()|append event to queue|cap at 200|render event list HTML
+  ._esc()|escape HTML chars
+  ._formatTime()|format timestamp to local string
   CALLS→_addEvent,o.addEventListener,_events.unshift,_events.pop,String,_events.slice,JSON.stringify,_esc
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+PATTERNS: real-time event log|capped array queue
+EDGE_CASES: malformed event data|missing timestamp

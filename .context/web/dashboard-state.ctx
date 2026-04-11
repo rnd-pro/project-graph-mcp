@@ -1,8 +1,5 @@
 --- web/dashboard-state.js ---
 @sig 65b38725
-@enrich: Replace each {DESCRIBE} below. Read web/dashboard-state.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-export emit(t,e=)→events.dispatchEvent|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+export emit(t,e=)→events.dispatchEvent|dispatch custom dashboard event
+PATTERNS: EventTarget pub/sub|centralized dashboard state
+EDGE_CASES: missing event detail payload

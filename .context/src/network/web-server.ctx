@@ -1,20 +1,16 @@
---- src/network/web-server.js ---
 @sig 777321a3
-@enrich: Replace each {DESCRIBE} below. Read src/network/web-server.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-serveStatic(e,n)→o.normalize,a.match,o.join,r.startsWith,n.writeHead,n.end|{DESCRIBE}
-computeWSAccept(e)→n.createHash|{DESCRIBE}
-encodeWSFrame(e)→Buffer.from,Buffer.alloc,n.writeUInt16BE,BigInt,n.writeBigUInt64BE,Buffer.concat|{DESCRIBE}
-decodeWSFrame(e)→e.readUInt16BE,e.readBigUInt64BE,Number,e.slice,s.toString|{DESCRIBE}
-broadcastRPC(e,t)→JSON.stringify,e.send,y.delete|{DESCRIBE}
-patchState(e,t)→e.split,broadcastRPC|{DESCRIBE}
-ensureSkeleton()→d.executeTool|{DESCRIBE}
-hasActiveClients()|{DESCRIBE}
-resetShutdownTimer()→clearTimeout|{DESCRIBE}
-startShutdownTimer()→hasActiveClients,resetShutdownTimer,console.log,process.exit,setTimeout|{DESCRIBE}
-touchActivity()→resetShutdownTimer,startShutdownTimer|{DESCRIBE}
-handleAPI(e,a,s,r)→a.get,d.executeTool,n,s,a,o.dirname|{DESCRIBE}
-export startWebServer(t,a)→r,o.resolve,o.basename,n.createHash,u.slice,parseInt|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+serveStatic(e,n)→o.normalize,a.match,o.join,r.startsWith,n.writeHead,n.end|serve static web files from project-graph/web or symbiote modules
+computeWSAccept(e)→n.createHash|compute Sec-WebSocket-Accept hash for handshake
+encodeWSFrame(e)→Buffer.from,Buffer.alloc,n.writeUInt16BE,BigInt,n.writeBigUInt64BE,Buffer.concat|encode WebSocket frame with proper header length
+decodeWSFrame(e)→e.readUInt16BE,e.readBigUInt64BE,Number,e.slice,s.toString|decode incoming WebSocket frame and unmask payload
+broadcastRPC(e,t)→JSON.stringify,e.send,y.delete|send JSON-RPC message to all active WebSocket clients
+patchState(e,t)→e.split,broadcastRPC|update nested state object and broadcast patch event
+ensureSkeleton()→d.executeTool|lazy load project skeleton via MCP tool
+hasActiveClients()|check if any agent or UI clients are connected
+resetShutdownTimer()→clearTimeout|clear inactivity shutdown timer
+startShutdownTimer()→hasActiveClients,resetShutdownTimer,console.log,process.exit,setTimeout|start 15 min timer to exit process if no active clients
+touchActivity()→resetShutdownTimer,startShutdownTimer|reset and restart shutdown timer on activity
+handleAPI(e,a,s,r)→a.get,d.executeTool,n,s,a,o.dirname|route HTTP API requests to MCP tools or local handlers
+export startWebServer(t,a)→r,o.resolve,o.basename,n.createHash,u.slice,parseInt|init HTTP/WS server, handle routing and WebSocket upgrades
+PATTERNS: custom HTTP routing|manual WebSocket frame parsing without deps
+EDGE_CASES: 15min auto-shutdown|unmasked server frames|ping/pong opcodes

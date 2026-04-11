@@ -1,20 +1,16 @@
---- src/compact/expand.js ---
 @sig f83a5fba
 @vars f=SKIP_DIRS,h=SUPPORTED
-@enrich: Replace each {DESCRIBE} below. Read src/compact/expand.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
 generateJSDoc(t)→sanitizeJSDocText,e.push,e.join|build /** */ JSDoc block from .ctx signature
 export expandProject(t,r=)→a,s,walkJSFiles,l,resolveCtx,expandFile|expand all src/ → .expanded/ with JSDoc injection
 parseCtxSignatures(t)→t.split,n.trim,t.startsWith,t.match,e.set,parseCtxParams|parse .ctx file into Map of func name → typed signature
 parseCtxParams(t)→t.trim,t.split,e.match,e.replace|parse param string into [{name, type, optional}] array
 extractReturnType(t)→t.match|extract return type from →ReturnType arrow chain
 sanitizeJSDocText(t)→t.replace|escape */ in JSDoc descriptions to prevent parse errors
-parseCtxVars(t)→t.split,n.trim,t.startsWith,t.slice,t.trim,e.set|{DESCRIBE}
-parseCtxNames(t)→t.split,n.trim,t.startsWith,t.slice,t.indexOf,r.split|{DESCRIBE}
-collectLocals(t)→e.add,f|{DESCRIBE}
-collectLocalDecls(t)→e.push,f|{DESCRIBE}
-restoreNames(t,e,n,s,r)→o.set,a.push,value.replace,e.toUpperCase,r.has,r.get|{DESCRIBE}
+parseCtxVars(t)→t.split,n.trim,t.startsWith,t.slice,t.trim,e.set|parse .ctx @vars line into Map of name → value
+parseCtxNames(t)→t.split,n.trim,t.startsWith,t.slice,t.indexOf,r.split|parse .ctx @names line into Map of module → name mappings
+collectLocals(t)→e.add,f|walk AST to collect local variable identifiers into Set
+collectLocalDecls(t)→e.push,f|walk AST to collect local VariableDeclarator nodes into Array
+restoreNames(t,e,n,s,r)→o.set,a.push,value.replace,e.toUpperCase,r.has,r.get|restore original unminified names using AST walking and scope mapping
 export expandFile(e,n,s=)→t,o.trim,m,a.split,s.trim,s.startsWith|beautify compact JS + inject JSDoc from .ctx|core hybrid mode expand
 resolveCtx(e,n)→c,i,p,a,s,t|find .ctx file: colocated or .context/ mirror
 PATTERNS: Terser beautify (no compress/mangle)|AST walk for injection points|reverse-order insertion|name-based symbol matching

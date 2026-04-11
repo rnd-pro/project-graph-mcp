@@ -1,9 +1,5 @@
---- src/lang/lang-sql.js ---
 @sig f561b2a3
 @vars e=SQL_KEYWORDS,t=ORM_READ_METHODS,n=ORM_WRITE_METHODS
-@enrich: Replace each {DESCRIBE} below. Read src/lang/lang-sql.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
 export isSQLString(e)|test if string looks like a SQL query
 isValidTableName(t)→t.toLowerCase,e.has|validate table name against SQL keywords and casing rules
 export extractSQLFromString(e)→e.replace,a.exec,s.slice,isValidTableName,t.add,i.exec|extract table READs and WRITEs from SQL string
@@ -11,6 +7,6 @@ export parseSQL(e=,t=)→s.exec,e.substring,parseColumns,tables.push|parse CREAT
 parseColumns(t)→splitByTopLevelComma,t.trim,s.match,t.toLowerCase,e.has,n.push|extract column names and types from CREATE TABLE block
 splitByTopLevelComma(e)→t.push,n.trim|split string by top-level commas respecting parentheses
 export extractSQLFromCode(e)→a.exec,isSQLString,extractSQLFromString,t.add,reads.forEach,n.add|extract SQL queries and ORM calls from source code
-export extractORMFromCode(e)→r.exec,e.startsWith,t.has,s.add,n.has,a.add|{DESCRIBE}
+export extractORMFromCode(e)→r.exec,e.startsWith,t.has,s.add,n.has,a.add|extract DB reads/writes from prisma, sequelize, knex ORM calls
 PATTERNS: ORM pattern matching (prisma, sequelize, knex)|regex SQL parsing
 EDGE_CASES: ignores PostgreSQL keywords|ignores DELETE target in reads

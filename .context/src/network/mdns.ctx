@@ -1,11 +1,7 @@
---- src/network/mdns.js ---
 @sig 313a9654
-@enrich: Replace each {DESCRIBE} below. Read src/network/mdns.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-export registerLocal(t,e)→registerDnsSd,tryAvahi,registerMcast|{DESCRIBE}
-registerDnsSd(e,r)→String,t,n.unref,n.kill|{DESCRIBE}
-tryAvahi(e)→t,r.on,r.unref,r.kill|{DESCRIBE}
-registerMcast(t)→t.split,Buffer.alloc,e.write,n.map,Buffer.from,Buffer.concat|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+export registerLocal(t,e)→registerDnsSd,tryAvahi,registerMcast|route mDNS registration to dns-sd(mac)|Avahi(linux)|Node.js mcast
+registerDnsSd(e,r)→String,t,n.unref,n.kill|spawn dns-sd process for Bonjour service registration
+tryAvahi(e)→t,r.on,r.unref,r.kill|spawn avahi-publish-address process for Linux mDNS registration
+registerMcast(t)→t.split,Buffer.alloc,e.write,n.map,Buffer.from,Buffer.concat|create UDP socket and send mDNS answer packets
+PATTERNS: platform-specific mDNS implementation fallback
+EDGE_CASES: silently ignores UDP errors|kills spawned processes on cleanup
