@@ -76,72 +76,81 @@ export class FileTree extends e {
         if (fileEl) {
             this.querySelectorAll(".pg-tree-file.active").forEach(el => el.classList.remove("active")), 
             fileEl.classList.add("active");
-            const dir = e.includes("/") ? e.substring(0, e.lastIndexOf("/")) : ".";
-            this._expandedDirs.has(dir) || (this._expandedDirs.add(dir), this._saveExpandedState(), 
-            this._updateDirDOM(dir)), fileEl.scrollIntoView({
-                block: "center",
-                behavior: "smooth"
-            });
+            // Expand all ancestor dirs
+            const parts = e.split("/");
+            parts.pop(); // remove filename
+            let changed = !1;
+            for (let i = 1; i <= parts.length; i++) {
+                const dir = parts.slice(0, i).join("/");
+                this._expandedDirs.has(dir) || (this._expandedDirs.add(dir), this._updateDirDOM(dir), changed = !0);
+            }
+            changed && this._saveExpandedState();
+            fileEl.scrollIntoView({ block: "center", behavior: "smooth" });
         }
     }
     _renderTree(e) {
         if (!e) return void (this.$.treeHTML = '<div class="pg-placeholder">No files found</div>');
         const t = new Map, n = e.n || {};
         for (const val of Object.values(n)) if (val.f) {
-            const item = t.get(val.f) || {
-                exports: 0,
-                classes: 0
-            };
+            const item = t.get(val.f) || { exports: 0, classes: 0 };
             item.classes++, t.set(val.f, item);
         }
         const s = e.X || {};
         for (const [key, val] of Object.entries(s)) {
-            const item = t.get(key) || {
-                exports: 0,
-                classes: 0
-            };
+            const item = t.get(key) || { exports: 0, classes: 0 };
             item.exports = val.length, t.set(key, item);
         }
         const i = e.f || {};
         for (const [key, val] of Object.entries(i)) for (const s of val) {
             const p = "./" === key ? s : `${key}${s}`;
-            t.has(p) || t.set(p, {
-                exports: 0,
-                classes: 0
-            });
+            t.has(p) || t.set(p, { exports: 0, classes: 0 });
         }
         const o = e.a || {};
         for (const [key, val] of Object.entries(o)) for (const s of val) {
             const p = "./" === key ? s : `${key}${s}`;
-            t.has(p) || t.set(p, {
-                exports: 0,
-                classes: 0,
-                nonSource: !0
-            });
+            t.has(p) || t.set(p, { exports: 0, classes: 0, nonSource: !0 });
         }
         if (0 === t.size) return void (this.$.treeHTML = '<div class="pg-placeholder">No files found</div>');
-        const r = {};
-        for (const [key, val] of t) {
-            const dir = key.includes("/") ? key.substring(0, key.lastIndexOf("/")) : ".";
-            r[dir] || (r[dir] = []), r[dir].push({
-                f: key,
-                ...val
-            });
-        }
-        const l = [];
-        for (const [dir, files] of Object.entries(r).sort()) {
-            const isExpanded = this._expandedDirs && this._expandedDirs.has(dir), chevron = isExpanded ? "expand_more" : "chevron_right", hiddenAttr = isExpanded ? "" : " hidden";
-            l.push(`<div class="pg-tree-dir" data-dir="${dir}"><span class="material-symbols-outlined pg-chevron" style="font-size:16px">${chevron}</span> <span class="material-symbols-outlined" style="font-size:16px">folder</span> ${dir}/</div>`), 
-            l.push(`<div class="pg-tree-children" data-dir="${dir}"${hiddenAttr}>`);
-            for (const file of files.sort((a, b) => a.f.localeCompare(b.f))) {
-                const name = file.f.split("/").pop(), icon = FileTree._getFileIcon(name), badges = [];
-                file.exports > 0 && badges.push(`${file.exports}f`), file.classes > 0 && badges.push(`${file.classes}c`);
-                const badgeHtml = badges.length > 0 ? `<span class="pg-badge">${badges.join(" ")}</span>` : "", nonSourceClass = file.nonSource ? " pg-non-source" : "";
-                l.push(`<div class="pg-tree-file${nonSourceClass}" data-file="${file.f}"><span class="material-symbols-outlined" style="font-size:14px">${icon}</span> ${name}${badgeHtml}</div>`);
+        // Build nested tree structure
+        const root = { children: {}, files: [] };
+        for (const [filePath, meta] of t) {
+            const parts = filePath.split("/");
+            const fileName = parts.pop();
+            let node = root;
+            for (const part of parts) {
+                node.children[part] || (node.children[part] = { children: {}, files: [] });
+                node = node.children[part];
             }
-            l.push("</div>");
+            node.files.push({ f: filePath, name: fileName, ...meta });
         }
-        this.$.treeHTML = l.join("");
+        // Render recursively
+        const renderNode = (node, dirPath, depth) => {
+            const l = [];
+            // Sort: dirs first, then files
+            const dirs = Object.keys(node.children).sort();
+            const files = node.files.sort((a, b) => a.name.localeCompare(b.name));
+            const pad = depth * 16;
+            for (const dirName of dirs) {
+                const childPath = dirPath ? `${dirPath}/${dirName}` : dirName;
+                const isExpanded = this._expandedDirs && this._expandedDirs.has(childPath);
+                const chevron = isExpanded ? "expand_more" : "chevron_right";
+                const hiddenAttr = isExpanded ? "" : " hidden";
+                l.push(`<div class="pg-tree-dir" data-dir="${childPath}" style="padding-left:${pad + 6}px"><span class="material-symbols-outlined pg-chevron" style="font-size:16px">${chevron}</span> <span class="material-symbols-outlined" style="font-size:16px">folder</span> ${dirName}/</div>`);
+                l.push(`<div class="pg-tree-children" data-dir="${childPath}"${hiddenAttr}>`);
+                l.push(renderNode(node.children[dirName], childPath, depth + 1));
+                l.push("</div>");
+            }
+            for (const file of files) {
+                const icon = FileTree._getFileIcon(file.name), badges = [];
+                file.exports > 0 && badges.push(`${file.exports}f`);
+                file.classes > 0 && badges.push(`${file.classes}c`);
+                const badgeHtml = badges.length > 0 ? `<span class="pg-badge">${badges.join(" ")}</span>` : "";
+                const nonSourceClass = file.nonSource ? " pg-non-source" : "";
+                l.push(`<div class="pg-tree-file${nonSourceClass}" data-file="${file.f}" style="padding-left:${pad + 24}px"><span class="material-symbols-outlined" style="font-size:14px">${icon}</span> ${file.name}${badgeHtml}</div>`);
+            }
+            return l.join("");
+        };
+        this.$.treeHTML = renderNode(root, "", 0);
     }
     static _getFileIcon(e) {
         return e.endsWith(".html") ? "html" : e.endsWith(".css") || e.endsWith(".css.js") ? "css" : e.endsWith(".tpl.js") ? "web" : e.endsWith(".json") ? "data_object" : e.endsWith(".md") ? "description" : e.endsWith(".svg") || e.endsWith(".png") || e.endsWith(".jpg") ? "image" : e.endsWith(".woff2") || e.endsWith(".ttf") ? "font_download" : "insert_drive_file";
@@ -152,17 +161,22 @@ export class FileTree extends e {
         this.querySelectorAll(".pg-tree-file").forEach(t => {
             const match = !e || t.dataset.file.toLowerCase().includes(e);
             if (t.hidden = !match, e && match) {
-                const dir = t.dataset.file.includes("/") ? t.dataset.file.substring(0, t.dataset.file.lastIndexOf("/")) : ".";
-                this._expandedDirs.has(dir) || (this._expandedDirs.add(dir), changed = !0, this._updateDirDOM(dir));
+                // Expand all ancestor dirs
+                const parts = t.dataset.file.split("/");
+                parts.pop();
+                for (let i = 1; i <= parts.length; i++) {
+                    const dir = parts.slice(0, i).join("/");
+                    this._expandedDirs.has(dir) || (this._expandedDirs.add(dir), changed = !0, this._updateDirDOM(dir));
+                }
             }
-        }), changed && this._saveExpandedState(), e ? this.querySelectorAll(".pg-tree-children").forEach(childrenEl => {
-            const dir = childrenEl.dataset.dir;
-            let hasVisibleFile = !1;
-            childrenEl.querySelectorAll(".pg-tree-file").forEach(f => {
-                f.hidden || (hasVisibleFile = !0);
-            });
-            const dirEl = this.querySelector(`.pg-tree-dir[data-dir="${CSS.escape(dir)}"]`);
-            dirEl && (dirEl.hidden = !hasVisibleFile);
+        }), changed && this._saveExpandedState(), e ? this.querySelectorAll(".pg-tree-dir").forEach(dirEl => {
+            const dir = dirEl.dataset.dir;
+            const childrenEl = this.querySelector(`.pg-tree-children[data-dir="${CSS.escape(dir)}"]`);
+            if (!childrenEl) return;
+            let hasVisible = !1;
+            childrenEl.querySelectorAll(".pg-tree-file").forEach(f => { f.hidden || (hasVisible = !0); });
+            childrenEl.querySelectorAll(".pg-tree-children").forEach(c => { c.querySelector(".pg-tree-file:not([hidden])") && (hasVisible = !0); });
+            dirEl.hidden = !hasVisible;
         }) : this.querySelectorAll(".pg-tree-dir").forEach(dirEl => {
             dirEl.hidden = !1;
         });
