@@ -62,6 +62,34 @@ html, body {
   gap: 12px;
 }
 
+.topbar-search-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--sn-bg, hsl(228, 14%, 14%));
+  border: 1px solid var(--sn-node-border, rgba(255, 255, 255, 0.1));
+  border-radius: 6px;
+  color: var(--sn-text-dim, #999);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 120ms ease;
+  font-family: inherit;
+}
+.topbar-search-hint:hover {
+  border-color: var(--sn-node-selected, hsl(210, 55%, 42%));
+  color: var(--sn-text, #e0e0e0);
+}
+.topbar-search-hint kbd {
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--sn-node-bg, hsl(228, 14%, 22%));
+  border: 1px solid var(--sn-node-border);
+  font-family: monospace;
+  margin-left: 4px;
+}
+
 .project-name {
   font-size: 13px;
   font-weight: 600;

@@ -2,11 +2,9 @@
 // Uses symbiote-node as a library for BSP layout + sidebar navigation
 
 // Import from symbiote-node library (resolved via importmap)
-import { Layout, LayoutTree, applyTheme, CARBON } from 'symbiote-node';
-
-// Side-effect imports — register custom elements (same pattern as admin-panel)
-import './vendor/symbiote-node/layout/Layout/Layout.js';
-import './vendor/symbiote-node/layout/LayoutSidebar/LayoutSidebar.js';
+import { Layout, LayoutTree, applyTheme } from 'symbiote-node';
+import { CARBON } from './vendor/symbiote-node/themes/carbon.js';
+import { state as reactiveState, subscribe, onEvent, call, connect } from './state.js';
 
 // Import panel components (self-registering)
 import './panels/file-tree.js';
@@ -15,8 +13,10 @@ import './panels/ctx-panel.js';
 import './panels/dep-graph.js';
 import './panels/health-panel.js';
 import './panels/live-monitor.js';
+import './panels/SettingsPanel/SettingsPanel.js';
+import './components/quick-open.js';
 
-// ═══ Shared state ═══
+// ═══ Shared state (legacy — panels still use this) ═══
 export const state = {
   skeleton: null,
   activeFile: null,
@@ -24,11 +24,15 @@ export const state = {
   monitorEvents: [],
 };
 
-// ═══ API helper ═══
-// Base URL from module location — works both direct and through gateway prefix
+// ═══ Legacy API helper (backward compat — panels still use this) ═══
 const API_BASE = new URL('.', import.meta.url).href;
 
 export async function api(endpoint, params = {}) {
+  // Prefer WS call if connected, fallback to HTTP
+  if (reactiveState.connected && endpoint.startsWith('/api/')) {
+    const wsResult = await apiViaWS(endpoint, params);
+    if (wsResult !== null) return wsResult;
+  }
   const qs = new URLSearchParams(params).toString();
   const path = endpoint.replace(/^\//, '');
   const url = qs ? `${API_BASE}${path}?${qs}` : `${API_BASE}${path}`;
@@ -37,46 +41,29 @@ export async function api(endpoint, params = {}) {
   return res.json();
 }
 
-// ═══ PubSub for cross-panel communication ═══
+/** Route legacy api() calls through WebSocket */
+async function apiViaWS(endpoint, params) {
+  const TOOL_MAP = {
+    '/api/skeleton': { name: 'get_skeleton', args: (p) => ({ path: p.path }) },
+    '/api/file': { name: 'compact', args: (p) => ({ action: 'compress_file', path: p.path, beautify: true }) },
+    '/api/docs': { name: 'docs', args: (p) => ({ action: 'get', path: p.path, file: p.file }) },
+    '/api/analysis': { name: 'analyze', args: (p) => ({ action: 'full_analysis', path: p.path }) },
+    '/api/analysis-summary': { name: 'analyze', args: (p) => ({ action: 'analysis_summary', path: p.path }) },
+    '/api/deps': { name: 'navigate', args: (p) => ({ action: 'deps', symbol: p.symbol }) },
+    '/api/usages': { name: 'navigate', args: (p) => ({ action: 'usages', symbol: p.symbol }) },
+    '/api/expand': { name: 'navigate', args: (p) => ({ action: 'expand', symbol: p.symbol }) },
+    '/api/chain': { name: 'navigate', args: (p) => ({ action: 'call_chain', from: p.from, to: p.to }) },
+  };
+  const mapping = TOOL_MAP[endpoint];
+  if (!mapping) return null; // Unknown — fallback to HTTP
+  return call(mapping.name, mapping.args(params));
+}
+
+// ═══ PubSub for cross-panel communication (legacy — panels still use this) ═══
 export const events = new EventTarget();
 
 export function emit(name, detail = {}) {
   events.dispatchEvent(new CustomEvent(name, { detail }));
-}
-
-// ═══ WebSocket for live monitoring ═══
-function initWebSocket() {
-  // Derive WS URL from API_BASE (supports gateway prefix)
-  const wsBase = API_BASE.replace(/^http/, 'ws');
-  const ws = new WebSocket(`${wsBase}ws/monitor`);
-
-  ws.onopen = () => {
-    document.getElementById('status-indicator').className = 'status connected';
-  };
-
-  ws.onclose = () => {
-    document.getElementById('status-indicator').className = 'status disconnected';
-    setTimeout(initWebSocket, 3000);
-  };
-
-  ws.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-
-      // Agent lifecycle events
-      if (data.type === 'agent_connect' || data.type === 'agent_disconnect') {
-        updateAgentBadge(data.agents);
-        emit('agent-event', data);
-        return;
-      }
-
-      state.monitorEvents.push(data);
-      if (state.monitorEvents.length > 500) state.monitorEvents.shift();
-      emit('tool-event', data);
-    } catch { /* ignore */ }
-  };
-
-  state.ws = ws;
 }
 
 // ═══ Panel type registry ═══
@@ -87,6 +74,7 @@ const PANEL_TYPES = {
   'dep-graph':   { title: 'Dependencies', icon: 'account_tree',  component: 'pg-dep-graph' },
   'health':      { title: 'Health',       icon: 'analytics',     component: 'pg-health-panel' },
   'monitor':     { title: 'Live Monitor', icon: 'monitor_heart', component: 'pg-live-monitor' },
+  'settings':    { title: 'Settings',     icon: 'settings',      component: 'pg-settings-panel' },
 };
 
 // ═══ Sidebar section definitions ═══
@@ -117,6 +105,7 @@ const SECTION_LAYOUTS = {
     0.5,
   ),
   monitor: () => LayoutTree.createPanel('monitor'),
+  settings: () => LayoutTree.createPanel('settings'),
 };
 
 // ═══ Initialize ═══
@@ -202,42 +191,57 @@ function initLayout() {
 async function init() {
   initLayout();
 
-  // ═══ Project identity ═══
-  try {
-    const info = await api('/api/project-info');
-    state.projectInfo = info;
+  // ═══ Connect reactive state via WebSocket ═══
+  connect();
 
-    // Set page title & project name
-    document.title = `${info.name} — Project Graph`;
-    document.getElementById('project-name').textContent = info.name;
+  // Bridge reactive state → legacy UI elements
+  subscribe('project', (project) => {
+    if (!project) return;
+    document.title = `${project.name} — Project Graph`;
+    document.getElementById('project-name').textContent = project.name;
+    document.documentElement.style.setProperty('--project-accent', project.color);
+    updateAgentBadge(project.agents);
+  });
 
-    // Set accent color from project hash
-    document.documentElement.style.setProperty('--project-accent', info.color);
+  subscribe('skeleton', (skeleton) => {
+    if (!skeleton) return;
+    state.skeleton = skeleton;
 
-    // Show agent count
-    updateAgentBadge(info.agents);
-  } catch {
-    // Fallback — no project-info endpoint available
-  }
-
-  // Load project skeleton
-  try {
-    state.skeleton = await api('/api/skeleton');
-    const nodes = state.skeleton?.n;
-    const fileCount = nodes ? new Set(Object.values(nodes).map(n => n.f)).size : 0;
-
-    // Update subtitle with file count
+    // Count all files from skeleton
+    const allFiles = new Set();
+    for (const node of Object.values(skeleton.n || {})) { if (node.f) allFiles.add(node.f); }
+    for (const file of Object.keys(skeleton.X || {})) { allFiles.add(file); }
+    for (const [dir, files] of Object.entries(skeleton.f || {})) {
+      for (const f of files) allFiles.add(dir === './' ? f : `${dir}${f}`);
+    }
+    // Non-source files (HTML, CSS, templates, configs, etc.)
+    for (const [dir, files] of Object.entries(skeleton.a || {})) {
+      for (const f of files) allFiles.add(dir === './' ? f : `${dir}${f}`);
+    }
     const subtitle = document.getElementById('project-files');
-    if (subtitle) subtitle.textContent = `${fileCount} files`;
+    if (subtitle) subtitle.textContent = `${allFiles.size} files`;
 
-    emit('skeleton-loaded', state.skeleton);
-  } catch (err) {
-    document.getElementById('project-name').textContent = 'Error';
-    console.error('Failed to load skeleton:', err);
-  }
+    emit('skeleton-loaded', skeleton);
+  });
 
-  // Start WebSocket
-  initWebSocket();
+  subscribe('connected', (connected) => {
+    const indicator = document.getElementById('status-indicator');
+    if (indicator) {
+      indicator.className = connected ? 'status connected' : 'status disconnected';
+    }
+  });
+
+  // Bridge reactive events → legacy panel events
+  onEvent((event) => {
+    if (event.type === 'agent_connect' || event.type === 'agent_disconnect') {
+      updateAgentBadge(event.agents);
+      emit('agent-event', event);
+      return;
+    }
+    state.monitorEvents.push(event);
+    if (state.monitorEvents.length > 500) state.monitorEvents.shift();
+    emit('tool-event', event);
+  });
 }
 
 // ═══ Agent badge helper ═══
@@ -255,10 +259,17 @@ function updateAgentBadge(count) {
   badge.style.display = count > 0 ? '' : 'none';
 }
 
+// Mount global components
+function mountGlobalComponents() {
+  if (!document.querySelector('pg-quick-open')) {
+    document.body.appendChild(document.createElement('pg-quick-open'));
+  }
+}
+
 // Auto-init
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', () => { init(); mountGlobalComponents(); });
 } else {
-  setTimeout(init, 100);
+  setTimeout(() => { init(); mountGlobalComponents(); }, 100);
 }
 

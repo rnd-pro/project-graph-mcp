@@ -170,7 +170,7 @@ export function buildGraph(parsed) {
   return graph;
 }
 
-export function createSkeleton(graph) {
+export function createSkeleton(graph, allFiles = null) {
   const legend = {};
   const nodes = {};
 
@@ -241,6 +241,25 @@ export function createSkeleton(graph) {
   // Only add uncovered files if there are any
   if (Object.keys(fileTree).length > 0) {
     result.f = fileTree;
+  }
+
+  // All project files grouped by directory (for file tree explorer)
+  if (allFiles && allFiles.length > 0) {
+    // Build set of source files (already in n/X/f)
+    const sourceFiles = new Set(graph.files || []);
+    // Filter to only non-source files
+    const nonSource = allFiles.filter(f => !sourceFiles.has(f));
+    if (nonSource.length > 0) {
+      const tree = {};
+      for (const filePath of nonSource) {
+        const lastSlash = filePath.lastIndexOf('/');
+        const dir = lastSlash >= 0 ? filePath.slice(0, lastSlash + 1) : './';
+        const file = lastSlash >= 0 ? filePath.slice(lastSlash + 1) : filePath;
+        if (!tree[dir]) tree[dir] = [];
+        tree[dir].push(file);
+      }
+      result.a = tree;
+    }
   }
 
   return result;

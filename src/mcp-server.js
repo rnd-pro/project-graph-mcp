@@ -27,8 +27,11 @@ import { getAiContext } from './ai-context.js';
 import { checkJSDocConsistency } from './jsdoc-checker.js';
 import { checkTypes } from './type-checker.js';
 import { compactProject, expandProject } from './compact.js';
+import { decompileFile, decompileProject } from './decompile.js';
+import { validatePipeline } from './validate-pipeline.js';
 import { validateCtxContracts } from './ctx-to-jsdoc.js';
 import { getConfig, setConfig, getModeDescription, getModeWorkflow } from './mode-config.js';
+import { readFileSync as fsReadFileSync, existsSync as fsExistsSync } from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -212,6 +215,26 @@ const TOOL_HANDLERS = {
     if (args.stripJSDoc !== undefined) updates.stripJSDoc = args.stripJSDoc;
     return setConfig(dir, updates);
   },
+  decompile_file: async (args) => {
+    const filePath = resolvePath(args.path);
+    // Resolve .ctx for this file
+    const projectPath = path.dirname(path.dirname(filePath)); // assume src/file.js
+    const relFile = path.relative(projectPath, filePath);
+    const ctxName = path.basename(relFile, path.extname(relFile)) + '.ctx';
+    const fileDir = path.dirname(relFile);
+    let ctxContent = null;
+    const colocated = path.join(projectPath, fileDir, ctxName);
+    const mirrored = path.join(projectPath, '.context', fileDir, ctxName);
+    if (fsExistsSync(colocated)) ctxContent = fsReadFileSync(colocated, 'utf-8');
+    else if (fsExistsSync(mirrored)) ctxContent = fsReadFileSync(mirrored, 'utf-8');
+    return decompileFile(filePath, ctxContent);
+  },
+  decompile_project: (args) => {
+    return decompileProject(resolvePath(args.path), { dryRun: args.dryRun || false });
+  },
+  validate_pipeline: (args) => {
+    return validatePipeline(resolvePath(args.path), { strict: args.strict || false });
+  },
 };
 
 const RESPONSE_HINTS = {
@@ -386,6 +409,9 @@ const RESPONSE_HINTS = {
     if (result.mode === 2) {
       hints.push('💡 Workflow: get_compressed_file() → read → edit_compressed() → write.');
     }
+    if (result.mode === 4) {
+      hints.push('💡 Mode 4 workflow: edit compact → validate_pipeline → decompile_project → .full/ ready for ESLint/tsc.');
+    }
     return hints;
   },
 
@@ -394,6 +420,21 @@ const RESPONSE_HINTS = {
       return [`✅ Mode set to ${result.config.mode}. Saved to ${result.path}.`];
     }
     return [];
+  },
+
+  validate_pipeline: (result) => {
+    const hints = [`${result.status === 'PASS' ? '✅' : '❌'} Pipeline ${result.status} (${result.duration}): ${result.summary.contractErrors} contract errors, ${result.summary.astErrors} AST errors.`];
+    if (result.status === 'PASS') {
+      hints.push(`💡 ${result.summary.jsdocInjected} JSDoc blocks injected. Token savings: ${result.summary.tokenSavings}.`);
+    }
+    if (result.summary.contractErrors > 0) {
+      hints.push('⚠️ Fix .ctx contract errors first, then re-run validate_pipeline.');
+    }
+    return hints;
+  },
+
+  decompile_project: (result) => {
+    return [`✅ Decompiled ${result.files} files → ${result.outputDir}. ${result.totalJSDocInjected} JSDoc blocks injected.`];
   },
 };
 
@@ -436,7 +477,7 @@ const CONSOLIDATED_HANDLERS = {
     return TOOL_HANDLERS[handler](args);
   },
   compact: (args) => {
-    const map = { compress_file: 'get_compressed_file', edit: 'edit_compressed', compact_all: 'compact_project', beautify: 'beautify_project', get_mode: 'get_mode', set_mode: 'set_mode' };
+    const map = { compress_file: 'get_compressed_file', edit: 'edit_compressed', compact_all: 'compact_project', beautify: 'beautify_project', decompile_file: 'decompile_file', decompile_project: 'decompile_project', validate_pipeline: 'validate_pipeline', get_mode: 'get_mode', set_mode: 'set_mode' };
     const handler = map[args.action];
     if (!handler) throw new Error(`Unknown compact action: ${args.action}`);
     return TOOL_HANDLERS[handler](args);
@@ -471,7 +512,7 @@ const CONSOLIDATED_HINTS = {
     return fn ? fn(result) : [];
   },
   compact: (result, args) => {
-    const hintMap = { compress_file: 'get_compressed_file', edit: 'edit_compressed', get_mode: 'get_mode', set_mode: 'set_mode' };
+    const hintMap = { compress_file: 'get_compressed_file', edit: 'edit_compressed', get_mode: 'get_mode', set_mode: 'set_mode', validate_pipeline: 'validate_pipeline', decompile_project: 'decompile_project' };
     const fn = RESPONSE_HINTS[hintMap[args.action]];
     return fn ? fn(result) : [];
   },
@@ -696,7 +737,7 @@ export function createServer(sendToClient) {
   };
 }
 
-export async function startStdioServer() {
+export async function startStdioServer(bufferedLines = []) {
     const sendToClient = (message) => {
     console.log(JSON.stringify(message));
   };
@@ -704,13 +745,7 @@ export async function startStdioServer() {
   const server = createServer(sendToClient);
   const readline = await import('readline');
 
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    terminal: false,
-  });
-
-  rl.on('line', async (line) => {
+  const processLine = async (line) => {
     try {
       const message = JSON.parse(line);
       const response = await server.handleMessage(message);
@@ -723,5 +758,18 @@ export async function startStdioServer() {
         error: { code: -32700, message: 'Parse error' },
       });
     }
+  };
+
+  // Replay any buffered lines first
+  for (const line of bufferedLines) {
+    await processLine(line);
+  }
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    terminal: false,
   });
+
+  rl.on('line', processLine);
 }

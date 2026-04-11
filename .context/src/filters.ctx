@@ -1,17 +1,14 @@
 --- src/filters.js ---
 @sig 97377999
-@enrich: Replace each {DESCRIBE} below. Read src/filters.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-export getFilters()|{DESCRIBE}
-export setFilters(updates)→getFilters|{DESCRIBE}
-export addExcludes(dirs)→getFilters|{DESCRIBE}
-export removeExcludes(dirs)→dirs.includes,excludeDirs.filter,getFilters|{DESCRIBE}
-export resetFilters()→getFilters|{DESCRIBE}
-export parseGitignore(rootDir)→join,existsSync,readFileSync,content.split,line.trim,line.startsWith|{DESCRIBE}
-export shouldExcludeDir(dirName,relativePath=)→dirName.startsWith,excludeDirs.includes,matchGitignorePattern|{DESCRIBE}
-export shouldExcludeFile(fileName,relativePath=)→matchWildcard,matchGitignorePattern|{DESCRIBE}
-matchWildcard(pattern,str)→pattern.replace|{DESCRIBE}
-matchGitignorePattern(pattern,name,relativePath)→pattern.includes,matchWildcard,fullPath.includes|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+export getFilters()|return current filter configuration
+export setFilters(updates)→getFilters|update filter configuration state
+export addExcludes(dirs)→getFilters|add directories to exclude list
+export removeExcludes(dirs)→dirs.includes,excludeDirs.filter,getFilters|remove directories from exclude list
+export resetFilters()→getFilters|restore default filter configuration
+export parseGitignore(rootDir)→join,existsSync,readFileSync,content.split,line.trim,line.startsWith|parse and load patterns from .gitignore
+export shouldExcludeDir(dirName,relativePath=)→dirName.startsWith,excludeDirs.includes,matchGitignorePattern|check if directory should be excluded by rules
+export shouldExcludeFile(fileName,relativePath=)→matchWildcard,matchGitignorePattern|check if file should be excluded by rules
+matchWildcard(pattern,str)→pattern.replace|check if string matches wildcard pattern
+matchGitignorePattern(pattern,name,relativePath)→pattern.includes,matchWildcard,fullPath.includes|check string against gitignore pattern rules
+PATTERNS: mutable module state|regex wildcard matching
+EDGE_CASES: ignores gitignore comments|handles hidden files option

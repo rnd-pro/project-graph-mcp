@@ -1,11 +1,8 @@
 --- src/mode-config.js ---
 @sig 59f3a19d
-@enrich: Replace each {DESCRIBE} below. Read src/mode-config.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-export getConfig(projectDir)→join,existsSync,readFileSync,JSON.parse|{DESCRIBE}
-export setConfig(projectDir,config)→join,dirname,existsSync,mkdirSync,getConfig,JSON.stringify|{DESCRIBE}
-export getModeDescription(mode)|{DESCRIBE}
-export getModeWorkflow(mode)|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+export getConfig(projectDir)→join,existsSync,readFileSync,JSON.parse|read .context/config.json, merge with defaults
+export setConfig(projectDir,config)→join,dirname,existsSync,mkdirSync,getConfig,writeFileSync|save mode config|validates mode 1-4
+export getModeDescription(mode)|return human-readable desc for mode 1-4
+export getModeWorkflow(mode)|return read/edit/docs/validate workflow per mode
+PATTERNS: config merge with DEFAULTS|.context/config.json storage
+EDGE_CASES: missing config→defaults|invalid mode→throw error|missing dir→mkdirSync

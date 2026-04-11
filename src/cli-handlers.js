@@ -1,4 +1,4 @@
-import { getSkeleton, getFocusZone, expand, deps, usages } from './tools.js';
+import { getSkeleton, expand, deps, usages } from './tools.js';
 import { getPendingTests, getTestSummary } from './test-annotations.js';
 import { getFilters } from './filters.js';
 import { getInstructions } from './instructions.js';

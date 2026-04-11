@@ -1,8 +1,5 @@
 --- src/ai-context.js ---
 @sig 4de57d15
-@enrich: Replace each {DESCRIBE} below. Read src/ai-context.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-export getAiContext(dirPath,options=)→resolve,getSkeleton,estimateTokens,getGraph,getProjectDocs,findJSFiles|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+export getAiContext(dirPath,options=)→resolve,getSkeleton,estimateTokens,getGraph,getProjectDocs,findJSFiles|get project context including skeleton, docs, and optionally compressed files
+PATTERNS: token estimation heuristic|parallel generation
+EDGE_CASES: gracefully skips unreadable files|handles missing files

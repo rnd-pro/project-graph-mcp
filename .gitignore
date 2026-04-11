@@ -6,4 +6,5 @@ node_modules/
 .agents/
 .gemini/
 .context/.cache/
+.full/
 dev-docs/

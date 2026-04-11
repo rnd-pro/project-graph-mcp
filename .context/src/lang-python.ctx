@@ -1,8 +1,5 @@
 --- src/lang-python.js ---
 @sig 32dce532
-@enrich: Replace each {DESCRIBE} below. Read src/lang-python.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-export parsePython(code=,filename=)→stripStringsAndComments,cleanCode.split,line.trim,line.match,classes.push,paramsStr.split|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+export parsePython(code=,filename=)→stripStringsAndComments,cleanCode.split,line.trim,line.match,classes.push,paramsStr.split|parse Python classes, methods, and top-level functions
+PATTERNS: indentation level tracking for scope|regex matching
+EDGE_CASES: handles async def|handles __all__ for explicit exports

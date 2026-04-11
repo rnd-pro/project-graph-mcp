@@ -1,11 +1,8 @@
 --- src/complexity.js ---
 @sig ddd77195
-@enrich: Replace each {DESCRIBE} below. Read src/complexity.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-calculateComplexity(body)→walk.simple|{DESCRIBE}
-getRating(complexity)|{DESCRIBE}
-export analyzeComplexityFile(code,relPath)→parse,calculateComplexity,getRating,items.push,walk.simple|{DESCRIBE}
-export getComplexity(dir,options=)→resolve,findJSFiles,analyzeFile,allItems.push,allItems.filter,allItems.sort|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+calculateComplexity(body)→walk.simple|compute cyclomatic complexity from AST body
+getRating(complexity)|return severity rating from complexity score
+export analyzeComplexityFile(code,relPath)→parse,calculateComplexity,getRating,items.push,walk.simple|analyze complexity for all functions in a single file
+export getComplexity(dir,options=)→resolve,findJSFiles,analyzeFile,allItems.push,allItems.filter,allItems.sort|scan directory, filter and sort complexity results
+PATTERNS: AST tree walking via Acorn|cyclomatic complexity counting
+EDGE_CASES: parses arrow functions with blocks|ignores unparseable files

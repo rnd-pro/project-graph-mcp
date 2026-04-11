@@ -124,8 +124,8 @@ function validateFunction(jsdoc, astParams, funcNode, name, file, line) {
 
   const docParams = jsdoc.params;
 
-  // 1. Param count mismatch
-  if (docParams.length !== astParams.length) {
+  // 1. Param count mismatch (skip description-only comments: 0 @param is intentional when .ctx holds the params)
+  if (docParams.length > 0 && docParams.length !== astParams.length) {
     issues.push({
       file, line, name,
       severity: 'error',
@@ -163,7 +163,7 @@ function validateFunction(jsdoc, astParams, funcNode, name, file, line) {
     const inferredType = inferTypeFromDefault(astParams[i]);
 
     if (inferredType && docType && docType !== '*') {
-      let compatible = docType.includes(inferredType);
+      let compatible = docType.toLowerCase().includes(inferredType.toLowerCase());
       // Union types like 'a'|'b' are valid strings
       if (!compatible && inferredType === 'string' && docType.includes("'") && docType.includes('|')) {
         compatible = true;

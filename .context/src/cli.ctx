@@ -1,9 +1,6 @@
 --- src/cli.js ---
 @sig b135c417
-@enrich: Replace each {DESCRIBE} below. Read src/cli.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-export printHelp()→console.log|{DESCRIBE}
-export runCLI(command,args)→printHelp,console.error,process.exit,def.handler,console.log,JSON.stringify|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+export printHelp()→console.log|log usage instructions and available commands to stdout
+export runCLI(command,args)→printHelp,console.error,process.exit,def.handler,console.log,JSON.stringify|parse args, validate, and route to corresponding cli handler
+PATTERNS: generic command router|table help text
+EDGE_CASES: handles unknown commands gracefully|validates required args

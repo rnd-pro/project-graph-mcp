@@ -51,40 +51,97 @@ export class FileTree extends Symbiote {
   }
 
   _renderTree(skeleton) {
-    const nodesObj = skeleton?.n;
-    if (!nodesObj || Object.keys(nodesObj).length === 0) {
+    if (!skeleton) {
       this.$.treeHTML = '<div class="pg-placeholder">No files found</div>';
       return;
     }
-    const nodes = Object.values(nodesObj);
 
-    // Deduplicate by file path
-    const fileMap = new Map();
-    for (const node of nodes) {
-      const f = node.f || '';
-      if (f && !fileMap.has(f)) fileMap.set(f, node);
+    // Collect ALL files from skeleton sections:
+    // n = class nodes (with .f file path)
+    // X = exported functions grouped by file
+    // f = uncovered files grouped by directory
+    const fileSet = new Map(); // filepath → { exports: number, classes: number }
+
+    // 1) Files from class nodes (n)
+    const nodesObj = skeleton.n || {};
+    for (const node of Object.values(nodesObj)) {
+      if (node.f) {
+        const existing = fileSet.get(node.f) || { exports: 0, classes: 0 };
+        existing.classes++;
+        fileSet.set(node.f, existing);
+      }
     }
 
+    // 2) Files from exported functions (X)
+    const exportsByFile = skeleton.X || {};
+    for (const [file, exports] of Object.entries(exportsByFile)) {
+      const existing = fileSet.get(file) || { exports: 0, classes: 0 };
+      existing.exports = exports.length;
+      fileSet.set(file, existing);
+    }
+
+    // 3) Uncovered files (f) — { "dir/": ["file1.js", ...] }
+    const uncoveredFiles = skeleton.f || {};
+    for (const [dir, files] of Object.entries(uncoveredFiles)) {
+      for (const file of files) {
+        const filepath = dir === './' ? file : `${dir}${file}`;
+        if (!fileSet.has(filepath)) {
+          fileSet.set(filepath, { exports: 0, classes: 0 });
+        }
+      }
+    }
+
+    // 4) Non-source files (a) — .html, .css, .tpl.js, .css.js, .json, .md, etc.
+    const nonSourceFiles = skeleton.a || {};
+    for (const [dir, files] of Object.entries(nonSourceFiles)) {
+      for (const file of files) {
+        const filepath = dir === './' ? file : `${dir}${file}`;
+        if (!fileSet.has(filepath)) {
+          fileSet.set(filepath, { exports: 0, classes: 0, nonSource: true });
+        }
+      }
+    }
+
+    if (fileSet.size === 0) {
+      this.$.treeHTML = '<div class="pg-placeholder">No files found</div>';
+      return;
+    }
+
+    // Group by directory
     const dirs = {};
-    for (const [filepath, node] of fileMap) {
+    for (const [filepath, meta] of fileSet) {
       const dir = filepath.includes('/') ? filepath.substring(0, filepath.lastIndexOf('/')) : '.';
       if (!dirs[dir]) dirs[dir] = [];
-      dirs[dir].push(node);
+      dirs[dir].push({ f: filepath, ...meta });
     }
 
     const html = [];
     for (const [dir, files] of Object.entries(dirs).sort()) {
       html.push(`<div class="pg-tree-dir"><span class="material-symbols-outlined" style="font-size:16px">folder</span> ${dir}/</div>`);
-      for (const file of files.sort((a, b) => (a.f || '').localeCompare(b.f || ''))) {
+      for (const file of files.sort((a, b) => a.f.localeCompare(b.f))) {
         const name = file.f.split('/').pop();
-        const funcs = (file.fn || []).length;
-        const cls = (file.c || []).length;
-        const badge = funcs + cls > 0 ? `<span class="pg-badge">${funcs}f${cls ? ' ' + cls + 'c' : ''}</span>` : '';
-        html.push(`<div class="pg-tree-file" data-file="${file.f}"><span class="material-symbols-outlined" style="font-size:14px">insert_drive_file</span> ${name}${badge}</div>`);
+        const icon = FileTree._getFileIcon(name);
+        const parts = [];
+        if (file.exports > 0) parts.push(`${file.exports}f`);
+        if (file.classes > 0) parts.push(`${file.classes}c`);
+        const badge = parts.length > 0 ? `<span class="pg-badge">${parts.join(' ')}</span>` : '';
+        const nonSourceClass = file.nonSource ? ' pg-non-source' : '';
+        html.push(`<div class="pg-tree-file${nonSourceClass}" data-file="${file.f}"><span class="material-symbols-outlined" style="font-size:14px">${icon}</span> ${name}${badge}</div>`);
       }
     }
 
     this.$.treeHTML = html.join('');
+  }
+
+  static _getFileIcon(filename) {
+    if (filename.endsWith('.html')) return 'html';
+    if (filename.endsWith('.css') || filename.endsWith('.css.js')) return 'css';
+    if (filename.endsWith('.tpl.js')) return 'web';
+    if (filename.endsWith('.json')) return 'data_object';
+    if (filename.endsWith('.md')) return 'description';
+    if (filename.endsWith('.svg') || filename.endsWith('.png') || filename.endsWith('.jpg')) return 'image';
+    if (filename.endsWith('.woff2') || filename.endsWith('.ttf')) return 'font_download';
+    return 'insert_drive_file';
   }
 
   _applyFilter() {
@@ -162,6 +219,9 @@ FileTree.rootStyles = /*css*/`
     color: var(--sn-cat-server, hsl(210, 45%, 45%));
   }
   pg-file-tree .pg-tree-file[hidden] { display: none; }
+  pg-file-tree .pg-tree-file.pg-non-source {
+    opacity: 0.6;
+  }
   pg-file-tree .pg-badge {
     margin-left: auto;
     font-size: 10px;

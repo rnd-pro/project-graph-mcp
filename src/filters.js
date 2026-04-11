@@ -1,5 +1,5 @@
 import { readFileSync, existsSync } from 'fs';
-import { join, relative } from 'path';
+import { join } from 'path';
 
 const DEFAULT_EXCLUDES = [
   'node_modules',

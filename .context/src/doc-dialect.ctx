@@ -1,8 +1,5 @@
 --- src/doc-dialect.js ---
 @sig 5aed9e6b
-@enrich: Replace each {DESCRIBE} below. Read src/doc-dialect.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
 export generateDocDialect(graph,projectPath)→basename,lines.push,parts.push,parts.join,edges.filter,edgeParts.push|generate compact doc-dialect string from graph|includes project/file/function levels
 walkCtxFiles(dir,base)→existsSync,readdirSync,join,statSync,stat.isDirectory,walkCtxFiles|recursively find .ctx files|returns relative and absolute paths
 resolveCtxPath(projectPath,sourceFile)→extname,basename,dirname,join,existsSync|null→extname,basename,dirname,join,existsSync|null→extname,basename,dirname,join,existsSync|null→extname,basename,dirname,join,existsSync|resolve .ctx path for source file|priority: colocated > mirror
@@ -12,8 +9,8 @@ export getProjectDocs(graph,projectPath,options=)→readContextDocs,resolveCtxPa
 computeSignature(file,parsed)→params.join,parts.push,methods.sort,parts.sort,createHash,parts.join|compute structural signature hash from AST|used for staleness detection
 parseCtxDescriptions(content)→content.split,line.trim,trimmed.startsWith,trimmed.match,descriptions.set|extract user descriptions from existing .ctx|preserves data on overwrite
 export checkStaleness(projectPath,parsed)→join,walkCtxFiles,readFileSync,content.match,computeSignature,stale.push|check .ctx files staleness vs current AST
-buildFileTemplate(file,nodes,graph,parsed,existingDescriptions)→computeSignature,meta.push,desc.get,meta.join,lines.push,calls.slice|build rich AST template for single file|injects {DESCRIBE} markers
+buildFileTemplate(file,nodes,graph,parsed,existingDescriptions)→computeSignature,meta.push,desc.get,meta.join,lines.push,calls.slice|build rich AST template for single file|injects placeholder markers
 export generateContextFiles(graph,projectPath,parsed,options=)→join,existsSync,mkdirSync,basename,statParts.push,statParts.join|generate .context/ templates|supports focus scope and overwrite merge
-processFileCtx(file,nodes,graph,parsed,contextDir,projectPath,overwrite)→extname,basename,dirname,join,existsSync,mkdirSync|{DESCRIBE}
+processFileCtx(file,nodes,graph,parsed,contextDir,projectPath,overwrite)→extname,basename,dirname,join,existsSync,mkdirSync|generate or update .ctx and .ctx.md templates for a single file
 PATTERNS: two-tier doc resolution (colocated > mirror)|AST signature hashing
-EDGE_CASES: preserves existing {DESCRIBE} on overwrite|handles git diff for focus scope
+EDGE_CASES: preserves existing placeholders on overwrite|handles git diff for focus scope

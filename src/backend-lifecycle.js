@@ -74,7 +74,7 @@ export function writePortFile(projectPath, port) {
     port,
     pid: process.pid,
     project: abs,
-    name: basename(abs),
+    name: basename(abs) || 'root',
     startedAt: Date.now(),
   };
   writeFileSync(getPortFilePath(projectPath), JSON.stringify(data, null, 2));
@@ -159,8 +159,9 @@ export async function ensureBackend(projectPath) {
  * Uses raw TCP + manual WS framing (zero dependencies, bypasses Node 22 WS bugs).
  *
  * @param {number} port - Backend port
+ * @param {string[]} [bufferedLines] - Pre-buffered stdin lines (from server.js init wait)
  */
-export function startStdioProxy(port) {
+export function startStdioProxy(port, bufferedLines = []) {
   const wsKey = randomBytes(16).toString('base64');
 
   const socket = createConnection({ host: '127.0.0.1', port }, () => {
@@ -177,6 +178,7 @@ export function startStdioProxy(port) {
 
   let handshakeComplete = false;
   let dataBuf = Buffer.alloc(0);
+  let clientQueue = [...bufferedLines]; // Pre-populate with buffered lines
 
   const rl = createInterface({ input: process.stdin, terminal: false });
 
@@ -206,6 +208,20 @@ export function startStdioProxy(port) {
 
     return Buffer.concat([header, mask, masked]);
   }
+
+  // Start reading stdin → WS (Queue lines until handshake completes)
+  rl.on('line', (line) => {
+    if (handshakeComplete) {
+      try { socket.write(encodeClientFrame(line)); } catch {}
+    } else {
+      clientQueue.push(line);
+    }
+  });
+
+  rl.on('close', () => {
+    socket.end();
+    process.exit(0);
+  });
 
   // Decode an unmasked WS frame (server → client)
   function decodeFrame(buf) {
@@ -248,14 +264,11 @@ export function startStdioProxy(port) {
       handshakeComplete = true;
       dataBuf = combined.slice(headerEnd + 4);
 
-      // Start reading stdin → WS
-      rl.on('line', (line) => {
+      // Flush queued client lines
+      for (const line of clientQueue) {
         try { socket.write(encodeClientFrame(line)); } catch {}
-      });
-      rl.on('close', () => {
-        socket.end();
-        process.exit(0);
-      });
+      }
+      clientQueue = [];
     } else {
       dataBuf = Buffer.concat([dataBuf, chunk]);
     }

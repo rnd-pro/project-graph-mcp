@@ -1,6 +1,11 @@
-import { resolve, isAbsolute } from 'path';
+import { resolve, isAbsolute, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 let workspaceRoot = null;
+
+// Derive the project-graph-mcp root from the module location
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const selfRoot = resolve(__dirname, '..');
 
 // Auto-detect --workspace arg at module load
 const wsArg = process.argv.find(a => a.startsWith('--workspace='));
@@ -28,7 +33,7 @@ export function getWorkspaceRoot() {
   if (process.env.PROJECT_ROOT) {
     return process.env.PROJECT_ROOT;
   }
-  return process.cwd();
+  return selfRoot;
 }
 
 export function resolvePath(inputPath) {

@@ -47,8 +47,9 @@
   "homepage": "https://github.com/rnd-pro/project-graph-mcp",
   "license": "MIT",
   "dependencies": {
+    "@symbiotejs/symbiote": "^3.2.1",
     "symbiote-node": "^0.2.0",
-    "@symbiotejs/symbiote": "^3.2.1"
+    "ws": "^8.20.0"
   },
   "engines": {
     "node": ">=18.0.0"

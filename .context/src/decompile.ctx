@@ -1,0 +1,15 @@
+--- src/decompile.js ---
+@sig 2d44a20d
+parseCtxSignatures(ctxContent)→ctxContent.split,line.trim,trimmed.match,sigs.set,parseCtxParams|parse .ctx file into Map of func name → typed signature
+parseCtxParams(paramStr)→paramStr.split,p.trim,trimmed.match|parse param string into [{name, type, optional}] array
+extractReturnType(callChain)→callChain.match|extract return type from →ReturnType arrow chain
+sanitizeJSDocText(text)→text.replace|escape */ in JSDoc descriptions to prevent parse errors
+generateJSDoc(sig)→sanitizeJSDocText|build /** */ JSDoc block from .ctx signature
+export decompileFile(filePath,ctxContent,options=)→readFileSync,minify,parseCtxSignatures,parse,walk,generateJSDoc|beautify compact JS + inject JSDoc from .ctx|core Mode 4 decompilation
+resolveCtx(projectPath,relFile)→basename,extname,dirname,join,existsSync,readFileSync|find .ctx file: colocated or .context/ mirror
+export decompileProject(projectPath,options=)→join,existsSync,walkJSFiles,relative,resolveCtx,decompileFile,writeFileSync|decompile all src/ → .full/ with JSDoc injection
+extractDeclarations(code)→parse,walk|extract fn/class positions with line numbers from AST
+export buildLineMap(compactCode,fullCode)→extractDeclarations|build Map: fullLine → {compactLine, symbol}|symbol-level mapping
+export mapFullToCompact(compactFilePath,fullFilePath,fullLine:number)→readFileSync,buildLineMap|map .full/ line to compact source line|returns null if not found
+PATTERNS: Terser beautify (no compress/mangle)|AST walk for injection points|reverse-order insertion|name-based symbol matching
+EDGE_CASES: */ in descriptions→sanitized|empty files→skip|parse errors→fallback to beautified|unmapped lines→null

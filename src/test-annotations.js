@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'fs';
-import { join, basename, relative, resolve } from 'path';
+import { join, relative, resolve } from 'path';
 
 function findCtxMdFiles(dir) {
   const files = [];

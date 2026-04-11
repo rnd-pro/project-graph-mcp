@@ -1,12 +1,9 @@
 --- src/compress.js ---
 @sig f4dd1d72
-@enrich: Replace each {DESCRIBE} below. Read src/compress.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
 estimateTokens(text)→Math.ceil|estimates token count from str length
 extractLegend(source,filePath)→basename,lines.push,parse,Math.max,source.slice,beforeNode.match|parses AST to extract exports & JSDocs into compact legend string
 export compressFile(filePath,options=)→extname,SUPPORTED_EXTENSIONS.has,readFileSync,estimateTokens,source.trim,minify|minifies JS/TS via Terser, prepends JSDoc legend
-export editCompressed(filePath,symbol,newCode,options=)→readFileSync,parse,findSymbolRange,source.slice,minify,writeFileSync|{DESCRIBE}
-findSymbolRange(ast,source,symbol)→walk|{DESCRIBE}
+export editCompressed(filePath,symbol,newCode,options=)→readFileSync,parse,findSymbolRange,source.slice,minify,writeFileSync|find symbol in file and replace its code safely
+findSymbolRange(ast,source,symbol)→walk|traverse AST to find byte range for a named symbol
 PATTERNS: AST traversal|regex JSDoc extraction|Terser minification
-EDGE_CASES: empty file→empty code|parse err→fallback to regex strip
+EDGE_CASES: validates syntax before writing|handles empty files

@@ -1,39 +1,7 @@
-import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { createHash } from 'crypto';
 
-export function computeSig(fileData) {
-  const parts = [];
-
-  // Function signatures
-  if (fileData.functions) {
-    for (const fn of fileData.functions) {
-      parts.push(`fn:${fn.name}:${fn.params?.length || 0}`);
-    }
-  }
-
-  // Class signatures
-  if (fileData.classes) {
-    for (const cls of fileData.classes) {
-      parts.push(`cls:${cls.name}`);
-      if (cls.methods) {
-        for (const m of cls.methods) {
-          parts.push(`m:${cls.name}.${m}`);
-        }
-      }
-    }
-  }
-
-  // Exports
-  if (fileData.exports) {
-    for (const exp of fileData.exports) {
-      parts.push(`exp:${exp}`);
-    }
-  }
-
-  const hash = createHash('md5').update(parts.sort().join('|')).digest('hex');
-  return hash.slice(0, 8);
-}
 
 export function computeContentHash(code) {
   return createHash('md5').update(code).digest('hex').slice(0, 8);
@@ -78,15 +46,4 @@ export function isCacheValid(cached, currentSig, currentContentHash, level = 'co
 
   // For body-dependent metrics, both hashes must match
   return cached.sig === currentSig && cached.contentHash === currentContentHash;
-}
-
-export function invalidateAllCaches(contextDir) {
-  const cacheDir = join(contextDir, '.cache');
-  try {
-    if (existsSync(cacheDir)) {
-      rmSync(cacheDir, { recursive: true, force: true });
-    }
-  } catch (e) {
-    // Non-fatal
-  }
 }

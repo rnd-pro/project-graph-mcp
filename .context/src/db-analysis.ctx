@@ -1,11 +1,8 @@
 --- src/db-analysis.js ---
 @sig b6493058
-@enrich: Replace each {DESCRIBE} below. Read src/db-analysis.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-export getDBSchema(dir)→parseProject,tables.map,tables.reduce|{DESCRIBE}
-export getTableUsage(dir,tableName)→parseProject,buildGraph,readers.some,readers.push,writers.some,writers.push|{DESCRIBE}
-export getDBDeadTables(dir)→parseProject,buildGraph,referencedTables.add,referencedTables.has,schemaTables.filter,collectReferencedColumns|{DESCRIBE}
-collectReferencedColumns(parsed)→columns.add|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+export getDBSchema(dir)→parseProject,tables.map,tables.reduce|read parsed project to list all defined SQL tables and columns
+export getTableUsage(dir,tableName)→parseProject,buildGraph,readers.some,readers.push,writers.some,writers.push|find readers and writers for tables using parsed graph edges
+export getDBDeadTables(dir)→parseProject,buildGraph,referencedTables.add,referencedTables.has,schemaTables.filter,collectReferencedColumns|find schema tables not referenced by any read/write in code
+collectReferencedColumns(parsed)→columns.add|heuristically collect all potential column names from code
+PATTERNS: dependency graph analysis|heuristic DB column extraction
+EDGE_CASES: hardcoded standard columns prevent false positive dead tables

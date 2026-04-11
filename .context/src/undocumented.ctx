@@ -1,14 +1,11 @@
 --- src/undocumented.js ---
 @sig fd17b822
-@enrich: Replace each {DESCRIBE} below. Read src/undocumented.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-findJSFiles(dir,rootDir=)→parseGitignore,readdirSync,join,relative,statSync,stat.isDirectory|{DESCRIBE}
-findJSDocBefore(comments,targetLine)|null|null|null|{DESCRIBE}
-extractComments(code)→regex.exec,code.slice,comments.push|{DESCRIBE}
-checkMissing(jsdoc,level)→missing.push,jsdoc.includes|{DESCRIBE}
-export checkUndocumentedFile(code,filePath,level)→parse,extractComments,findJSDocBefore,results.push,methodName.startsWith,SKIP_METHODS.includes|{DESCRIBE}
-export getUndocumented(dir,level=)→resolve,findJSFiles,readFileSync,relative,checkUndocumentedFile,results.push|{DESCRIBE}
-export getUndocumentedSummary(dir,level=)→getUndocumented,items.filter,items.slice|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+findJSFiles(dir,rootDir=)→parseGitignore,readdirSync,join,relative,statSync,stat.isDirectory|recursively find JS files applying filter rules
+findJSDocBefore(comments,targetLine)|null|null|null|find JSDoc block immediately preceding a line
+extractComments(code)→regex.exec,code.slice,comments.push|extract all JSDoc blocks and their end lines
+checkMissing(jsdoc,level)→missing.push,jsdoc.includes|check if JSDoc is missing required tags for strictness level
+export checkUndocumentedFile(code,filePath,level)→parse,extractComments,findJSDocBefore,results.push,methodName.startsWith,SKIP_METHODS.includes|analyze single file for undocumented classes, functions, methods
+export getUndocumented(dir,level=)→resolve,findJSFiles,readFileSync,relative,checkUndocumentedFile,results.push|scan directory for all undocumented items
+export getUndocumentedSummary(dir,level=)→getUndocumented,items.filter,items.slice|scan directory and return aggregated undocumented summary
+PATTERNS: AST traversal|regex JSDoc extraction
+EDGE_CASES: skips lifecycle methods|skips private prefixed methods

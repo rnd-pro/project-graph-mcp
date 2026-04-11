@@ -1,4 +1,4 @@
-import { parseProject, parseFile, findJSFiles } from './parser.js';
+import { parseProject, parseFile, findJSFiles, findAllProjectFiles } from './parser.js';
 import { buildGraph, createSkeleton } from './graph-builder.js';
 import { readFileSync, statSync, writeFileSync, existsSync, unlinkSync } from 'fs';
 import { execSync } from 'child_process';
@@ -134,7 +134,8 @@ function snapshotMtimes(path) {
 
 export async function getSkeleton(path) {
   const graph = await getGraph(path);
-  return createSkeleton(graph);
+  const allFiles = findAllProjectFiles(path);
+  return createSkeleton(graph, allFiles);
 }
 
 export async function getFocusZone(options = {}) {

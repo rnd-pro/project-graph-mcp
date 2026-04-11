@@ -39,8 +39,8 @@ export function setConfig(projectDir, config) {
   const merged = { ...existing, ...config };
 
   // Validate mode
-  if (![1, 2, 3].includes(merged.mode)) {
-    throw new Error(`Invalid mode: ${merged.mode}. Valid: 1 (compact), 2 (full), 3 (IDE)`);
+  if (![1, 2, 3, 4].includes(merged.mode)) {
+    throw new Error(`Invalid mode: ${merged.mode}. Valid: 1 (compact), 2 (full), 3 (IDE), 4 (compact+cache)`);
   }
 
   writeFileSync(configPath, JSON.stringify(merged, null, 2) + '\n', 'utf-8');
@@ -57,6 +57,7 @@ export function getModeDescription(mode) {
     case 1: return 'Native Compact — code stored minified, agent edits directly';
     case 2: return 'Full Storage — code stored formatted, agent uses get_compressed_file + edit_compressed';
     case 3: return 'IDE Virtual — compact storage with IDE virtual display (future)';
+    case 4: return 'Compact + Cache — code stored minified, .full/ cache for tooling (ESLint/tsc)';
     default: return `Unknown mode: ${mode}`;
   }
 }
@@ -83,6 +84,14 @@ export function getModeWorkflow(mode) {
         edit: 'IDE handles bidirectional mapping',
         docs: 'Managed by IDE plugin',
         validate: 'Automatic via IDE integration',
+      };
+    case 4:
+      return {
+        read: 'Read .js files directly (compact) for token efficiency',
+        edit: 'Use edit_compressed(path, symbol, code) → auto-regenerate .full/',
+        docs: 'Read .ctx files; JSDoc auto-injected into .full/ via decompile',
+        validate: 'Run validate_pipeline → contracts + decompile + AST verify',
+        decompile: 'Run decompile_project to regenerate .full/ from compact + .ctx',
       };
     default:
       return { read: 'N/A', edit: 'N/A', docs: 'N/A', validate: 'N/A' };

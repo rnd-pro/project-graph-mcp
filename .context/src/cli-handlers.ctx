@@ -1,9 +1,6 @@
 --- src/cli-handlers.js ---
 @sig d3d56e0c
-@enrich: Replace each {DESCRIBE} below. Read src/cli-handlers.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-getArg(args,name)→a.startsWith,args.find,arg.split|undefined→a.startsWith,args.find,arg.split|undefined→a.startsWith,args.find,arg.split|undefined→a.startsWith,args.find,arg.split|{DESCRIBE}
-getPath(args)→a.startsWith,args.find,resolvePath|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+getArg(args,name)→a.startsWith,args.find,arg.split|undefined→a.startsWith,args.find,arg.split|undefined→a.startsWith,args.find,arg.split|undefined→a.startsWith,args.find,arg.split|extract flag argument value from args array
+getPath(args)→a.startsWith,args.find,resolvePath|extract and resolve first non-flag path argument
+PATTERNS: command definition map|lazy execution
+EDGE_CASES: falls back to cwd if no path given|validates required args

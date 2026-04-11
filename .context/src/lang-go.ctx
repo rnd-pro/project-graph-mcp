@@ -1,11 +1,8 @@
 --- src/lang-go.js ---
 @sig 7ce14b2b
-@enrich: Replace each {DESCRIBE} below. Read src/lang-go.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-export parseGo(code,filename)→extractImports,stripStringsAndComments,structRegex.exec,getBody,code.substring,body.split|{DESCRIBE}
-extractImports(text)→text.replace,importBlockRegex.exec,block.split,line.match,imports.includes,imports.push|{DESCRIBE}
-getBody(code,startIndex)→code.substring|{DESCRIBE}
-extractCalls(body,packageNames)→callRegex.exec,keywords.includes,callName.includes,callName.split,packageNames.has,calls.includes|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+export parseGo(code,filename)→extractImports,stripStringsAndComments,structRegex.exec,getBody,code.substring,body.split|parse Go structs, interfaces, methods, and functions
+extractImports(text)→text.replace,importBlockRegex.exec,block.split,line.match,imports.includes,imports.push|extract Go imports and package names
+getBody(code,startIndex)→code.substring|extract block body using brace counting
+extractCalls(body,packageNames)→callRegex.exec,keywords.includes,callName.includes,callName.split,packageNames.has,calls.includes|extract function calls ignoring Go keywords
+PATTERNS: regex string extraction|brace counting for block scope
+EDGE_CASES: ignores Go keywords|strips package prefix if alias matches

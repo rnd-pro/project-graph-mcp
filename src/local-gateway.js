@@ -140,70 +140,27 @@ function resolveBackend(host, pathname, reg) {
       }
     }
 
-    // Root path → serve dashboard
-    if (pathname === '/' || pathname === '') {
-      return { port: 0, rewritePath: '/__dashboard__', isDashboard: true, routes: service.routes };
+    // Unmatched path (e.g. root, or static files like /dashboard.js)
+    // Find the first alive backend to act as the root static server
+    for (const p of prefixes) {
+      try {
+        const route = service.routes[p];
+        process.kill(route.pid, 0); 
+        // Found alive backend
+        // Rewrite path: / -> /dashboard.html, anything else -> as is
+        const targetPath = (pathname === '/' || pathname === '') ? '/dashboard.html' : pathname;
+        return { port: route.port, rewritePath: targetPath };
+      } catch { continue; }
     }
   }
 
   // Simple hostname routing
   if (service.port) {
-    return { port: service.port, rewritePath: pathname };
+    const targetPath = (pathname === '/' || pathname === '') ? '/dashboard.html' : pathname;
+    return { port: service.port, rewritePath: targetPath };
   }
 
   return null;
-}
-
-// ═══ Dashboard HTML ═══
-
-function serveDashboard(res, routes) {
-  const projects = Object.entries(routes || {}).map(([prefix, r]) => {
-    let alive = false;
-    try { process.kill(r.pid, 0); alive = true; } catch {}
-    return { prefix, ...r, alive };
-  });
-
-  const items = projects.map(p =>
-    `<li class="${p.alive ? 'active' : 'inactive'}">
-      <a href="${p.prefix}/">${p.projectName || p.prefix}</a>
-      <span class="path">${p.projectPath || ''}</span>
-      <span class="status">${p.alive ? '● running' : '○ stopped'}</span>
-    </li>`
-  ).join('');
-
-  const html = `<!DOCTYPE html>
-<html><head>
-  <meta charset="utf-8"><title>Project Graph — Dashboard</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, -apple-system, sans-serif; background: #0a0a0f; color: #e8e8e8; 
-           display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .card { background: #15151f; border: 1px solid #2a2a3a; border-radius: 16px; padding: 48px;
-            max-width: 680px; width: 100%; }
-    h1 { font-size: 28px; font-weight: 600; margin-bottom: 8px; }
-    .sub { color: #888; margin-bottom: 32px; }
-    ul { list-style: none; }
-    li { border: 1px solid #2a2a3a; border-radius: 12px; padding: 16px 20px; margin-bottom: 12px;
-         transition: border-color 0.2s, background 0.2s; }
-    li:hover { border-color: #5a5aff; background: #1a1a2f; }
-    li.inactive { opacity: 0.4; }
-    a { color: #7878ff; font-size: 18px; font-weight: 500; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .path { display: block; color: #666; font-size: 13px; font-family: monospace; margin-top: 4px; }
-    .status { display: block; color: #4ade80; font-size: 12px; margin-top: 4px; }
-    li.inactive .status { color: #666; }
-    .empty { color: #555; text-align: center; padding: 32px; }
-  </style>
-</head><body>
-  <div class="card">
-    <h1>⬡ Project Graph</h1>
-    <p class="sub">${projects.length} project${projects.length !== 1 ? 's' : ''} registered</p>
-    ${items.length ? `<ul>${items}</ul>` : '<p class="empty">No projects registered. Start an MCP agent to see projects here.</p>'}
-  </div>
-</body></html>`;
-
-  res.writeHead(200, { 'Content-Type': 'text/html' });
-  res.end(html);
 }
 
 // ═══ Gateway process management ═══
@@ -256,9 +213,11 @@ function ensureGateway() {
         return;
       }
 
-      // Dashboard
-      if (resolved.isDashboard) {
-        serveDashboard(res, resolved.routes);
+      // Internal Gateway API
+      if (req.url === '/api/gateway-info') {
+        const payload = JSON.stringify(reg['project-graph.local'] || { routes: {} });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(payload);
         return;
       }
 
@@ -323,22 +282,47 @@ function ensureGateway() {
       const proxySocket = net.createConnection(
         { host: '127.0.0.1', port: resolved.port },
         () => {
-          // Rewrite the URL in the upgrade request
           const rewrittenUrl = resolved.rewritePath;
-          proxySocket.write(
-            `${req.method} ${rewrittenUrl} HTTP/1.1\r\n` +
+          
+          const rawReq = `${req.method} ${rewrittenUrl} HTTP/1.1\r\n` +
             Object.entries(req.headers)
               .map(([k, v]) => `${k}: ${v}`)
               .join('\r\n') +
-            '\r\n\r\n'
-          );
+            '\r\n\r\n';
+          proxySocket.write(rawReq);
           if (head.length) proxySocket.write(head);
-          socket.pipe(proxySocket).pipe(socket);
+
+          // Wait for backend's HTTP response (101), forward it to browser,
+          // THEN set up bi-directional pipe for WS frames
+          let responseBuf = Buffer.alloc(0);
+          proxySocket.on('data', function onFirstData(chunk) {
+            responseBuf = Buffer.concat([responseBuf, chunk]);
+            const headerEnd = responseBuf.indexOf('\r\n\r\n');
+            if (headerEnd === -1) return; // Wait for full headers
+            
+            // Forward ENTIRE response (headers + any trailing data) to browser
+            socket.write(responseBuf);
+            
+
+            
+            // Remove this handler — switch to pipe mode
+            proxySocket.removeListener('data', onFirstData);
+            
+            // Bi-directional pipe for WS frames
+            socket.pipe(proxySocket);
+            proxySocket.pipe(socket);
+          });
         }
       );
 
-      proxySocket.on('error', () => socket.destroy());
-      socket.on('error', () => proxySocket.destroy());
+      proxySocket.on('error', (err) => {
+        console.error('WS PROXY ERROR:', err.message);
+        socket.destroy();
+      });
+      socket.on('error', (err) => {
+        console.error('WS CLIENT ERROR:', err.message);
+        proxySocket.destroy();
+      });
     });
 
     // Try port 80 first, fallback to 8080

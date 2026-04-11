@@ -248,16 +248,16 @@ export const TOOLS = [
     },
   },
 
-  // compact: compress_file, edit, compact_all, beautify, get_mode, set_mode
+  // compact: compress_file, edit, compact_all, beautify, decompile_file, decompile_project, validate_pipeline, get_mode, set_mode
   {
     name: 'compact',
-    description: 'Compact code operations. Actions: compress_file|edit|compact_all|beautify|get_mode|set_mode',
+    description: 'Compact code operations. Actions: compress_file|edit|compact_all|beautify|decompile_file|decompile_project|validate_pipeline|get_mode|set_mode',
     inputSchema: {
       type: 'object',
       properties: {
         action: {
           type: 'string',
-          enum: ['compress_file', 'edit', 'compact_all', 'beautify', 'get_mode', 'set_mode'],
+          enum: ['compress_file', 'edit', 'compact_all', 'beautify', 'decompile_file', 'decompile_project', 'validate_pipeline', 'get_mode', 'set_mode'],
           description: 'Compact action to perform',
         },
         path: { type: 'string', description: 'Path to file or directory' },
@@ -266,9 +266,10 @@ export const TOOLS = [
         beautify: { type: 'boolean', description: 'Beautify output (default: true)' },
         legend: { type: 'boolean', description: 'For compress_file: include export legend' },
         dryRun: { type: 'boolean', description: 'Preview without modifying' },
-        mode: { type: 'number', description: 'For set_mode: mode number 1, 2, or 3' },
+        mode: { type: 'number', description: 'For set_mode: mode number 1, 2, 3, or 4' },
         autoValidate: { type: 'boolean', description: 'For set_mode: auto-validate after edits' },
         stripJSDoc: { type: 'boolean', description: 'For set_mode: strip JSDoc when compacting' },
+        strict: { type: 'boolean', description: 'For validate_pipeline: report fns missing from .ctx' },
       },
       required: ['action'],
     },

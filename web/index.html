@@ -6,7 +6,7 @@
   <title>Project Graph — Web Explorer</title>
   <meta name="description" content="Interactive codebase explorer powered by project-graph-mcp">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=account_tree,analytics,arrow_drop_down,chevron_left,chevron_right,close,code,collapse_all,dashboard,description,drag_indicator,expand_less,expand_more,folder,folder_open,fullscreen,fullscreen_exit,insert_drive_file,monitor_heart,search,settings,swap_horiz,swap_vert,tune,visibility,visibility_off&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
   <link rel="stylesheet" href="style.css">
   <script type="importmap">
   {
@@ -28,6 +28,11 @@
         <span id="project-files" class="project-files"></span>
       </div>
       <div class="topbar-right">
+        <button class="topbar-search-hint" onclick="document.dispatchEvent(new KeyboardEvent('keydown',{key:'k',metaKey:true}))">
+          <span class="material-symbols-outlined" style="font-size:14px">search</span>
+          <span>Search</span>
+          <kbd>⌘K</kbd>
+        </button>
         <span id="agent-badge" class="agent-badge" style="display:none"></span>
         <span id="status-indicator" class="status connected"></span>
       </div>

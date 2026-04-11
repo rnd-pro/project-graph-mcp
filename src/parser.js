@@ -438,6 +438,43 @@ export function findJSFiles(dir, rootDir = dir) {
   return files;
 }
 
+/**
+ * Find ALL project files (not just source files).
+ * Respects the same directory exclusions as findJSFiles but includes
+ * all file types: .html, .css, .tpl.js, .css.js, .json, .md, images, etc.
+ * Returns relative paths from rootDir.
+ */
+export function findAllProjectFiles(dir, rootDir = dir) {
+  if (dir === rootDir) {
+    parseGitignore(rootDir);
+  }
+
+  const files = [];
+  const resolvedRoot = resolve(rootDir);
+
+  try {
+    for (const entry of readdirSync(dir)) {
+      const fullPath = join(dir, entry);
+      const stat = statSync(fullPath);
+      const relativePath = relative(resolvedRoot, dir);
+
+      if (stat.isDirectory()) {
+        if (!shouldExcludeDir(entry, relativePath)) {
+          files.push(...findAllProjectFiles(fullPath, rootDir));
+        }
+      } else {
+        if (!shouldExcludeFile(entry, relativePath)) {
+          files.push(relative(resolvedRoot, fullPath));
+        }
+      }
+    }
+  } catch (e) {
+    console.warn(`Cannot read directory ${dir}:`, e.message);
+  }
+
+  return files;
+}
+
 // ============================
 // JSDoc Type Extraction
 // ============================

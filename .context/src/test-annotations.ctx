@@ -1,17 +1,14 @@
 --- src/test-annotations.js ---
 @sig e05b5440
-@enrich: Replace each {DESCRIBE} below. Read src/test-annotations.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-findCtxMdFiles(dir)→readdirSync,join,statSync,stat.isDirectory,entry.startsWith,findCtxMdFiles|{DESCRIBE}
-export parseAnnotations(content,filePath)→content.split,line.startsWith,groupByName,features.push,line.match,rest.split|{DESCRIBE}
-groupByName(tests,filePath)→Object.entries|{DESCRIBE}
-export getAllFeatures(dir)→resolve,join,findCtxMdFiles,readFileSync,parseAnnotations,features.push|{DESCRIBE}
-export getPendingTests(dir)→resolve,getAllFeatures,relative,pending.push|{DESCRIBE}
-export markTestPassed(testId)→testId.split,updateTestState|{DESCRIBE}
-export markTestFailed(testId,reason)→testId.split,updateTestState|{DESCRIBE}
-updateTestState(name,testId,newState,reason)→process.cwd,join,findCtxMdFiles,testId.split,parseInt,readFileSync|{DESCRIBE}
-export getTestSummary(dir)→getAllFeatures,failures.push,Math.round|{DESCRIBE}
-export resetTestState()→process.cwd,join,findCtxMdFiles,readFileSync,content.replace,writeFileSync|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+findCtxMdFiles(dir)→readdirSync,join,statSync,stat.isDirectory,entry.startsWith,findCtxMdFiles|recursively find .ctx.md files in dir
+export parseAnnotations(content,filePath)→content.split,line.startsWith,groupByName,features.push,line.match,rest.split|parse checklist lines into test feature objects
+groupByName(tests,filePath)→Object.entries|group parsed tests by feature name
+export getAllFeatures(dir)→resolve,join,findCtxMdFiles,readFileSync,parseAnnotations,features.push|read and parse all test features from context dir
+export getPendingTests(dir)→resolve,getAllFeatures,relative,pending.push|return list of pending tests with file paths
+export markTestPassed(testId)→testId.split,updateTestState|mark specific test id as passed [x]
+export markTestFailed(testId,reason)→testId.split,updateTestState|mark specific test id as failed [!] with reason
+updateTestState(name,testId,newState,reason)→process.cwd,join,findCtxMdFiles,testId.split,parseInt,readFileSync|update test state string in .ctx.md file
+export getTestSummary(dir)→getAllFeatures,failures.push,Math.round|compute total, passed, failed, pending counts
+export resetTestState()→process.cwd,join,findCtxMdFiles,readFileSync,content.replace,writeFileSync|reset all test states to pending [ ]
+PATTERNS: regex markdown checklist parsing|file rewriting for state
+EDGE_CASES: handles unreadable files gracefully|handles missing failure reasons

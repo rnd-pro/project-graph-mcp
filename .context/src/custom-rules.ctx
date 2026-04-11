@@ -1,21 +1,18 @@
 --- src/custom-rules.js ---
 @sig f39de6c1
-@enrich: Replace each {DESCRIBE} below. Read src/custom-rules.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
-parseGraphignore(startDir)→dirname,join,existsSync,readFileSync,content.split,line.trim|{DESCRIBE}
-isGraphignored(relativePath)→relativePath.split,pattern.endsWith,pattern.slice,relativePath.startsWith,basename.startsWith,pattern.startsWith|{DESCRIBE}
-loadRuleSets()→existsSync,readdirSync,file.endsWith,join,readFileSync,JSON.parse|{DESCRIBE}
-saveRuleSet(ruleSet)→join,JSON.stringify,writeFileSync|{DESCRIBE}
-findFiles(dir,filePattern,rootDir=)→parseGitignore,parseGraphignore,filePattern.replace,readdirSync,join,relative|{DESCRIBE}
-isExcluded(filePath,excludePatterns=)→pattern.replace,filePath.endsWith|{DESCRIBE}
-isInStringOrComment(line,matchIndex)→line.indexOf|{DESCRIBE}
-isWithinContext(lines,lineIndex,contextTag)→openTag.replace,line.indexOf|{DESCRIBE}
-checkFileAgainstRule(filePath,rule,rootDir)→isExcluded,readFileSync,content.split,relative,regex.exec,isInStringOrComment|{DESCRIBE}
-export getCustomRules()→loadRuleSets,Object.entries,rules.map|{DESCRIBE}
-export setCustomRule(ruleSetName,rule)→loadRuleSets,rules.findIndex,rules.push,saveRuleSet|{DESCRIBE}
-export deleteCustomRule(ruleSetName,ruleId)→loadRuleSets,rules.findIndex,rules.splice,saveRuleSet|{DESCRIBE}
-export detectProjectRuleSets(dir)→loadRuleSets,join,existsSync,readFileSync,JSON.parse,Object.keys|{DESCRIBE}
-export checkCustomRules(dir,options=)→resolve,loadRuleSets,detectProjectRuleSets,allRules.push,Object.entries,detected.includes|{DESCRIBE}
-PATTERNS: {DESCRIBE}
-EDGE_CASES: {DESCRIBE}
+parseGraphignore(startDir)→dirname,join,existsSync,readFileSync,content.split,line.trim|parse .graphignore patterns by walking up directory tree
+isGraphignored(relativePath)→relativePath.split,pattern.endsWith,pattern.slice,relativePath.startsWith,basename.startsWith,pattern.startsWith|check if relative path matches any graphignore pattern
+loadRuleSets()→existsSync,readdirSync,file.endsWith,join,readFileSync,JSON.parse|load all JSON ruleset configs from rules directory
+saveRuleSet(ruleSet)→join,JSON.stringify,writeFileSync|serialize and save ruleset to JSON file
+findFiles(dir,filePattern,rootDir=)→parseGitignore,parseGraphignore,filePattern.replace,readdirSync,join,relative|recursively find files matching extension, applying ignore filters
+isExcluded(filePath,excludePatterns=)→pattern.replace,filePath.endsWith|check if file path matches rule exclusion patterns
+isInStringOrComment(line,matchIndex)→line.indexOf|check if match index is inside string literal or comment
+isWithinContext(lines,lineIndex,contextTag)→openTag.replace,line.indexOf|check if line is inside specific HTML-like tag context
+checkFileAgainstRule(filePath,rule,rootDir)→isExcluded,readFileSync,content.split,relative,regex.exec,isInStringOrComment|test file content against regex or string rule, returning violations
+export getCustomRules()→loadRuleSets,Object.entries,rules.map|load and return summary of all custom rules
+export setCustomRule(ruleSetName,rule)→loadRuleSets,rules.findIndex,rules.push,saveRuleSet|add or update a single rule in a ruleset
+export deleteCustomRule(ruleSetName,ruleId)→loadRuleSets,rules.findIndex,rules.splice,saveRuleSet|remove a rule from a ruleset by ID
+export detectProjectRuleSets(dir)→loadRuleSets,join,existsSync,readFileSync,JSON.parse,Object.keys|auto-detect applicable rulesets from package.json and imports
+export checkCustomRules(dir,options=)→resolve,loadRuleSets,detectProjectRuleSets,allRules.push,Object.entries,detected.includes|run relevant custom rules against project directory
+PATTERNS: auto-detection via dependencies and imports|regex code scanning
+EDGE_CASES: state machine ignores matches inside strings/comments

@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { WebSocketServer } from 'ws';
 import { createServer as createMCPServer } from './mcp-server.js';
 import bus from './event-bus.js';
 import { registerService } from './local-gateway.js';
@@ -64,7 +65,10 @@ function serveStatic(reqPath, res) {
   const ext = path.extname(filePath);
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
   const content = fs.readFileSync(filePath);
-  res.writeHead(200, { 'Content-Type': contentType });
+  res.writeHead(200, {
+    'Content-Type': contentType,
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+  });
   res.end(content);
 }
 
@@ -129,13 +133,64 @@ function decodeWSFrame(buf) {
 
 export function startWebServer(projectPath, port) {
   const mcpServer = createMCPServer(() => {});
-  const projectName = path.basename(path.resolve(projectPath));
+  const projectName = path.basename(path.resolve(projectPath)) || 'root';
   let nextAgentId = 1;
 
-  // ═══ MCP Agent connections (stdio proxy WebSocket clients) ═══
+  // ═══ Reactive Server State Graph ═══
+  const absPath = path.resolve(projectPath);
+  const colorHash = crypto.createHash('md5').update(absPath).digest('hex');
+  const colorHue = parseInt(colorHash.slice(0, 4), 16) % 360;
+
+  const serverState = {
+    project: {
+      name: projectName,
+      path: absPath,
+      color: `hsl(${colorHue}, 65%, 55%)`,
+      agents: 0,
+      pid: process.pid,
+    },
+    skeleton: null,   // loaded lazily on first request
+    events: [],       // last 500 tool events
+  };
+
+  /** Broadcast JSON-RPC 2.0 notification to all monitor WS clients */
+  function broadcastRPC(method, params) {
+    const msg = JSON.stringify({ jsonrpc: '2.0', method, params });
+    for (const client of wsClients) {
+      try { client.send(msg); } catch { wsClients.delete(client); }
+    }
+  }
+
+  /** Update serverState field and broadcast patch to all clients */
+  function patchState(statePath, value) {
+    // Apply to local state
+    const keys = statePath.split('.');
+    let target = serverState;
+    for (let i = 0; i < keys.length - 1; i++) target = target[keys[i]];
+    target[keys[keys.length - 1]] = value;
+    // Broadcast patch
+    broadcastRPC('patch', { path: statePath, value });
+  }
+
+  /** Load skeleton into state (lazy, cached) */
+  async function ensureSkeleton() {
+    if (!serverState.skeleton) {
+      try {
+        serverState.skeleton = await mcpServer.executeTool('get_skeleton', { path: projectPath });
+      } catch { /* skeleton not available yet */ }
+    }
+    return serverState.skeleton;
+  }
+
+  // ═══ MCP Agent + Monitor connections ═══
   const mcpAgents = new Map(); // socket → { id, mcpServer, agentId, connectedAt }
+  const wsClients = new Set(); // monitor WS clients
   let shutdownTimer = null;
   const SHUTDOWN_DELAY = 15 * 60 * 1000; // 15 minutes
+
+  function hasActiveClients() {
+    return mcpAgents.size > 0 || wsClients.size > 0;
+  }
 
   function resetShutdownTimer() {
     if (shutdownTimer) {
@@ -145,14 +200,24 @@ export function startWebServer(projectPath, port) {
   }
 
   function startShutdownTimer() {
-    if (mcpAgents.size > 0) return;
+    if (hasActiveClients()) return;
+    resetShutdownTimer();
     shutdownTimer = setTimeout(() => {
-      if (mcpAgents.size === 0) {
-        console.log('[project-graph] No agents connected for 15 min — shutting down.');
+      if (!hasActiveClients()) {
+        console.log('[project-graph] No clients for 15 min — shutting down.');
         process.exit(0);
       }
     }, SHUTDOWN_DELAY);
   }
+
+  /** Call on any activity (API call, WS message) to keep backend alive */
+  function touchActivity() {
+    resetShutdownTimer();
+    startShutdownTimer();
+  }
+
+  // Start idle timer immediately — if nobody connects, auto-exit
+  startShutdownTimer();
 
   // API route handlers — reuse existing consolidated tool handlers
   async function handleAPI(pathname, query, req, res) {
@@ -171,6 +236,19 @@ export function startWebServer(projectPath, port) {
             beautify: true,
           });
           break;
+        case '/api/raw-file': {
+          const rawPath = query.get('path');
+          try {
+            const { readFileSync } = await import('fs');
+            const { resolve, relative } = await import('path');
+            const fullPath = resolve(projectPath, rawPath);
+            const content = readFileSync(fullPath, 'utf-8');
+            result = { content, file: rawPath };
+          } catch (e) {
+            result = { content: `// Cannot read: ${e.message}`, file: rawPath };
+          }
+          break;
+        }
         case '/api/docs':
           result = await mcpServer.executeTool('docs', {
             action: 'get',
@@ -241,7 +319,10 @@ export function startWebServer(projectPath, port) {
         }
 
         default:
-          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.writeHead(200, { 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+          });
           res.end(JSON.stringify({ error: 'Unknown API endpoint' }));
           return;
       }
@@ -249,27 +330,30 @@ export function startWebServer(projectPath, port) {
       res.writeHead(200, {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'no-cache',
       });
       res.end(JSON.stringify(result));
     } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.writeHead(500, {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+      });
       res.end(JSON.stringify({ error: err.message }));
     }
   }
 
-  // ═══ WebSocket broadcast (monitor) ═══
-  const wsClients = new Set();
 
-  function broadcastWS(data) {
-    const payload = JSON.stringify(data);
-    const frame = encodeWSFrame(payload);
-    for (const client of wsClients) {
-      try { client.write(frame); } catch { wsClients.delete(client); }
-    }
-  }
-
-  bus.on('tool:call', (event) => broadcastWS(event));
-  bus.on('tool:result', (event) => broadcastWS(event));
+  // Event bus → broadcast as legacy events AND push to serverState.events
+  bus.on('tool:call', (event) => {
+    serverState.events.push(event);
+    if (serverState.events.length > 500) serverState.events.shift();
+    broadcastRPC('event', event);
+  });
+  bus.on('tool:result', (event) => {
+    serverState.events.push(event);
+    if (serverState.events.length > 500) serverState.events.shift();
+    broadcastRPC('event', event);
+  });
 
   // HTTP server
   const server = http.createServer((req, res) => {
@@ -286,43 +370,89 @@ export function startWebServer(projectPath, port) {
     }
 
     if (url.pathname.startsWith('/api/')) {
+      touchActivity();
       handleAPI(url.pathname, url.searchParams, req, res);
       return;
     }
 
+    if (url.pathname === '/ws/monitor') {
+      console.log('UNEXPECTED HTTP /ws/monitor', req.headers);
+    }
+    
     serveStatic(url.pathname, res);
   });
 
+
+  // ═══ Monitor WebSocket via 'ws' library ═══
+  // Supports JSON-RPC 2.0: snapshot on connect, patches, and tool calls
+  const monitorWSS = new WebSocketServer({ noServer: true });
+  monitorWSS.on('connection', async (ws) => {
+    wsClients.add(ws);
+    touchActivity();
+
+    // Send initial state snapshot via JSON-RPC 2.0 (without events — those stream live)
+    await ensureSkeleton();
+    const snapshot = {
+      project: serverState.project,
+      skeleton: serverState.skeleton,
+    };
+    try {
+      ws.send(JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'snapshot',
+        params: { state: snapshot },
+      }));
+    } catch { /* client may have disconnected */ }
+
+    // Handle incoming JSON-RPC 2.0 requests (tool calls from UI)
+    ws.on('message', async (raw) => {
+      touchActivity();
+      let msg;
+      try { msg = JSON.parse(raw.toString()); } catch { return; }
+
+      // Only handle JSON-RPC 2.0 requests (must have 'id' and 'method')
+      if (!msg.jsonrpc || !msg.id || !msg.method) return;
+
+      if (msg.method === 'tool') {
+        // Execute MCP tool via WS: { method: "tool", params: { name, args } }
+        const { name, args } = msg.params || {};
+        try {
+          const result = await mcpServer.executeTool(name, args || {});
+          ws.send(JSON.stringify({ jsonrpc: '2.0', id: msg.id, result }));
+        } catch (err) {
+          ws.send(JSON.stringify({
+            jsonrpc: '2.0', id: msg.id,
+            error: { code: -32000, message: err.message },
+          }));
+        }
+      } else {
+        ws.send(JSON.stringify({
+          jsonrpc: '2.0', id: msg.id,
+          error: { code: -32601, message: `Unknown method: ${msg.method}` },
+        }));
+      }
+    });
+
+    ws.on('close', () => {
+      wsClients.delete(ws);
+      startShutdownTimer();
+    });
+    ws.on('error', () => {
+      wsClients.delete(ws);
+      startShutdownTimer();
+    });
+  });
+
   // ═══ WebSocket upgrade — supports /ws/monitor AND /mcp-ws ═══
-  server.on('upgrade', (req, socket) => {
+  server.on('upgrade', (req, socket, head) => {
     const key = req.headers['sec-websocket-key'];
     if (!key) { socket.destroy(); return; }
 
-    // ── Monitor WebSocket (browser) ──
+    // ── Monitor WebSocket (browser) — delegate to ws library ──
     if (req.url === '/ws/monitor') {
-      const accept = computeWSAccept(key);
-      socket.write(
-        'HTTP/1.1 101 Switching Protocols\r\n' +
-        'Upgrade: websocket\r\n' +
-        'Connection: Upgrade\r\n' +
-        `Sec-WebSocket-Accept: ${accept}\r\n` +
-        '\r\n'
-      );
-      wsClients.add(socket);
-
-      socket.on('data', (buf) => {
-        if (buf.length >= 2) {
-          const opcode = buf[0] & 0x0F;
-          if (opcode === 0x8) { wsClients.delete(socket); socket.end(); }
-          else if (opcode === 0x9) {
-            const pong = Buffer.from(buf);
-            pong[0] = (pong[0] & 0xF0) | 0xA;
-            socket.write(pong);
-          }
-        }
+      monitorWSS.handleUpgrade(req, socket, head, (ws) => {
+        monitorWSS.emit('connection', ws, req);
       });
-      socket.on('close', () => wsClients.delete(socket));
-      socket.on('error', () => wsClients.delete(socket));
       return;
     }
 
@@ -346,8 +476,9 @@ export function startWebServer(projectPath, port) {
       mcpAgents.set(socket, { agentId, mcpServer: agentMCP, connectedAt: Date.now() });
       resetShutdownTimer();
 
-      // Broadcast agent connect event
-      broadcastWS({ type: 'agent_connect', agentId, agents: mcpAgents.size, ts: Date.now() });
+      // Update state + broadcast agent connect
+      patchState('project.agents', mcpAgents.size);
+      broadcastRPC('event', { type: 'agent_connect', agentId, agents: mcpAgents.size, ts: Date.now() });
 
       let buf = Buffer.alloc(0);
       socket.on('data', (chunk) => {
@@ -363,7 +494,8 @@ export function startWebServer(projectPath, port) {
           if (frame.opcode === 0x8) {
             // Close
             mcpAgents.delete(socket);
-            broadcastWS({ type: 'agent_disconnect', agentId, agents: mcpAgents.size, ts: Date.now() });
+            patchState('project.agents', mcpAgents.size);
+            broadcastRPC('event', { type: 'agent_disconnect', agentId, agents: mcpAgents.size, ts: Date.now() });
             socket.end();
             if (mcpAgents.size === 0) startShutdownTimer();
             return;
@@ -399,7 +531,8 @@ export function startWebServer(projectPath, port) {
 
       socket.on('close', () => {
         mcpAgents.delete(socket);
-        broadcastWS({ type: 'agent_disconnect', agentId, agents: mcpAgents.size, ts: Date.now() });
+        patchState('project.agents', mcpAgents.size);
+        broadcastRPC('event', { type: 'agent_disconnect', agentId, agents: mcpAgents.size, ts: Date.now() });
         if (mcpAgents.size === 0) startShutdownTimer();
       });
       socket.on('error', () => {
