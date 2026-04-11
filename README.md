@@ -66,7 +66,7 @@ get_ai_context({ path: "src/" })
 - **Merge strategy** — regenerating `.ctx` files preserves existing descriptions
 - **Boot aggregator** — `get_ai_context` combines skeleton + docs + compressed files in one response
 
-```
+```bash
 # Generate .context/ documentation templates
 npx project-graph-mcp generate-ctx src/
 
@@ -76,6 +76,42 @@ npx project-graph-mcp docs src/
 # Compress a single file for AI
 npx project-graph-mcp compress src/core/parser.js
 ```
+
+### Two-Tier Context: Overview → Focus
+
+Agents don't need full context for every file. The server provides a **progressive loading model**:
+
+```
+┌──────────────────────────────────────────────┐
+│  get_skeleton()     → Entire project, ~2-5K tokens  │
+│  get_focus_zone()   → Specific files + .ctx, ~1-3K/file  │
+└──────────────────────────────────────────────┘
+```
+
+```javascript
+// 1. Overview: read entire project structure (cheap)
+get_skeleton({ path: "src/" })
+// → Legend, stats, all classes/functions/exports in minified JSON
+
+// 2. Focus: get enriched context for area of interest
+get_focus_zone({ recentFiles: ["src/core/parser.js", "src/mcp/tools.js"] })
+// → Compact code + .ctx documentation for just those files
+
+// 3. Or auto-detect from git diff
+get_focus_zone({ path: ".", useGitDiff: true })
+// → Context for recently changed files only
+```
+
+**Token budget breakdown** — each file reports separate metrics:
+
+| Layer | What | Tokens |
+|-------|------|--------|
+| Code (compact .js) | Minified source, all names preserved | codeTok |
+| Context (.ctx) | AST signatures, descriptions, types | ctxTok |
+| Total (code + ctx) | Full context for focused work | totalTok |
+| Expanded (beautified) | What a human would read | expanded |
+
+Savings = `1 - totalTok / expanded`. Typical: **20-40% savings** per file with full context.
 
 ### Compact Code Architecture
 
@@ -118,6 +154,22 @@ npx project-graph-mcp set-mode . 2
 npx project-graph-mcp validate-ctx . --strict
 ```
 
+### Expand & Validate Pipeline
+
+The compact→expand pipeline is **fully reversible**. Verify round-trip integrity:
+
+```javascript
+// Expand a compact file back to full formatted + JSDoc
+compact({ action: "expand_file", path: "src/parser.js" })
+
+// Expand entire project
+compact({ action: "expand_project", path: ".", dryRun: true })
+
+// Validate compact ↔ expand round-trip
+compact({ action: "validate_pipeline", path: ".", strict: true })
+// → Reports any functions in source missing from .ctx
+```
+
 ### Test Checklists
 
 Test checklists live in `.ctx.md` files (alongside documentation), not in source code:
@@ -134,6 +186,47 @@ The agent calls `get_pending_tests`, runs the test, then `mark_test_passed` (whi
 ### Monorepo Support
 
 `discover_sub_projects` scans standard monorepo directories (`packages/`, `apps/`, `services/`, `modules/`, `libs/`, `plugins/`) for sub-projects with `package.json`. Combined with `parseProject({ recursive: true })`, agents can analyze entire monorepos.
+
+### Database Analysis
+
+Scan SQL migrations and code for database schema insights:
+
+```javascript
+// Extract schema from SQL/migration files
+db({ action: "schema", path: "src/" })
+
+// Find where each table is referenced in code
+db({ action: "table_usage", path: "src/", table: "users" })
+
+// Detect tables defined but never queried
+db({ action: "dead_tables", path: "src/" })
+```
+
+### Web Dashboard
+
+Every project-graph-mcp instance includes a built-in web UI at `http://localhost:{port}/`:
+
+- **Multi-project dashboard** — overview of all registered projects with token metrics
+- **File tree** — navigate project structure
+- **Code viewer** — compact/raw toggle with syntax highlighting and per-file compression stats
+- **Dependency graph** — visual dependency exploration
+- **Health panel** — analysis results
+- **Live monitor** — real-time agent activity via WebSocket
+
+With the optional gateway, all projects are accessible under `http://project-graph.local/{project-name}/`.
+
+### Compression Metrics
+
+Token-level metrics are available project-wide and per-file:
+
+```javascript
+// Project-wide: how many tokens for the entire codebase
+// GET /api/compression-stats
+// → { files: 45, codeTok: 47000, ctxTok: 9500, totalTok: 56500 }
+
+// Per-file: shown in code viewer header
+// 2054 + 527 ctx = 2581 → 3340 tok (23% savings)
+```
 
 ### Performance
 
@@ -264,7 +357,8 @@ Best used together with [**agent-pool-mcp**](https://www.npmjs.com/package/agent
 - [ARCHITECTURE.md](ARCHITECTURE.md) — Source code structure
 - [AGENT_ROLE.md](docs/examples/AGENT_ROLE.md) — Full system prompt for agents
 - [AGENT_ROLE_MINIMAL.md](docs/examples/AGENT_ROLE_MINIMAL.md) — Minimal variant (agent self-discovers)
-- [ROADMAP.md](dev-docs/ROADMAP.md) — Feature roadmap and backlog
+- [GUIDE.md](GUIDE.md) — Comprehensive usage guide with all tools
+- [ROADMAP.md](docs/ROADMAP.md) — Feature roadmap and backlog
 
 ## Related Projects
 - [agent-pool-mcp](https://github.com/rnd-pro/agent-pool-mcp) — Multi-agent orchestration via Gemini CLI
