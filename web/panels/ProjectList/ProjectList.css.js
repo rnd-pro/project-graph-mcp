@@ -1,1 +1,1 @@
-export default"\n:host {\n  display: block;\n  height: 100%;\n  overflow-y: auto;\n  padding: 16px;\n  background: var(--sn-bg-primary);\n  color: var(--sn-fg-primary);\n}\n.empty {\n  color: var(--sn-fg-muted);\n  padding: 24px;\n  text-align: center;\n}\n";
+export default"\n:host {\n  display: block;\n  height: 100%;\n  overflow-y: auto;\n  padding: 10px;\n  background: var(--sn-bg-primary);\n  color: var(--sn-fg-primary);\n}\n.empty {\n  color: var(--sn-fg-muted);\n  padding: 24px;\n  text-align: center;\n}\n";
