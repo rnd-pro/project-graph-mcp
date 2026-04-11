@@ -12,7 +12,55 @@ let s;try{s=(await u(i,{compress:!1,mangle:!1,module:!0,output:{beautify:!0,comm
 let a;try{a=m(s,{ecmaVersion:"latest",sourceType:"module",locations:!0})}catch{return{code:s,injected:0,original:i.length,decompiled:s.length}}const l=[];d(a,{ExportNamedDeclaration(t){const e=t.declaration;if(e){if("FunctionDeclaration"===e.type&&e.id?.name){const n=c.get(e.id.name);n&&l.push({pos:t.start,jsdoc:generateJSDoc(n)})}if("ClassDeclaration"===e.type&&e.id?.name){const n=c.get(e.id.name);n&&n.description&&l.push({pos:t.start,jsdoc:`/**\n * ${n.description}\n */`})}}},FunctionDeclaration(t){if(!t.id?.name)return;
 const e=c.get(t.id.name);e&&!e.exported&&l.push({pos:t.start,jsdoc:generateJSDoc(e)})},ClassDeclaration(t){if(!t.id?.name)return;
 const e=c.get(t.id.name);e&&!e.exported&&e.description&&l.push({pos:t.start,jsdoc:`/**\n * ${e.description}\n */`})}}),l.sort((t,e)=>e.pos-t.pos);
-let p=s,f=0;for(const{pos:t,jsdoc:e}of l){const n=p.lastIndexOf("\n",t-1),o=-1===n?0:n+1,r=p.slice(o,t).match(/^(\s*)/)?.[1]||"",i=e.split("\n").map(t=>r+t).join("\n");p=p.slice(0,t)+i+"\n"+p.slice(t),f++}return{code:p,injected:f,original:i.length,decompiled:p.length}}const f=new Set(["node_modules",".git","vendor",".context","dev-docs",".agent",".agents",".full","web"]),h=new Set([".js",".mjs"]);function walkJSFiles(t,e=t){const n=[];try{for(const o of r(t)){if(o.startsWith(".")&&"."!==o)continue;
+function extractImportLegend(ast) {
+  const aliases = [];
+  d(ast, { ImportDeclaration(node) {
+    for (const spec of node.specifiers) {
+      if ("ImportSpecifier" === spec.type && spec.imported.name !== spec.local.name)
+        aliases.push({ original: spec.imported.name, alias: spec.local.name, source: node.source.value });
+      else if ("ImportDefaultSpecifier" === spec.type)
+        aliases.push({ original: "default", alias: spec.local.name, source: node.source.value });
+      else if ("ImportNamespaceSpecifier" === spec.type && spec.local.name.length <= 2)
+        aliases.push({ original: "*", alias: spec.local.name, source: node.source.value });
+    }
+  }});
+  if (0 === aliases.length) return "";
+  const bySource = new Map;
+  for (const a of aliases) {
+    const key = a.source.split("/").pop().replace(/\.\w+$/, "");
+    bySource.has(key) || bySource.set(key, []);
+    bySource.get(key).push(a.alias + "=" + ("*" === a.original ? "* (namespace)" : a.original));
+  }
+  const lines = [];
+  for (const [src, maps] of bySource) lines.push(` * ${src}: ${maps.join(", ")}`);
+  return "/**\n * @names Import aliases\n" + lines.join("\n") + "\n */\n";
+}
+function addParamHints(code, ast, ctxMap) {
+  const replacements = [];
+  const seen = new Set;
+  const visitor = node => {
+    const fn = node.declaration || node;
+    if ("FunctionDeclaration" !== fn.type || !fn.id?.name) return;
+    if (seen.has(fn.id.name)) return;
+    seen.add(fn.id.name);
+    const ctx = ctxMap.get(fn.id.name);
+    if (!ctx || !ctx.params || 0 === ctx.params.length) return;
+    const mangledParams = fn.params.map(p => "Identifier" === p.type ? p.name : "AssignmentPattern" === p.type && "Identifier" === p.left.type ? p.left.name : null).filter(Boolean);
+    const hints = [];
+    for (let i = 0; i < Math.min(mangledParams.length, ctx.params.length); i++) {
+      if (mangledParams[i] !== ctx.params[i].name) hints.push(mangledParams[i] + "=" + ctx.params[i].name);
+    }
+    if (0 === hints.length) return;
+    const closeParenIdx = code.indexOf(")", fn.params[fn.params.length - 1].end);
+    if (closeParenIdx > -1) replacements.push({ pos: closeParenIdx + 1, text: " /* " + hints.join(", ") + " */" });
+  };
+  d(ast, { FunctionDeclaration: visitor, ExportNamedDeclaration(node) { node.declaration && "FunctionDeclaration" === node.declaration.type && visitor(node); } });
+  replacements.sort((a, b) => b.pos - a.pos);
+  let result = code;
+  for (const r of replacements) result = result.slice(0, r.pos) + r.text + result.slice(r.pos);
+  return result;
+}
+let p=s,f=0;for(const{pos:t,jsdoc:e}of l){const n=p.lastIndexOf("\n",t-1),o=-1===n?0:n+1,r=p.slice(o,t).match(/^(\s*)/)?.[1]||"",i=e.split("\n").map(t=>r+t).join("\n");p=p.slice(0,t)+i+"\n"+p.slice(t),f++}try{const legendAst=m(p,{ecmaVersion:"latest",sourceType:"module",locations:!0});p=addParamHints(p,legendAst,c);const legend=extractImportLegend(legendAst);legend&&(p=legend+p)}catch{}return{code:p,injected:f,original:i.length,decompiled:p.length}}const f=new Set(["node_modules",".git","vendor",".context","dev-docs",".agent",".agents",".full","web"]),h=new Set([".js",".mjs"]);function walkJSFiles(t,e=t){const n=[];try{for(const o of r(t)){if(o.startsWith(".")&&"."!==o)continue;
 const r=s(t,o);i(r).isDirectory()?f.has(o)||n.push(...walkJSFiles(r,e)):h.has(a(o).toLowerCase())&&n.push(r)}}catch{}return n}
 function resolveCtx(e,n){const r=c(n,a(n))+".ctx",i=l(n),p=s(e,i,r);if(o(p))return t(p,"utf-8");
 const u=s(e,".context",i,r);return o(u)?t(u,"utf-8"):null}
