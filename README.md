@@ -264,7 +264,7 @@ Best used together with [**agent-pool-mcp**](https://www.npmjs.com/package/agent
 - [ARCHITECTURE.md](ARCHITECTURE.md) — Source code structure
 - [AGENT_ROLE.md](docs/examples/AGENT_ROLE.md) — Full system prompt for agents
 - [AGENT_ROLE_MINIMAL.md](docs/examples/AGENT_ROLE_MINIMAL.md) — Minimal variant (agent self-discovers)
-- [ROADMAP.md](docs/ROADMAP.md) — Feature roadmap and backlog
+- [ROADMAP.md](dev-docs/ROADMAP.md) — Feature roadmap and backlog
 
 ## Related Projects
 - [agent-pool-mcp](https://github.com/rnd-pro/agent-pool-mcp) — Multi-agent orchestration via Gemini CLI
