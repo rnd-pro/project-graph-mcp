@@ -1,0 +1,17 @@
+// @ctx .context/src/compact/compact-migrate.ctx
+import{readFileSync as R,writeFileSync as W,readdirSync as n,statSync as o,existsSync as s}from"fs";import{join as r,extname as c,relative as a,basename as i,dirname as l}from"path";import{execSync as u}from"child_process";import{compactProject as d}from"./compact.js";import{validatePipeline as m}from"./validate-pipeline.js";import{setConfig as f}from"./mode-config.js";
+const g=new Set([".js",".mjs"]),h=new Set(["node_modules",".git","vendor",".context","dev-docs",".agent",".agents",".expanded"]);
+function walkJS(e,t=e){const s=[];try{for(const a of n(e)){if(a.startsWith(".")&&"."!==a)continue;
+const n=r(e,a);o(n).isDirectory()?h.has(a)||s.push(...walkJS(n,t)):g.has(c(a).toLowerCase())&&s.push(n)}}catch{}return s}
+function checkGitClean(e){try{const t=u("git status --porcelain",{cwd:e,encoding:"utf-8"}).trim();if(t)throw new Error("Working directory is not clean. Commit or stash changes first.\n\nDirty files:\n"+t)}catch(e){if(e.message.includes("not clean"))throw e;throw new Error("Not a git repository or git not available: "+e.message)}}
+async function extractNames(e){const t=R(e,"utf-8"),n=new Set;try{const{parse:o}=await import("../../vendor/acorn.mjs"),{simple:s}=await import("../../vendor/walk.mjs"),r=o(t,{ecmaVersion:"latest",sourceType:"module"});s(r,{FunctionDeclaration(e){e.id?.name&&n.add(e.id.name)},ClassDeclaration(e){e.id?.name&&n.add(e.id.name)},VariableDeclarator(e){e.id?.name&&n.add(e.id.name)},ImportSpecifier(e){e.local?.name&&n.add(e.local.name)},ImportDefaultSpecifier(e){e.local?.name&&n.add(e.local.name)},AssignmentExpression(e){"Identifier"===e.left?.type&&n.add(e.left.name)}})}catch{const o=/(?:function\s+(\w+)|(\w+)\s*(?:=\s*(?:async\s+)?(?:function|\([^)]*\)\s*=>))|(?:const|let|var)\s+(\w+))/g;let s;while(s=o.exec(t)){const e=s[1]||s[2]||s[3];e&&e.length>1&&n.add(e)}}return[...n].filter(e=>e.length>1)}
+function buildNamesDirective(e,t){const n=t.split("\n"),o=new Set;const s=/(?:^|[^a-zA-Z_$])([a-z])(?:\s*[=,)}\];:]|$)/g;for(const e of n){let t;while(t=s.exec(e)){o.add(t[1])}}const r=new Map;for(const t of e){const e=t.charAt(0).toLowerCase();if(o.has(e)&&!r.has(e)){r.set(e,t)}}if(0===r.size)return null;return"@names "+[...r.entries()].map(([e,t])=>`${e}=${t}`).join(",")}
+function updateCtxNames(e,t,n){const o=a(n,e),s=i(o,c(o))+".ctx",u=l(o),d=r(n,".context",u,s);if(!S(d))return;try{let e=R(d,"utf-8");if(e.includes("@names")){e=e.replace(/@names .*/,t)}else{const n=e.indexOf("\n");e=-1===n?t+"\n"+e:e.slice(0,n+1)+t+"\n"+e.slice(n+1)}W(d,e,"utf-8")}catch{}}
+function S(e){return s(e)}
+export async function compactMigrate(e,t={}){const{dryRun:n=!1}=t;checkGitClean(e);
+const o=walkJS(e),p=[];for(const t of o){const n=a(e,t),o=await extractNames(t),s=R(t,"utf-8");p.push({file:n,namesCount:o.length,names:o,originalSize:s.length})}
+if(n)return{dryRun:!0,files:p.length,fileSummary:p.map(e=>({file:e.file,identifiers:e.namesCount,originalSize:e.originalSize}))};
+const v=await d(e,{dryRun:!1});for(const t of o){const n=R(t,"utf-8"),o=p.find(e=>t.endsWith(e.file));if(o&&o.names.length>0){const s=buildNamesDirective(o.names,n);s&&updateCtxNames(t,s,e)}}
+let b;try{b=await m(e,{strict:!1})}catch(e){b={status:"SKIP",reason:e.message}}
+f(e,{mode:1});
+return{migrated:!0,files:v.files,savings:v.savings,originalBytes:v.originalBytes,compactedBytes:v.compactedBytes,validation:b?.status||"SKIP",mode:"compact (1)",hint:"Run 'expand_project' to generate .expanded/ cache for human review"}}

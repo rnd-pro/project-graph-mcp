@@ -107,17 +107,12 @@ get_focus_zone({ path: ".", useGitDiff: true })
 // → Context for recently changed files only
 ```
 
-**Real-world token budget** (45-file project, Mode 4 — compact source):
+**Real-world token budget** (this project's own benchmark, 45 files):
 
 ```
 Skeleton + docs only:          3.2K tok — 93% savings, full project overview
-src/ (compact, agent reads):  46.9K tok — what the agent works with
-.expanded/ (human review):    76.0K tok — beautified + JSDoc from .ctx
-
-Agent savings vs human-readable: 38% ↓
+Compact source (agent reads): 46.9K tok — 20-55% savings per file
 ```
-
-Compact source saves **38% tokens** vs what a human reads. The agent works directly with minified code; humans review via `.expanded/` cache with restored names and injected JSDoc. The `.ctx` layer (~200 tok per file) provides typed signatures and descriptions for both.
 
 **Per-file metrics breakdown:**
 
@@ -126,31 +121,28 @@ Compact source saves **38% tokens** vs what a human reads. The agent works direc
 | Code (compact .js) | Minified source, all names preserved | codeTok |
 | Context (.ctx) | AST signatures, types, descriptions | ctxTok |
 | Total (focus mode) | What agent reads when focusing | codeTok + ctxTok |
-| Expanded (beautified) | What a human would read (raw source) | expanded |
 
 ### Compact Code Architecture
 
-Four modes for AI-native codebase editing — configure per project via `.context/config.json`:
+Two modes for AI-native codebase editing — configure per project via `.context/config.json`:
 
-| Mode | Storage | Agent reads | Agent writes | Human reviews |
-|------|---------|-------------|--------------|---------------|
-| **1 — Native Compact** | Minified JS | Files directly | Files directly | `.ctx` + Web UI |
-| **2 — Full Storage** | Formatted JS | `get_compressed_file` | `edit_compressed` | Files directly |
-| **3 — IDE Virtual** | Minified JS | IDE renders full | IDE handles mapping | IDE |
-| **4 — Compact + Cache** ⭐ | Minified JS | Files directly | Files directly | `.expanded/` cache |
+| Mode | Storage | Agent reads/writes | Human reviews |
+|------|---------|-------------------|---------------|
+| **1 — Compact** ⭐ | Minified JS | `src/` directly | `.expanded/` cache |
+| **2 — Full** | Formatted JS | compressed view | `src/` directly |
 
-**Mode 4 workflow** (recommended for AI-first projects):
+**Mode 1 — Compact** (recommended for AI-first projects):
 
-Source of truth is compact code. Agents read and write it directly — saving tokens in **both directions**. Output tokens typically cost 3-5x more than input, so compact output is the biggest cost saving. Humans review via auto-generated `.expanded/` cache with restored names and injected JSDoc.
+Source of truth is compact code. Agents read and write it directly — saving tokens in **both directions** (input and output). Since output tokens cost 3-5x more than input, compact output is the biggest cost saving. Humans review via auto-generated `.expanded/` cache with restored names and injected JSDoc.
 
 ```javascript
-// Agent reads and edits compact source directly (38% fewer tokens both ways)
+// Agent reads and edits compact source directly (20-55% fewer tokens both ways)
 // After edits, validate and generate human-readable cache:
 compact({ action: "validate_pipeline", path: ".", strict: true })
 compact({ action: "expand_project", path: "." })
 ```
 
-**Mode 2 workflow** (for existing projects with formatted source):
+**Mode 2 — Full** (for existing projects, no refactoring needed):
 
 ```javascript
 // 1. Read compressed view (saves input tokens only)
@@ -167,6 +159,14 @@ edit_compressed({
 validate_ctx_contracts({ path: "." })
 ```
 
+**Migrating from Full to Compact:**
+
+```bash
+# Ensure git is clean, then run automated migration
+npx project-graph-mcp compact-migrate .
+# → compacts all JS, generates @names in .ctx, sets mode 1, validates
+```
+
 **`.ctx` typed signatures** — JSDoc types extracted into compact format:
 
 ```
@@ -174,8 +174,11 @@ parseFile(code:string,filename:string)→Promise<ParseResult>→parse,walk|parse
 ```
 
 ```bash
+# Check current mode
+npx project-graph-mcp mode .
+
 # Set project mode
-npx project-graph-mcp set-mode . 4
+npx project-graph-mcp set-mode . 1
 
 # Validate .ctx documentation matches source
 npx project-graph-mcp validate-ctx . --strict
@@ -347,7 +350,9 @@ npx project-graph-mcp docs src/           # Project docs (doc-dialect)
 npx project-graph-mcp generate-ctx src/   # Generate .context/ docs
 npx project-graph-mcp validate-ctx .      # Validate .ctx ↔ source
 npx project-graph-mcp mode .             # Show current editing mode
-npx project-graph-mcp set-mode . 2       # Set mode (1/2/3)
+npx project-graph-mcp compact-migrate .  # Migrate formatted -> compact (git must be clean)
+npx project-graph-mcp set-mode . 1       # Set mode (1=compact*, 2=full)
+npx project-graph-mcp serve .            # Start web dashboard
 npx project-graph-mcp help                # All commands
 ```
 
