@@ -1,1 +1,2 @@
+// @ctx .context/web/panels/ProjectList/ProjectList.tpl.ctx
 export default'\n<div itemize="projects" item-tag="pg-project-item"></div>\n<div class="empty" ref="emptyMsg">\n  No projects registered.\n</div>\n';

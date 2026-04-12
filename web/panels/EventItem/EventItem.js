@@ -1,4 +1,3 @@
-import t from"@symbiotejs/symbiote";
-import e from"./EventItem.css.js";
-import s from"./EventItem.tpl.js";
+// @ctx .context/web/panels/EventItem/EventItem.ctx
+import t from"@symbiotejs/symbiote";import e from"./EventItem.css.js";import s from"./EventItem.tpl.js";
 export class EventItem extends t{init$={ts:0,type:"",tool:"",args:null,duration_ms:0,success:!0,result_keys:[],expanded:!1,icon:"arrow_right",detailsText:"",statusClass:"",durationText:"",_projectName:""};renderCallback(){this.sub("ts",t=>{this.ref.time.textContent=t?new Date(t).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit"}):""}),this.sub("type",t=>{this.$.icon="tool_call"===t?"call_made":"call_received",this.$.statusClass="tool_call"===t?"call":this.$.success?"success":"error"}),this.sub("duration_ms",t=>{this.$.durationText=t?`${t}ms`:""}),this.sub("args",t=>{t&&"object"==typeof t&&Object.keys(t).length>0?this.$.detailsText=JSON.stringify(t,null,2):this.$.detailsText=""}),this.onclick=()=>{(this.$.detailsText||this.$.result_keys?.length)&&(this.$.expanded=!this.$.expanded,this.$.expanded?this.setAttribute("expanded",""):this.removeAttribute("expanded"))}}}EventItem.template=s,EventItem.rootStyles=e,EventItem.reg("pg-event-item");

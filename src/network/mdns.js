@@ -1,6 +1,5 @@
 // @ctx .context/src/network/mdns.ctx
-import{spawn as t}from"node:child_process";
-import e from"node:dgram";
+import{spawn as t}from"node:child_process";import e from"node:dgram";
 const r="224.0.0.251";
 export function registerLocal(t,e){if("darwin"===process.platform)return registerDnsSd(t,e);if("linux"===process.platform){const e=tryAvahi(t);if(e)return e}return registerMcast(t)}
 function registerDnsSd(e,r){const n=t("dns-sd",["-P","Project Graph","_http._tcp","",String(r),e,"127.0.0.1"],{stdio:"ignore",detached:!1});return n.unref(),{method:"Bonjour (dns-sd)",cleanup:()=>{try{n.kill()}catch{}}}}

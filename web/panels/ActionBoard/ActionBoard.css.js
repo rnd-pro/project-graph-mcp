@@ -1,1 +1,2 @@
+// @ctx .context/web/panels/ActionBoard/ActionBoard.css.ctx
 export default"\n:host {\n  display: flex;\n  flex-direction: column;\n  height: 100%;\n  background: var(--sn-bg-primary);\n  color: var(--sn-fg-primary);\n  overflow: hidden;\n}\n.list {\n  flex: 1;\n  overflow-y: auto;\n  padding: 16px;\n}\n";

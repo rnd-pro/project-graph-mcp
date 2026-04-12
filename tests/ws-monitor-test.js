@@ -1,10 +1,6 @@
 // @ctx .context/tests/ws-monitor-test.ctx
 #!/usr/bin/env node
-import e from"node:http";
-import o from"node:net";
-import t from"node:crypto";
-import n from"node:fs";
-import s from"node:path";import{fileURLToPath as r}from"node:url";s.dirname(r(import.meta.url));
+import e from"node:http";import o from"node:net";import t from"node:crypto";import n from"node:fs";import s from"node:path";import{fileURLToPath as r}from"node:url";s.dirname(r(import.meta.url));
 const c=s.join(process.env.HOME||"/tmp",".local-gateway"),i=s.join(c,"services.json"),l=s.join(c,"gateway.pid"),a=process.argv.slice(2),g=a.includes("--direct-only"),$=a.includes("--gateway-only"),p="[0m",d="[2m",f="[1m",u="[32m",m="[31m",y="[33m",h="[36m";function log(e,o,t=""){const n=(new Date).toISOString().slice(11,23);console.log(`${d}${n}${p} ${t}${e}${p} ${o}`)}
 function logEvent(e,o){const t=o.type||"unknown",n=o.tool||"",s=o.duration_ms?` (${o.duration_ms}ms)`:"",r=void 0!==o.success?(o.success?u+" ✓":m+" ✗")+p:"";if(log("◆",`${f}[${e}]${p} ${t} ${h}${n}${p}${s}${r}`),o.args){const e=JSON.stringify(o.args);log(" ",`  args: ${d}${e.length>120?e.slice(0,120)+"...":e}${p}`)}o.result_keys&&log(" ",`  result_keys: ${d}${o.result_keys.join(", ")}${p}`)}
 function readRegistry(){try{return JSON.parse(n.readFileSync(i,"utf8"))}catch{return{}}}

@@ -1,3 +1,4 @@
+// @ctx .context/web/panels/ctx-panel.ctx
 import n from"@symbiotejs/symbiote";import{api as t,events as e,state as i}from"../app.js";
 export class CtxPanel extends n{init$={contentHTML:'<div class="pg-placeholder">Select a file to view documentation</div>',outlineHTML:""};initCallback(){e.addEventListener("file-selected",n=>{this._loadCtx(n.detail.path),this._loadOutline(n.detail.path)})}_loadOutline(n){const t=i.skeleton;if(!t)return void(this.$.outlineHTML="");
 const e=t.X||{},s=t.L||{},a=e[n];if(!a||0===a.length)return void(this.$.outlineHTML="");

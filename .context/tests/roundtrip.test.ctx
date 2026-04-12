@@ -1,0 +1,2 @@
+# roundtrip.test
+Tests for compact→expand→compact roundtrip integrity.
