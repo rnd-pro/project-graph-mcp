@@ -4,7 +4,11 @@
 
 # project-graph-mcp
 
-An MCP server that parses your source code into a **10-50x compressed skeleton** — classes, functions, imports, and dependencies in a minified JSON. Agents navigate the graph using `expand`, `deps`, and `usages` without reading irrelevant files. The **AI Context Layer** compresses an entire codebase into ~3K tokens (93% savings) with a single `get_ai_context` call. Supports **monorepo scanning** and **streaming analysis** for large codebases.
+**Your entire codebase in one context window.** An MCP server that compresses source code **10-50x** via AST-based minification — agents read, navigate, and edit your project without seeing a single irrelevant line. Includes a built-in Web Dashboard for visual code exploration.
+
+![Expanded view — beautified code with JSDoc from .ctx files](docs/img/explorer-expanded.jpg)
+
+![Compact view — minified source as agents see it (7 lines vs 30+)](docs/img/explorer-compact.jpg)
 
 **Expanded view** — beautified code with JSDoc injection from `.ctx` files:
 
