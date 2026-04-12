@@ -8,12 +8,15 @@
  *   tests/lib/asserts.js    — shared assertion helpers
  *
  * Phases:
- *   1. MCP Protocol (stdio JSON-RPC)
- *   2. UI Server Lifecycle (HTTP APIs)
- *   3. WebSocket Data Flow (snapshot, tool calls, events)
- *   4. Dynamic Tool Discovery (schemas → auto-test)
- *   5. Round-trip Data Integrity (compact → expand → verify)
- *   6. NPM Verify mode (VERIFY_NPM=1)
+ *   1. MCP Protocol Handshake (stdio JSON-RPC)
+ *   2. MCP Tool Responses — Mode 2 (human-readable code)
+ *   3. UI Server HTTP APIs
+ *   4. WebSocket Data Flow (snapshot, tool calls, events)
+ *   5. Dynamic Tool Discovery (schemas → auto-test every action)
+ *   6. Documentation Workflow (generate, stale, contracts)
+ *   7. Mode 1 (Compact) — full tool suite on MINIFIED code
+ *   8. Edit Workflow
+ *   9. Protocol Error Handling
  *
  * Run:
  *   node --test tests/integration.test.js
@@ -555,9 +558,9 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
   });
 
   // ================================================================
-  // PHASE 6: Round-trip Data Integrity
+  // PHASE 6: Docs generation
   // ================================================================
-  describe('Phase 6: Round-trip & docs', () => {
+  describe('Phase 6: Documentation workflow', () => {
 
     it('docs.generate → check_stale → validate_contracts', async () => {
       const { data: gen } = await mcpClient.callTool('docs', { action: 'generate', path: '.', overwrite: true });
@@ -578,17 +581,45 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
       }
     });
 
-    it('compact round-trip preserves all exported names', async () => {
-      // Switch to Mode 1
-      await mcpClient.callTool('compact', { action: 'set_mode', path: '.', mode: 1 });
+    it('docs.get — file-specific after generation', async () => {
+      const { data: r } = await mcpClient.callTool('docs', { action: 'get', path: '.', file: 'src/math.js' });
+      assertStr(r.docs, 'docs');
+      assert.ok(r.docs.includes('add'));
+    });
+  });
 
-      // Compact all
+  // ================================================================
+  // PHASE 7: Mode 1 (Compact) — full tool suite on minified code
+  //
+  // Phase 2 tested Mode 2 (human-readable, default).
+  // Phase 7 compacts the project to Mode 1, then re-runs the most
+  // critical tools to verify everything works on minified code.
+  // ================================================================
+  describe('Phase 7: Mode 1 (Compact) — tools on minified code', () => {
+
+    /** Snapshot of Mode 2 stats, for cross-mode comparison */
+    let mode2Stats = {};
+
+    before(async () => {
+      // Capture Mode 2 baseline
+      await mcpClient.callTool('invalidate_cache');
+      const { data: sk } = await mcpClient.callTool('get_skeleton', { path: '.' });
+      mode2Stats = { files: sk.s.files, functions: sk.s.functions, classes: sk.s.classes };
+    });
+
+    it('switch to Mode 1 + compact', async () => {
+      await mcpClient.callTool('compact', { action: 'set_mode', path: '.', mode: 1 });
+      const { data: mode } = await mcpClient.callTool('compact', { action: 'get_mode', path: '.' });
+      assert.strictEqual(mode.mode, 1);
+
       const { data: compacted } = await mcpClient.callTool('compact', { action: 'compact_all', path: '.' });
       assertNum(compacted.files, 'files');
       assert.ok(compacted.files >= 5);
       assert.ok(compacted.compactedBytes <= compacted.originalBytes);
+      if (compacted.errors) assert.strictEqual(compacted.errors.length, 0);
+    });
 
-      // Verify names in compacted files
+    it('exported names survive minification', () => {
       for (const fn of EXPORTED_FUNCTIONS) {
         let found = false;
         for (const f of ['src/math.js', 'src/utils.js', 'src/config.js', 'src/unused.js']) {
@@ -600,12 +631,72 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
         assert.ok(readFileSync(join(FIXTURE_ROOT, 'src/models.js'), 'utf-8').includes(cls),
           `class "${cls}" lost during compact`);
       }
+    });
 
-      // Expand project
-      const { data: expanded } = await mcpClient.callTool('compact', { action: 'expand_project', path: '.' });
-      assertNum(expanded.files, 'files');
+    it('skeleton on minified code — same symbols as Mode 2', async () => {
+      await mcpClient.callTool('invalidate_cache');
+      const { data: sk } = await mcpClient.callTool('get_skeleton', { path: '.' });
+      assert.strictEqual(sk.v, 1);
 
-      // Verify names in expanded files
+      // Same number of files and exported symbols
+      assert.strictEqual(sk.s.files, mode2Stats.files, 'file count changed after compact');
+      assert.strictEqual(sk.s.classes, mode2Stats.classes, 'class count changed after compact');
+
+      // All exported symbols still in legend
+      const longNames = Object.values(sk.L);
+      for (const sym of ALL_SYMBOLS) {
+        assert.ok(longNames.includes(sym), `"${sym}" missing from skeleton after compact`);
+      }
+    });
+
+    it('navigate on minified code', async () => {
+      const { data: expanded } = await mcpClient.callTool('navigate', { action: 'expand', symbol: 'add' });
+      assert.ok(expanded);
+      // In minified code, expand returns code (may be 1-line) — as long as no crash
+      // Some implementations return error for very short functions
+      if (!expanded.error) {
+        assert.ok(expanded.code || expanded.name, 'expand should return code or name');
+      }
+
+      const { data: deps } = await mcpClient.callTool('navigate', { action: 'deps', symbol: 'sum' });
+      assert.ok(deps !== undefined);
+
+      const { data: usages } = await mcpClient.callTool('navigate', { action: 'usages', symbol: 'add' });
+      assert.ok(usages !== undefined);
+    });
+
+    it('analyze on minified code — dead_code still detects neverCalled', async () => {
+      const { data: dc } = await mcpClient.callTool('analyze', { action: 'dead_code', path: '.' });
+      assert.ok(dc.items.map(i => i.name).includes('neverCalled'),
+        'dead code detection broken on minified files');
+
+      const { data: summary } = await mcpClient.callTool('analyze', { action: 'analysis_summary', path: '.' });
+      assertScore(summary.healthScore, 'healthScore');
+    });
+
+    it('compact_file on already-minified code', async () => {
+      const { data: r } = await mcpClient.callTool('compact', { action: 'compact_file', path: 'src/math.js' });
+      assertStr(r.code, 'code');
+      assert.ok(r.code.includes('add'));
+      // compact_file applies Terser + @ctx header regardless — just verify it works
+      assert.ok(r.compressed > 0);
+    });
+
+    it('expand_file decompiles minified code', async () => {
+      const { data: r } = await mcpClient.callTool('compact', { action: 'expand_file', path: 'src/math.js' });
+      assertStr(r.code, 'decompiled');
+      assert.ok(r.code.includes('add'));
+      assert.ok(r.code.includes('multiply'));
+      // Expanded should be multi-line
+      assert.ok(r.code.split('\n').length >= 3, 'expanded should be multi-line');
+    });
+
+    it('expand_project — creates .expanded/ with readable code', async () => {
+      const { data: r } = await mcpClient.callTool('compact', { action: 'expand_project', path: '.' });
+      assertNum(r.files, 'files');
+      assert.ok(existsSync(join(FIXTURE_ROOT, '.expanded')));
+
+      // Verify expanded files are human-readable
       for (const fn of EXPORTED_FUNCTIONS) {
         let found = false;
         for (const f of ['src/math.js', 'src/utils.js', 'src/config.js', 'src/unused.js']) {
@@ -615,27 +706,51 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
         assert.ok(found, `"${fn}" lost in .expanded`);
       }
 
-      // Expanded models preserves class hierarchy
+      // Class hierarchy preserved
       const models = readFileSync(join(FIXTURE_ROOT, '.expanded/src/models.js'), 'utf-8');
       for (const kw of ['class Animal', 'class Dog', 'extends', 'constructor', 'speak', 'static']) {
         assert.ok(models.includes(kw), `"${kw}" lost in expanded models`);
       }
+    });
 
-      // Beautify back
-      const { data: beautified } = await mcpClient.callTool('compact', { action: 'beautify', path: '.' });
-      assertNum(beautified.files, 'files');
-      assert.ok(beautified.beautifiedBytes >= beautified.originalBytes);
+    it('validate_pipeline on minified code', async () => {
+      const { data: r } = await mcpClient.callTool('compact', { action: 'validate_pipeline', path: '.' });
+      assertStr(r.status, 'status');
+      assertObj(r.summary, 'summary');
+      assertNum(r.summary.totalErrors, 'totalErrors');
+      assertNum(r.summary.filesProcessed, 'filesProcessed');
+      assertStr(r.summary.tokenSavings, 'tokenSavings');
+    });
 
-      // Validate pipeline
-      const { data: pipeline } = await mcpClient.callTool('compact', { action: 'validate_pipeline', path: '.' });
-      assertStr(pipeline.status, 'status');
-      assertObj(pipeline.summary, 'summary');
-      assertNum(pipeline.summary.totalErrors, 'totalErrors');
-      assertStr(pipeline.summary.tokenSavings, 'tokenSavings');
+    it('db + jsdoc still work on minified code', async () => {
+      const { data: db } = await mcpClient.callTool('db', { action: 'schema', path: '.' });
+      assertNum(db.totalTables, 'totalTables');
+      assert.ok(db.totalTables >= 2);
 
-      // Back to Mode 2
+      const { data: jsdoc } = await mcpClient.callTool('jsdoc', { action: 'check_consistency', path: '.' });
+      assertObj(jsdoc.summary, 'summary');
+    });
+
+    it('beautify — restores readable code', async () => {
+      const { data: r } = await mcpClient.callTool('compact', { action: 'beautify', path: '.' });
+      assertNum(r.files, 'files');
+      assert.ok(r.beautifiedBytes >= r.originalBytes);
+
+      // Files should be multi-line again
+      const code = readFileSync(join(FIXTURE_ROOT, 'src/math.js'), 'utf-8');
+      assert.ok(code.split('\n').filter(l => l.trim()).length >= 3);
+    });
+
+    after(async () => {
+      // Restore Mode 2 for subsequent tests
       await mcpClient.callTool('compact', { action: 'set_mode', path: '.', mode: 2 });
     });
+  });
+
+  // ================================================================
+  // PHASE 8: Edit workflow
+  // ================================================================
+  describe('Phase 8: Edit workflow', () => {
 
     it('compact.edit — replaces target, preserves neighbors', async () => {
       const { data } = await mcpClient.callTool('compact', {
@@ -651,9 +766,9 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
   });
 
   // ================================================================
-  // PHASE 7: Protocol error handling
+  // PHASE 9: Protocol error handling
   // ================================================================
-  describe('Phase 7: Error handling', () => {
+  describe('Phase 9: Error handling', () => {
 
     it('unknown MCP method → error', async () => {
       try {
