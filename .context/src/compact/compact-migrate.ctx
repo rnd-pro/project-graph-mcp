@@ -1,0 +1,7 @@
+# compact-migrate
+Converts formatted JS to compact mode 1. Reads --all or single files,
+applies Terser minification preserving imports, injects // @ctx header,
+writes minified output back. Handles shebang preservation and .mjs.
+## Exports
+- migrateFile(path): minify single file
+- migrateAll(root): batch-migrate src/ tree

@@ -1,8 +1,5 @@
 // @ctx .context/src/network/local-gateway.ctx
-import e from"node:http";
-import t from"node:net";
-import r from"node:fs";
-import n from"node:path";import{registerLocal as o}from"./mdns.js";
+import e from"node:http";import t from"node:net";import r from"node:fs";import n from"node:path";import{registerLocal as o}from"./mdns.js";
 const s=n.join(process.env.HOME||process.env.USERPROFILE||"/tmp",".local-gateway"),i=n.join(s,"services.json"),a=n.join(s,"gateway.pid"),backendsDir=n.join(s,"backends");function readRegistry(){try{return JSON.parse(r.readFileSync(i,"utf8"))}catch{return{}}}
 function writeRegistry(e){r.mkdirSync(s,{recursive:!0}),r.writeFileSync(i,JSON.stringify(e,null,2))}
 function reconcileBackends(){if(!r.existsSync(backendsDir))return;const files=r.readdirSync(backendsDir).filter(f=>f.endsWith(".json"));let changed=false;const reg=readRegistry();for(const f of files){try{const data=JSON.parse(r.readFileSync(n.join(backendsDir,f),"utf8"));try{process.kill(data.pid,0)}catch{r.unlinkSync(n.join(backendsDir,f));continue}const name=data.name||"root",route=`/${name}`;reg["project-graph.local"]=reg["project-graph.local"]||{name:"project-graph",routes:{}};if(!reg["project-graph.local"].routes[route]){reg["project-graph.local"].routes[route]={port:data.port,pid:data.pid,projectPath:data.project,projectName:name};changed=true}}catch{}}if(changed)writeRegistry(reg)}

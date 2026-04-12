@@ -1,9 +1,5 @@
 // @ctx .context/src/network/web-server.ctx
-import e from"node:http";
-import t from"node:fs";
-import o from"node:path";
-import n from"node:crypto";import{fileURLToPath as a}from"node:url";import{WebSocketServer as s}from"ws";import{createServer as r}from"../mcp/mcp-server.js";
-import c from"../core/event-bus.js";import{registerService as i}from"./local-gateway.js";import{expandFile as l}from"../compact/expand.js";
+import e from"node:http";import t from"node:fs";import o from"node:path";import n from"node:crypto";import{fileURLToPath as a}from"node:url";import{WebSocketServer as s}from"ws";import{createServer as r}from"../mcp/mcp-server.js";import c from"../core/event-bus.js";import{registerService as i}from"./local-gateway.js";import{expandFile as l}from"../compact/expand.js";
 const d=o.dirname(a(import.meta.url)),p=o.join(d,"..",".."),m=o.join(p,"web"),h={"symbiote-node":o.join(p,"node_modules","symbiote-node"),symbiote:o.join(p,"node_modules","@symbiotejs","symbiote")},u={".html":"text/html",".js":"text/javascript",".mjs":"text/javascript",".css":"text/css",".json":"application/json",".svg":"image/svg+xml",".png":"image/png",".ico":"image/x-icon",".woff2":"font/woff2"};function serveStatic(e,n){const a=o.normalize(e).replace(/^(\.\.[/\\])+/,""),s=a.match(/^[/\\]?vendor[/\\]([^/\\]+)[/\\]?(.*)/);
 let r,c;if(s&&h[s[1]]?(c=h[s[1]],r=o.join(c,s[2]||"index.js")):(c=m,r=o.join(m,"/"===a?"index.html":a)),!r.startsWith(c))return n.writeHead(403),void n.end("Forbidden");if(t.existsSync(r)&&t.statSync(r).isDirectory()&&(r=o.join(r,"index.html")),!t.existsSync(r))return n.writeHead(404),void n.end("Not Found");
 const i=o.extname(r),l=u[i]||"application/octet-stream",d=t.readFileSync(r);n.writeHead(200,{"Content-Type":l,"Cache-Control":"no-cache, no-store, must-revalidate"}),n.end(d)}
