@@ -1,9 +1,9 @@
 --- src/core/parser.js ---
 @sig c64e9ff4
-v(e,s)→s.endsWith,h,d,m,f,parseFile|{NEEDS_DESCRIPTION}
-j(e,s,t,n)→s.includes,s.push,b.has,S,g,y|{NEEDS_DESCRIPTION}
+v(e,s)→s.endsWith,h,d,m,f,parseFile|(internal utility)
+j(e,s,t,n)→s.includes,s.push,b.has,S,g,y|(internal utility)
 export findJSFiles(dir:string,rootDir:string=)→u,s,r,t,o,c.isDirectory|recursively find .js files in dir, respecting ignores and extensions
-E(e)→e.endsWith,x.some|{NEEDS_DESCRIPTION}
+E(e)→e.endsWith,x.some|(internal utility)
 export parseFile(code:string,filename:string)→a,console.warn,value.startsWith,s.slice,i.exec,e.slice|parse single JS file to AST|extracts classes,functions,imports,exports
 export discoverSubProjects(rootPath:string)→i,r,n,s,t,e|find sub-projects in known monorepo directories
 export parseProject(dir:string)→i,findJSFiles,e,o,v,files.push|parse all JS files in dir|returns aggregated ParseResult

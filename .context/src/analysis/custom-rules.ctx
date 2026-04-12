@@ -1,6 +1,6 @@
 --- src/analysis/custom-rules.js ---
 @sig 683d58c0
-b(t,s,n)→s.replace,e.endsWith,e,c,e.exec,j|{NEEDS_DESCRIPTION}
+b(t,s,n)→s.replace,e.endsWith,e,c,e.exec,j|(internal utility)
 export getCustomRules()→x,Object.entries,rules.map|load and return summary of all custom rules
 export setCustomRule(ruleSet:string,rule:Object)→x,rules.findIndex,rules.push,v|add or update a single rule in a ruleset
 export deleteCustomRule(ruleSet:string,ruleId:string)→x,rules.findIndex,rules.splice,v|remove a rule from a ruleset by ID

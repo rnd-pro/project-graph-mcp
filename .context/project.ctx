@@ -1,4 +1,4 @@
 === PROJECT: . ===
-ARCH: (auto-documented)
-FLOW: (auto-documented)
+ARCH: {DESCRIBE}
+FLOW: {DESCRIBE}
 STATS: 66 files|13 classes|271 functions

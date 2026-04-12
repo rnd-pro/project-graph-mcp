@@ -1,6 +1,6 @@
 --- src/network/mdns.js ---
 @sig bc73bb43
-n(e,r)→String,t,n.unref,n.kill|{NEEDS_DESCRIPTION}
+n(e,r)→String,t,n.unref,n.kill|(internal utility)
 export registerLocal(port:number,name:string)→n,c,o|route mDNS registration to dns-sd(mac)|Avahi(linux)|Node.js mcast
 PATTERNS: platform-specific mDNS implementation fallback
 EDGE_CASES: silently ignores UDP errors|kills spawned processes on cleanup

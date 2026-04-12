@@ -4,6 +4,6 @@ export computeContentHash(content:string)→i|compute full source code hash|for 
 export getCachePath(rootDir:string,key:string)→e.replace,c|get cache file path for source file|.context/.cache/path.json
 export readCache(rootDir:string,key:string)→getCachePath,r,t,JSON.parse|read cached analysis file|returns CacheEntry or null
 export writeCache(rootDir:string,key:string,data:Object)→getCachePath,a,n,JSON.stringify,e|write analysis cache entry|includes timestamp
-export isCacheValid(rootDir:string,key:string,sourceFile,maxAge:number=)|check if cache is valid|supports interface or content hash level
+export isCacheValid(rootDir:string,key:string,sourceFile:string,maxAge:number=)|check if cache is valid|supports interface or content hash level
 PATTERNS: dual-hashing (sig vs content)|persistent file-based cache
 EDGE_CASES: ignores read/write cache errors|handles missing directories

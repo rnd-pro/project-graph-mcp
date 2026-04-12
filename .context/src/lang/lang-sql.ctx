@@ -1,7 +1,7 @@
 --- src/lang/lang-sql.js ---
 @sig 676f0c3a
 export isSQLString(str:string)|test if string looks like a SQL query
-t(t)→t.toLowerCase,e.has|{NEEDS_DESCRIPTION}
+t(t)→t.toLowerCase,e.has|(internal utility)
 export extractSQLFromString(str:string)→e.replace,a.exec,r.slice,t,n.add,i.exec|extract table READs and WRITEs from SQL string
 export parseSQL(code:string=,filename:string=)→r.exec,e.substring,n,tables.push|parse CREATE TABLE statements into table objects
 export extractSQLFromCode(code:string)→r.exec,isSQLString,extractSQLFromString,t.add,reads.forEach,n.add|extract SQL queries and ORM calls from source code

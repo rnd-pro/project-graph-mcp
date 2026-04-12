@@ -1,8 +1,8 @@
 --- src/compact/compact.js ---
 @sig 596f30f0
-walkJSFiles(e,t=)→n,a.startsWith,r,o,f.has,walkJSFiles|{NEEDS_DESCRIPTION}
+walkJSFiles(e,t=)→n,a.startsWith,r,o,f.has,walkJSFiles|(internal utility)
 addTopLevelNewlines(e)→e.replace|insert newlines after minified semicolons to format top-level statements
-resolveCtxPath(e,t)→a,c,i,l,r,s|{NEEDS_DESCRIPTION}
+resolveCtxPath(e,t)→a,c,i,l,r,s|(internal utility)
 compactFile(n,o)→e,s.trim,u,addTopLevelNewlines,resolveCtxPath,a.startsWith|minify single JS file, prepend @ctx header if .ctx exists
 beautifyFile(n)→e,o.trim,u,t|format single JS file with proper indentation
 export compactProject(path:string,options:Object=)→walkJSFiles,a,e,u,addTopLevelNewlines,compactFile|compact all JS files in dir, per-file error handling, ret stats+savings%

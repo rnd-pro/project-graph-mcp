@@ -1,7 +1,7 @@
 --- src/compact/ctx-to-jsdoc.js ---
 @sig 174ef437
-m(t,e)→t.replace,r,o|{NEEDS_DESCRIPTION}
-F(t)|{NEEDS_DESCRIPTION}
+m(t,e)→t.replace,r,o|(internal utility)
+F(t)|(internal utility)
 export parseCtxFile(ctxPath:string)→t.split,t.match,r.split,i.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|parse .ctx file into structured fn signatures with params+types
 export injectJSDoc(filePath:string,options:Object=)→d,a,m,t,parseCtxFile,c|inject JSDoc from .ctx into source, skip if JSDoc exists, AST-located
 export stripJSDoc(filePath:string,options:Object=)→d,t,c,value.startsWith,f.filter,u.slice|strip all JSDoc via AST comments (safe—ignores strings), regex fallback
