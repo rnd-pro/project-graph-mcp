@@ -1,11 +1,11 @@
 --- src/compact/compact.js ---
 @sig 596f30f0
-walkJSFiles(e,t=)→n,a.startsWith,r,o,f.has,walkJSFiles|(auto-documented)
+walkJSFiles(e,t=)→n,a.startsWith,r,o,f.has,walkJSFiles|{NEEDS_DESCRIPTION}
 addTopLevelNewlines(e)→e.replace|insert newlines after minified semicolons to format top-level statements
-resolveCtxPath(e,t)→a,c,i,l,r,s|(auto-documented)
+resolveCtxPath(e,t)→a,c,i,l,r,s|{NEEDS_DESCRIPTION}
 compactFile(n,o)→e,s.trim,u,addTopLevelNewlines,resolveCtxPath,a.startsWith|minify single JS file, prepend @ctx header if .ctx exists
 beautifyFile(n)→e,o.trim,u,t|format single JS file with proper indentation
-export compactProject(t,n=)→walkJSFiles,a,e,u,addTopLevelNewlines,compactFile|compact all JS files in dir, per-file error handling, ret stats+savings%
+export compactProject(path,options=)→walkJSFiles,a,e,u,addTopLevelNewlines,compactFile|compact all JS files in dir, per-file error handling, ret stats+savings%
 PATTERNS: Terser mangle:false preserves all names|per-file try/catch collects errors array|dryRun mode estimates without writing|skips node_modules,vendor,.git,.context
 EDGE_CASES: empty files return 0/0|syntax errors collected in errors[] not thrown|files with only comments become empty (correct behavior)
-expandProject(a,b)|expandProject — internal helper
+expandProject(t,n=)|expandProject — internal helper

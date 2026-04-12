@@ -1,7 +1,7 @@
 --- src/compact/expand.js ---
 @sig a9cd25fe
-export expandProject(t,o=)→i,s,S,l,$,expandFile|expand all src/ → .expanded/ with JSDoc injection
-export expandFile(e,n,s=)→t,r.trim,m,i.split,s.trim,s.startsWith|beautify compact JS + inject JSDoc from .ctx|core hybrid mode expand
+export expandProject(rootPath,options=)→i,s,S,l,$,expandFile|expand all src/ → .expanded/ with JSDoc injection
+export expandFile(filePath,ctxContent,options=)→t,r.trim,m,i.split,s.trim,s.startsWith|beautify compact JS + inject JSDoc from .ctx|core hybrid mode expand
 PATTERNS: Terser beautify (no compress/mangle)|AST walk for injection points|reverse-order insertion|name-based symbol matching
 EDGE_CASES: */ in descriptions→sanitized|empty files→skip|parse errors→fallback to beautified|unmapped lines→null
 h(a)|parseCtxSignatures — internal helper

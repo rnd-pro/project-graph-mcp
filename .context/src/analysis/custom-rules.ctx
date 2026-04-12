@@ -1,11 +1,11 @@
 --- src/analysis/custom-rules.js ---
 @sig 683d58c0
-b(t,s,n)→s.replace,e.endsWith,e,c,e.exec,j|(auto-documented)
+b(t,s,n)→s.replace,e.endsWith,e,c,e.exec,j|{NEEDS_DESCRIPTION}
 export getCustomRules()→x,Object.entries,rules.map|load and return summary of all custom rules
-export setCustomRule(e,t)→x,rules.findIndex,rules.push,v|add or update a single rule in a ruleset
-export deleteCustomRule(e,t)→x,rules.findIndex,rules.splice,v|remove a rule from a ruleset by ID
-export detectProjectRuleSets(t)→x,o,n,e,JSON.parse,Object.keys|auto-detect applicable rulesets from package.json and imports
-export checkCustomRules(e,t=)→l,x,detectProjectRuleSets,r.push,Object.entries,detected.includes|run relevant custom rules against project directory
+export setCustomRule(ruleSet,rule)→x,rules.findIndex,rules.push,v|add or update a single rule in a ruleset
+export deleteCustomRule(ruleSet,ruleId)→x,rules.findIndex,rules.splice,v|remove a rule from a ruleset by ID
+export detectProjectRuleSets(path)→x,o,n,e,JSON.parse,Object.keys|auto-detect applicable rulesets from package.json and imports
+export checkCustomRules(path,options=)→l,x,detectProjectRuleSets,r.push,Object.entries,detected.includes|run relevant custom rules against project directory
 PATTERNS: auto-detection via dependencies and imports|regex code scanning
 EDGE_CASES: state machine ignores matches inside strings/comments
 y(a)|parseGraphignore — internal helper

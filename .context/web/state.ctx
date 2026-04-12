@@ -1,9 +1,9 @@
 --- web/state.js ---
 @sig 9a202a78
 o(e,n)→t.get,t,e.indexOf,e.slice,e|trigger event callbacks|handle dot path wildcards
-export subscribe(e,n)→t.has,t.set,t.get|add state change listener|ret unsubscribe fn
-export onEvent(e)→n.add,n.delete|add global event listener|ret unsubscribe fn
-export call(e,t=)→o,c.set,JSON.stringify,s.send,c.has,c.delete|send JSONRPC req via WS|ret Promise|handle timeout
+export subscribe(event,callback)→t.has,t.set,t.get|add state change listener|ret unsubscribe fn
+export onEvent(callback)→n.add,n.delete|add global event listener|ret unsubscribe fn
+export call(method,args=)→o,c.set,JSON.stringify,s.send,c.has,c.delete|send JSONRPC req via WS|ret Promise|handle timeout
 export connect()→e.replace,o,clearTimeout,JSON.parse,c.get,c.delete|init WS connection|handle reconnect|bind events
 export disconnect()→clearTimeout,s.close|close WS connection|clear reconnect timeout
 PATTERNS: WS RPC|pub/sub event system|reactive state mutations

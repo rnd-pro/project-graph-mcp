@@ -1,6 +1,6 @@
 --- src/analysis/similar-functions.js ---
 @sig 73623fb2
-export getSimilarFunctions(t,e=)→r,m,p,l.push,f,o.push|extract and compare signatures across directory for similar pairs
+export getSimilarFunctions(path,options=)→r,m,p,l.push,f,o.push|extract and compare signatures across directory for similar pairs
 PATTERNS: structural hashing of control flow|pair-wise comparison scoring
 EDGE_CASES: skips very small functions|ignores overloads (same name/file)
 u(a,b,c)|buildSignature — internal helper

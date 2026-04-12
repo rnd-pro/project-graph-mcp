@@ -1,6 +1,6 @@
 --- src/analysis/dead-code.js ---
 @sig 36cbbeca
-export getDeadCode(t)→i,m,u,e,a,h|scans dir for unused fns, classes, exports, vars, imports
+export getDeadCode(path)→i,m,u,e,a,h|scans dir for unused fns, classes, exports, vars, imports
 PATTERNS: AST traversal|cross-file dep tracking|heuristic usage regex
 EDGE_CASES: syntax err→skip file|test/css/tpl files→ignored
 y(a)|analyzeFileLocals — internal helper

@@ -2,10 +2,10 @@
 @sig aaf4f43d
 class FileTree extends e|9m,4$|Symbiote component for project file explorer tree
   .initCallback()|bind skeleton and selection events|handle click delegation
-  ._toggleDir()|(auto-documented)
-  ._saveExpandedState()|(auto-documented)
-  ._updateDirDOM()|(auto-documented)
-  ._collapseAll()|(auto-documented)
+  ._toggleDir()|(internal utility)
+  ._saveExpandedState()|(internal utility)
+  ._updateDirDOM()|(internal utility)
+  ._collapseAll()|(internal utility)
   ._highlightFile()|find file element|add active class|scroll into view
   ._renderTree()|parse skeleton data|group by directory|render HTML tree
   ._getFileIcon()|map file extension to material icon name

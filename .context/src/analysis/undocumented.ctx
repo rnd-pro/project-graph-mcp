@@ -1,8 +1,8 @@
 --- src/analysis/undocumented.js ---
 @sig 898e8f30
-export checkUndocumentedFile(t,e,n)→c,n.exec,t.slice,e.push,f,s.push|analyze single file for undocumented classes, functions, methods
-export getUndocumented(e,n=)→r,d,t,o,checkUndocumentedFile,i.push|scan directory for all undocumented items
-export getUndocumentedSummary(t,e=)→getUndocumented,n.filter,n.slice|scan directory and return aggregated undocumented summary
+export checkUndocumentedFile(filePath,code,level)→c,n.exec,t.slice,e.push,f,s.push|analyze single file for undocumented classes, functions, methods
+export getUndocumented(path,options=)→r,d,t,o,checkUndocumentedFile,i.push|scan directory for all undocumented items
+export getUndocumentedSummary(path,options=)→getUndocumented,n.filter,n.slice|scan directory and return aggregated undocumented summary
 PATTERNS: AST traversal|regex JSDoc extraction
 EDGE_CASES: skips lifecycle methods|skips private prefixed methods
 p(a,b)|findJSDocBefore — internal helper

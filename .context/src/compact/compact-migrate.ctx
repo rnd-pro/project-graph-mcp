@@ -1,8 +1,8 @@
 --- src/compact/compact-migrate.js ---
 @sig b7ae75d3
-export compactMigrate(t,n=)→m,message.includes,h,r,y,e|(auto-documented)
-PATTERNS: (auto-documented)
-EDGE_CASES: (auto-documented)
+export compactMigrate(path,options=)→m,message.includes,h,r,y,e|(internal utility)
+PATTERNS: (internal utility)
+EDGE_CASES: (internal utility)
 w(a,b)|extractNames — internal helper
 S(a,b,c)|buildNamesDirective — internal helper
 x(a)|updateCtxNames — internal helper

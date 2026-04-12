@@ -1,9 +1,9 @@
 --- src/compact/split-declarations.js ---
 @sig 66570947
-@enrich: Replace each (auto-documented) below. Read src/compact/split-declarations.js for context.
+@enrich: Replace each (internal utility) below. Read src/compact/split-declarations.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-export splitDeclarations(r)→t,n.push,n.sort,r.slice,o.push,o.filter|split minified blob into one-declaration-per-line using AST
-export isSingleLineBlob(r)→r.split,t.startsWith,t|check if code has >3 declarations on ≤2 lines
+export splitDeclarations(code)→t,n.push,n.sort,r.slice,o.push,o.filter|split minified blob into one-declaration-per-line using AST
+export isSingleLineBlob(code)→r.split,t.startsWith,t|check if code has >3 declarations on ≤2 lines
 PATTERNS: Acorn AST node.start boundaries for splitting
-EDGE_CASES: (auto-documented)
+EDGE_CASES: (internal utility)

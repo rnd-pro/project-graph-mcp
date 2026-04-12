@@ -1,14 +1,14 @@
 --- web/highlight.js ---
 @sig 01e0bd2d
-@enrich: Replace each (auto-documented) below. Read web/highlight.js for context.
+@enrich: Replace each {NEEDS_DESCRIPTION} below. Read web/highlight.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
 p(t)→c,r|check if char is valid identifier or number
-u(t)→t.replace|(auto-documented)
+u(t)→t.replace|{NEEDS_DESCRIPTION}
 a(t,n,s)→e|extract and escape substring
 c(t)|check if char is valid identifier start
 e(t)|escape HTML special chars
-export highlight(i)→a,l.push,i.substring,n.startsWith,u,r|lex JS string|wrap tokens in HTML spans|ret HTML string
+export highlight(code)→a,l.push,i.substring,n.startsWith,u,r|lex JS string|wrap tokens in HTML spans|ret HTML string
 PATTERNS: custom manual lexer|zero dep syntax highlighting
 EDGE_CASES: unterminated strings|nested comments
-o(a)|o — internal helper
+o(t)|o — internal helper

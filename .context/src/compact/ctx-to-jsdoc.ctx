@@ -1,11 +1,11 @@
 --- src/compact/ctx-to-jsdoc.js ---
 @sig 174ef437
-m(t,e)→t.replace,r,o|(auto-documented)
-F(t)|(auto-documented)
-export parseCtxFile(t)→t.split,t.match,r.split,i.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|parse .ctx file into structured fn signatures with params+types
-export injectJSDoc(n,s=)→d,a,m,t,parseCtxFile,c|inject JSDoc from .ctx into source, skip if JSDoc exists, AST-located
-export stripJSDoc(n,s=)→d,t,c,value.startsWith,f.filter,u.slice|strip all JSDoc via AST comments (safe—ignores strings), regex fallback
-export validateCtxContracts(e,n=)→d,a,m,t,parseCtxFile,c|validate if .ctx signatures match source AST signatures
+m(t,e)→t.replace,r,o|{NEEDS_DESCRIPTION}
+F(t)|{NEEDS_DESCRIPTION}
+export parseCtxFile(ctxPath)→t.split,t.match,r.split,i.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|parse .ctx file into structured fn signatures with params+types
+export injectJSDoc(filePath,options=)→d,a,m,t,parseCtxFile,c|inject JSDoc from .ctx into source, skip if JSDoc exists, AST-located
+export stripJSDoc(filePath,options=)→d,t,c,value.startsWith,f.filter,u.slice|strip all JSDoc via AST comments (safe—ignores strings), regex fallback
+export validateCtxContracts(rootPath,options=)→d,a,m,t,parseCtxFile,c|validate if .ctx signatures match source AST signatures
 PATTERNS: AST-based comment detection via Acorn onComment array|reverse-order insertions preserve line numbers|export keyword detection for duplicate prevention
 EDGE_CASES: strings containing /** preserved by AST parser|blank lines between JSDoc and fn handled by trimEnd|unparseable files fall back to regex strip
 h(a)|splitTopLevelParams — internal helper

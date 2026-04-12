@@ -1,11 +1,11 @@
 --- web/dashboard.js ---
 @sig 4540e0c4
-@enrich: Replace each (auto-documented) below. Read web/dashboard.js for context.
+@enrich: Replace each {NEEDS_DESCRIPTION} below. Read web/dashboard.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-i(e,t,o)→console.log,JSON.parse,projects.find,Object.assign,s,events.push|(auto-documented)
-l()→o,document.querySelector,document.createElement,n.setAttribute,e.appendChild,Object.entries|(auto-documented)
-PATTERNS: (auto-documented)
-EDGE_CASES: (auto-documented)
+i(e,t,o)→console.log,JSON.parse,projects.find,Object.assign,s,events.push|{NEEDS_DESCRIPTION}
+l()→o,document.querySelector,document.createElement,n.setAttribute,e.appendChild,Object.entries|{NEEDS_DESCRIPTION}
+PATTERNS: {NEEDS_DESCRIPTION}
+EDGE_CASES: {NEEDS_DESCRIPTION}
 c()|c — internal helper
-p(a)|p — internal helper
+p(e)|p — internal helper

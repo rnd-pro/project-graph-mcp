@@ -1,9 +1,9 @@
 --- src/analysis/analysis-cache.js ---
 @sig 3e2247a9
-export computeContentHash(t)→i|compute full source code hash|for body-dependent metrics
-export getCachePath(t,e)→e.replace,c|get cache file path for source file|.context/.cache/path.json
-export readCache(e,n)→getCachePath,r,t,JSON.parse|read cached analysis file|returns CacheEntry or null
-export writeCache(t,r,c)→getCachePath,a,n,JSON.stringify,e|write analysis cache entry|includes timestamp
-export isCacheValid(t,e,n,r=)|check if cache is valid|supports interface or content hash level
+export computeContentHash(content)→i|compute full source code hash|for body-dependent metrics
+export getCachePath(rootDir,key)→e.replace,c|get cache file path for source file|.context/.cache/path.json
+export readCache(rootDir,key)→getCachePath,r,t,JSON.parse|read cached analysis file|returns CacheEntry or null
+export writeCache(rootDir,key,data)→getCachePath,a,n,JSON.stringify,e|write analysis cache entry|includes timestamp
+export isCacheValid(rootDir,key,sourceFile,maxAge=)|check if cache is valid|supports interface or content hash level
 PATTERNS: dual-hashing (sig vs content)|persistent file-based cache
 EDGE_CASES: ignores read/write cache errors|handles missing directories
