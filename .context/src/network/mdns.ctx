@@ -3,5 +3,10 @@ export registerLocal(t,e)→registerDnsSd,tryAvahi,registerMcast|route mDNS regi
 registerDnsSd(e,r)→String,t,n.unref,n.kill|spawn dns-sd process for Bonjour service registration
 tryAvahi(e)→t,r.on,r.unref,r.kill|spawn avahi-publish-address process for Linux mDNS registration
 registerMcast(t)→t.split,Buffer.alloc,e.write,n.map,Buffer.from,Buffer.concat|create UDP socket and send mDNS answer packets
+@names __top__:r=MCAST_IP
+@names registerLocal:t=hostname,e=port
+@names registerDnsSd:e=hostname,r=port,n=proc
+@names tryAvahi:e=hostname,r=proc,n=failed
+@names registerMcast:t=hostname,n=parts,c=qname,e=qnameLen,o=server,i=qclass,s=resBuf,a=offset
 PATTERNS: platform-specific mDNS implementation fallback
 EDGE_CASES: silently ignores UDP errors|kills spawned processes on cleanup

@@ -12,5 +12,14 @@ startShutdownTimer()→hasActiveClients,resetShutdownTimer,console.log,process.e
 touchActivity()→resetShutdownTimer,startShutdownTimer|reset and restart shutdown timer on activity
 handleAPI(e,a,s,r)→a.get,d.executeTool,n,s,a,o.dirname|route HTTP API requests to MCP tools or local handlers
 export startWebServer(t,a)→r,o.resolve,o.basename,n.createHash,u.slice,parseInt|init HTTP/WS server, handle routing and WebSocket upgrades
+@names __top__:d=__dirname,p=root,m=webDir,h=vendorDirs,u=mime
+@names serveStatic:e=reqPath,n=res,a=cleanPath,s=vendorMatch,r=fullPath,c=baseDir,i=ext,l=contentType
+@names computeWSAccept:e=key
+@names encodeWSFrame:e=payload,t=buffer,o=len,n=header
+@names decodeWSFrame:e=buffer,t=opcode,o=masked,n=payloadLen,a=offset,s=data
+@names startWebServer:t=projectRoot,a=port,d=mcp,p=projectName,m=agentCounter,h=absRoot,u=hash,g=colorHue,f=state,w=agents,y=uiClients,S=shutdownTimer,v=server,j=wss,b=autoPort,T=listenPort
+@names broadcastRPC:e=method,t=params,o=msg
+@names patchState:e=path,t=value,o=keys,n=curr
+@names handleAPI:e=reqPath,a=query,s=method,r=res,c=result,i=targetPath
 PATTERNS: custom HTTP routing|manual WebSocket frame parsing without deps
 EDGE_CASES: 15min auto-shutdown|unmasked server frames|ping/pong opcodes

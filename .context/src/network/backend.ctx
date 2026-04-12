@@ -1,4 +1,5 @@
 @sig d1e9720c
 cleanup()→o|remove port file on exit
+@names __top__:t=projectRoot,c=server,a=intervalId,e=address
 PATTERNS: executable CLI entrypoint|interval port file polling
 EDGE_CASES: graceful exit on SIGINT/SIGTERM

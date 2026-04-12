@@ -9,5 +9,14 @@ export getGatewayPort()→readGatewayPid|get active gateway port or fallback to 
 startListening(e)→n.address,r.mkdirSync,JSON.stringify,r.writeFileSync,n.listen|start gateway HTTP/WS proxy server and save PID
 ensureGateway()→isGatewayRunning,readRegistry,resolveBackend,r.writeHead,Object.keys,r.end|spawn single global gateway proxy if not already running
 stopGateway()→r.unlinkSync|remove gateway.pid and services.json files
+@names __top__:s=gatewayDir,i=registryFile,a=pidFile
+@names writeRegistry:e=registryData
+@names registerService:e=name,t=port,r=options,n=hostname,s=registry,o=pathPrefix,i=mdnsService,a=gatewayPort,c=portStr,p=url
+@names resolveBackend:e=hostname,t=urlPath,r=registry,n=hostData,o=rewritePath
+@names readGatewayPid:e=content
+@names isGatewayRunning:e=pidData
+@names getGatewayPort:e=pidData
+@names ensureGateway:n=server,t=req,r=res,o=registry,s=backend,i=proxyReq,a=headers
+@names startListening:e=port
 PATTERNS: singleton global proxy across projects|transparent HTTP/WS routing
 EDGE_CASES: port 80 fallback to 8080 on EACCES|HTML injection for base href

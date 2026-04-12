@@ -1,2 +1,2 @@
-
-@names __top__:c=rl,a=pendingMessages,l=resolved,p=rootsRequestId,d=initializeId,n=debugLog startProxy:t=port
+@names __top__:c=rl,a=pendingMessages,l=resolved,p=rootsRequestId,d=initializeId,n=debugLog
+@names startProxy:e=projectRoot

@@ -8,5 +8,15 @@ export ensureBackend(e)→l,readPortFile,a,d,getPortFilePath,Date.now|check if b
 encodeClientFrame(e)→Buffer.from,t,Buffer.alloc,c.writeUInt16BE,BigInt,c.writeBigUInt64BE|encode and mask WebSocket client frame
 decodeFrame(e)→e.readUInt16BE,e.readBigUInt64BE,Number,e.slice|decode unmasked WebSocket frame from server
 export startStdioProxy(e,r=)→t,n.write,p,Buffer.alloc,u,Buffer.from|proxy stdin/stdout to WebSocket connection via TCP
+@names __top__:m=scriptDir,g=registryDir
+@names getPortFilePath:t=projectRoot,r=absPath,o=hash
+@names readPortFile:e=projectRoot,t=portFile
+@names writePortFile:e=projectRoot,t=port,r=absPath,n=data
+@names removePortFile:e=projectRoot
+@names listBackends:e=files,t=validBackends,r=file
+@names ensureBackend:e=projectRoot,t=absPath,o=existing,n=backendScript,c=portFile,s=startTime
+@names startStdioProxy:e=port,r=initialMessages,o=wsKey,n=socket,c=connected,s=buffer,i=pendingMsgs,a=rl
+@names encodeClientFrame:e=msg,r=payload,o=mask,n=maskedData,c=header
+@names decodeFrame:e=buffer,t=opcode,r=payloadLen,o=headerLen
 PATTERNS: detached process spawning|manual WebSocket client protocol via stdio
 EDGE_CASES: stale port file cleanup|timeout waiting for backend spawn
