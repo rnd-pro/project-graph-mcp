@@ -4,7 +4,7 @@
 
 # project-graph-mcp
 
-An MCP server that parses your source code into a **10-50x compressed skeleton** — classes, functions, imports, and dependencies in a minified JSON. Agents navigate the graph using `expand`, `deps`, and `usages` without reading irrelevant files. The **AI Context Layer** compresses an entire codebase into ~1700 tokens (97% savings) with a single `get_ai_context` call. Supports **monorepo scanning** and **streaming analysis** for large codebases.
+An MCP server that parses your source code into a **10-50x compressed skeleton** — classes, functions, imports, and dependencies in a minified JSON. Agents navigate the graph using `expand`, `deps`, and `usages` without reading irrelevant files. The **AI Context Layer** compresses an entire codebase into ~3K tokens (93% savings) with a single `get_ai_context` call. Supports **monorepo scanning** and **streaming analysis** for large codebases.
 
 > [!TIP]
 > **18 MCP tools.** Add one line to your MCP config and the server downloads itself on the next IDE restart.
@@ -54,7 +54,7 @@ One call loads everything an agent needs to understand a project:
 
 ```javascript
 get_ai_context({ path: "src/" })
-// → { skeleton, docs, totalTokens: 1742, savings: "97%" }
+// → { skeleton, docs, totalTokens: 3150, savings: "93%" }
 ```
 
 - **Code compression** — Terser-minified source with export legend headers (20-55% per file)
@@ -110,12 +110,15 @@ get_focus_zone({ path: ".", useGitDiff: true })
 **Real-world token budget** (45-file project):
 
 ```
-Traditional (raw sources):     64K tok — read everything expanded
-Overview (compact, no .ctx):   47K tok — 27% savings, full project
-Focus (compact + 3 files ctx): 47.6K tok — same savings + semantic descriptions
+Skeleton + docs only:         3.2K tok — 93% savings, full project overview
+Overview (compact, no .ctx):  compressed code — 20-55% savings per file
+Focus (compact + .ctx files): code + ~200 tok per .ctx — semantic descriptions
 ```
 
-Compact code saves **27% on average** (34-38% for typical files) by stripping whitespace and comments while preserving all names. The `.ctx` cost is **per-file** (~200 tok each) and only loaded for the focus area — the agent gets typed signatures and descriptions that the raw source never had.
+Compact code saves **20-55% per file** (typical projects with descriptive variable names) by minifying via Terser while preserving all exports. The `.ctx` cost is **per-file** (~200 tok each) and only loaded for the focus area — the agent gets typed signatures and descriptions that the raw source never had.
+
+> [!NOTE]
+> This project itself uses compact-style source code (single-letter variables), so self-benchmarks show minimal per-file savings. Projects with conventional naming see 34-55% compression.
 
 **Per-file metrics breakdown:**
 
