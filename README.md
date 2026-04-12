@@ -10,14 +10,6 @@
 
 ![Compact view — minified source as agents see it (7 lines vs 30+)](docs/img/explorer-compact.jpg)
 
-**Expanded view** — beautified code with JSDoc injection from `.ctx` files:
-
-![Expanded view with JSDoc](docs/img/explorer-expanded.jpg)
-
-**Compact view** — minified source as agents see it (7 lines vs 30+):
-
-![Compact minified view](docs/img/explorer-compact.jpg)
-
 > [!TIP]
 > **18 MCP tools.** Add one line to your MCP config and the server downloads itself on the next IDE restart.
 
