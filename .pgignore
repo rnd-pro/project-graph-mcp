@@ -4,3 +4,6 @@ vendor/
 # Generated files
 .context/
 .expanded/
+
+# Test files (not production code)
+tests/

@@ -1,32 +1,6 @@
-@sig f83a5fba
-@vars f=SKIP_DIRS,h=SUPPORTED
-generateJSDoc(t)→sanitizeJSDocText,e.push,e.join|build /** */ JSDoc block from .ctx signature
-export expandProject(t,r=)→a,s,walkJSFiles,l,resolveCtx,expandFile|expand all src/ → .expanded/ with JSDoc injection
-parseCtxSignatures(t)→t.split,n.trim,t.startsWith,t.match,e.set,parseCtxParams|parse .ctx file into Map of func name → typed signature
-parseCtxParams(t)→t.trim,t.split,e.match,e.replace|parse param string into [{name, type, optional}] array
-extractReturnType(t)→t.match|extract return type from →ReturnType arrow chain
-sanitizeJSDocText(t)→t.replace|escape */ in JSDoc descriptions to prevent parse errors
-parseCtxVars(t)→t.split,n.trim,t.startsWith,t.slice,t.trim,e.set|parse .ctx @vars line into Map of name → value
-parseCtxNames(t)→t.split,n.trim,t.startsWith,t.slice,t.indexOf,r.split|parse .ctx @names line into Map of module → name mappings
-collectLocals(t)→e.add,f|walk AST to collect local variable identifiers into Set
-collectLocalDecls(t)→e.push,f|walk AST to collect local VariableDeclarator nodes into Array
-restoreNames(t,e,n,s,r)→o.set,a.push,value.replace,e.toUpperCase,r.has,r.get|restore original unminified names using AST walking and scope mapping
-export expandFile(e,n,s=)→t,o.trim,m,a.split,s.trim,s.startsWith|beautify compact JS + inject JSDoc from .ctx|core hybrid mode expand
-resolveCtx(e,n)→c,i,p,a,s,t|find .ctx file: colocated or .context/ mirror
-@names __top__:t=readFileSync,e=writeFileSync,n=mkdirSync,s=existsSync,r=readdirSync,o=statSync,a=join,i=basename,c=extname,p=dirname,l=relative,m=minify,d=parse,f=simple,u=ancestor,h=SKIP_DIRS,y=SUPPORTED_EXTS
-@names parseCtxSignatures:t=ctxContent,e=signatures,n=line,s=classMatch,r=methodMatch,o=functionMatch,a=description
-@names parseCtxParams:t=paramsString,e=paramText,n=typedMatch,s=untypedMatch
-@names extractReturnType:t=returnTypeString,e=match
-@names sanitizeJSDocText:t=text
-@names generateJSDoc:t=signature,e=lines,n=param,s=paramName
-@names parseCtxVars:t=ctxContent,e=varsMap,n=line,s=valMatch
-@names parseCtxNames:t=ctxContent,e=namesMap,n=line,s=moduleName,r=mappings,o=moduleMap
-@names collectLocals:t=node,e=locals
-@names collectLocalDecls:t=node,e=decls
-@names restoreNames:t=sourceCode,e=ast,n=signatures,s=varsMap,r=namesMap,o=scopeMap,a=imports,i=usedNames,c=scopes,p=params,l=localsList,m=allReplacements,d=modifiedCode
-@names expandFile:e=filePath,n=ctxContent,s=options,r=indentLevel,o=sourceCode,a=beautifiedCode,t=lines,i=signatures,c=varsMap,p=namesMap,l=ast,u=jsdocBlocks,h=finalCode,y=injectedCount
-@names walkJSFiles:t=dir,e=rootDir,n=files,s=entry,r=entryPath,o=stat,y=SUPPORTED_EXTS
-@names resolveCtx:e=projectDir,n=filePath,r=ctxFile,o=fileDir,l=localCtxPath,m=contextDirCtxPath
-@names expandProject:t=projectDir,r=options,o=dryRun,i=outputDir,c=resolvedOutputDir,m=srcDir,d=jsFiles,f=fileDetails,u=errors,h=totalJSDocInjected,l=relativePath
+--- src/compact/expand.js ---
+@sig a9cd25fe
+export expandProject(t,o=)→i,s,S,l,$,expandFile|expand all src/ → .expanded/ with JSDoc injection
+export expandFile(e,n,s=)→t,r.trim,m,i.split,s.trim,s.startsWith|beautify compact JS + inject JSDoc from .ctx|core hybrid mode expand
 PATTERNS: Terser beautify (no compress/mangle)|AST walk for injection points|reverse-order insertion|name-based symbol matching
 EDGE_CASES: */ in descriptions→sanitized|empty files→skip|parse errors→fallback to beautified|unmapped lines→null

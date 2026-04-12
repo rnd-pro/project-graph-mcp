@@ -1,12 +1,9 @@
-@sig 313a9654
-export registerLocal(t,e)→registerDnsSd,tryAvahi,registerMcast|route mDNS registration to dns-sd(mac)|Avahi(linux)|Node.js mcast
-registerDnsSd(e,r)→String,t,n.unref,n.kill|spawn dns-sd process for Bonjour service registration
-tryAvahi(e)→t,r.on,r.unref,r.kill|spawn avahi-publish-address process for Linux mDNS registration
-registerMcast(t)→t.split,Buffer.alloc,e.write,n.map,Buffer.from,Buffer.concat|create UDP socket and send mDNS answer packets
-@names __top__:r=MCAST_IP
-@names registerLocal:t=hostname,e=port
-@names registerDnsSd:e=hostname,r=port,n=proc
-@names tryAvahi:e=hostname,r=proc,n=failed
-@names registerMcast:t=hostname,n=parts,c=qname,e=qnameLen,o=server,i=qclass,s=resBuf,a=offset
+--- src/network/mdns.js ---
+@sig bc73bb43
+@enrich: Replace each (auto-documented) below. Read src/network/mdns.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+n(e,r)→String,t,n.unref,n.kill|(auto-documented)
+export registerLocal(t,e)→n,c,o|route mDNS registration to dns-sd(mac)|Avahi(linux)|Node.js mcast
 PATTERNS: platform-specific mDNS implementation fallback
 EDGE_CASES: silently ignores UDP errors|kills spawned processes on cleanup

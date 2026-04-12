@@ -1,11 +1,18 @@
 --- web/panels/file-tree.js ---
-@sig 2f8165db
-class FileTree extends e|5m,3$|Symbiote component for project file explorer tree
+@sig aaf4f43d
+@enrich: Replace each (auto-documented) below. Read web/panels/file-tree.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+class FileTree extends e|9m,4$|Symbiote component for project file explorer tree
   .initCallback()|bind skeleton and selection events|handle click delegation
+  ._toggleDir()|(auto-documented)
+  ._saveExpandedState()|(auto-documented)
+  ._updateDirDOM()|(auto-documented)
+  ._collapseAll()|(auto-documented)
   ._highlightFile()|find file element|add active class|scroll into view
   ._renderTree()|parse skeleton data|group by directory|render HTML tree
   ._getFileIcon()|map file extension to material icon name
   ._applyFilter()|hide file elements not matching filter text
-  CALLS→_renderTree,_highlightFile,requestAnimationFrame,s.addEventListener,target.closest,querySelectorAll,classList.remove,classList.add
+  CALLS→localStorage.getItem,JSON.parse,Array.isArray,_renderTree,_highlightFile,requestAnimationFrame,s.addEventListener,target.closest
 PATTERNS: skeleton data parsing|event delegation|DOM filtering
 EDGE_CASES: empty skeleton|file with special chars in name|no files found

@@ -1,19 +1,7 @@
 --- src/analysis/undocumented.js ---
-@sig b041c612
-@vars d=SKIP_METHODS
-@names __top__:d=defaultConfig
-@names findJSFiles:e=dir,c=rootDir,i=files,r=entry,t=fullPath,u=relPath
-@names extractComments:e=sourceCode,t=comments,n=regex,s=match
-@names findJSDocBefore:e=comments,t=line,n=doc
-@names checkMissing:e=doc,t=node,n=missing
-@names checkUndocumentedFile:e=filePath,t=rootDir,n=options,s=content,o=ast,c=comments,i=results,r=node
-@names getUndocumented:t=projectPath,n=options,s=files,i=results,r=file,c=stats
-@names getUndocumentedSummary:e=results,t=options,n=summary,s=total,o=missing
-findJSDocBefore(e,t)|null|null|null|find JSDoc block immediately preceding a line
-extractComments(e)→n.exec,e.slice,t.push|extract all JSDoc blocks and their end lines
-checkMissing(e,t)→e.includes,n.push|check if JSDoc is missing required tags for strictness level
-export checkUndocumentedFile(e,t,n)→i,extractComments,findJSDocBefore,s.push,e.startsWith,d.includes|analyze single file for undocumented classes, functions, methods
-export getUndocumented(t,n=)→c,findJSFiles,e,o,checkUndocumentedFile,r.push|scan directory for all undocumented items
-export getUndocumentedSummary(e,t=)→getUndocumented,n.filter,n.slice|scan directory and return aggregated undocumented summary
+@sig 898e8f30
+export checkUndocumentedFile(t,e,n)→c,n.exec,t.slice,e.push,f,s.push|analyze single file for undocumented classes, functions, methods
+export getUndocumented(e,n=)→r,d,t,o,checkUndocumentedFile,i.push|scan directory for all undocumented items
+export getUndocumentedSummary(t,e=)→getUndocumented,n.filter,n.slice|scan directory and return aggregated undocumented summary
 PATTERNS: AST traversal|regex JSDoc extraction
 EDGE_CASES: skips lifecycle methods|skips private prefixed methods

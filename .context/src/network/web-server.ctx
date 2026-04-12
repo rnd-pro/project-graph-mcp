@@ -1,25 +1,18 @@
-@sig 777321a3
-serveStatic(e,n)→o.normalize,a.match,o.join,r.startsWith,n.writeHead,n.end|serve static web files from project-graph/web or symbiote modules
-computeWSAccept(e)→n.createHash|compute Sec-WebSocket-Accept hash for handshake
-encodeWSFrame(e)→Buffer.from,Buffer.alloc,n.writeUInt16BE,BigInt,n.writeBigUInt64BE,Buffer.concat|encode WebSocket frame with proper header length
-decodeWSFrame(e)→e.readUInt16BE,e.readBigUInt64BE,Number,e.slice,s.toString|decode incoming WebSocket frame and unmask payload
-broadcastRPC(e,t)→JSON.stringify,e.send,y.delete|send JSON-RPC message to all active WebSocket clients
-patchState(e,t)→e.split,broadcastRPC|update nested state object and broadcast patch event
-ensureSkeleton()→d.executeTool|lazy load project skeleton via MCP tool
-hasActiveClients()|check if any agent or UI clients are connected
-resetShutdownTimer()→clearTimeout|clear inactivity shutdown timer
-startShutdownTimer()→hasActiveClients,resetShutdownTimer,console.log,process.exit,setTimeout|start 15 min timer to exit process if no active clients
-touchActivity()→resetShutdownTimer,startShutdownTimer|reset and restart shutdown timer on activity
-handleAPI(e,a,s,r)→a.get,d.executeTool,n,s,a,o.dirname|route HTTP API requests to MCP tools or local handlers
-export startWebServer(t,a)→r,o.resolve,o.basename,n.createHash,u.slice,parseInt|init HTTP/WS server, handle routing and WebSocket upgrades
-@names __top__:d=__dirname,p=root,m=webDir,h=vendorDirs,u=mime
-@names serveStatic:e=reqPath,n=res,a=cleanPath,s=vendorMatch,r=fullPath,c=baseDir,i=ext,l=contentType
-@names computeWSAccept:e=key
-@names encodeWSFrame:e=payload,t=buffer,o=len,n=header
-@names decodeWSFrame:e=buffer,t=opcode,o=masked,n=payloadLen,a=offset,s=data
-@names startWebServer:t=projectRoot,a=port,d=mcp,p=projectName,m=agentCounter,h=absRoot,u=hash,g=colorHue,f=state,w=agents,y=uiClients,S=shutdownTimer,v=server,j=wss,b=autoPort,T=listenPort
-@names broadcastRPC:e=method,t=params,o=msg
-@names patchState:e=path,t=value,o=keys,n=curr
-@names handleAPI:e=reqPath,a=query,s=method,r=res,c=result,i=targetPath
+--- src/network/web-server.js ---
+@sig f4957190
+@enrich: Replace each (auto-documented) below. Read src/network/web-server.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+y(e)→Buffer.from,Buffer.alloc,n.writeUInt16BE,BigInt,n.writeBigUInt64BE,Buffer.concat|(auto-documented)
+x(e,t)→JSON.stringify,e.send,T.delete|(auto-documented)
+S(e,t)→e.split,x|(auto-documented)
+w(e)→e.readUInt16BE,e.readBigUInt64BE,Number,e.slice,s.toString|(auto-documented)
+P()→N,O,console.log,process.exit,setTimeout|(auto-documented)
+O()→clearTimeout|(auto-documented)
+k()→d.executeTool|(auto-documented)
+N()|(auto-documented)
+z()→O,P|(auto-documented)
+A(e,a,s,i)→a.get,d.executeTool,n,s,a,o.dirname|(auto-documented)
+export startWebServer(t,a)→i,o.resolve,o.basename,n.createHash,f.slice,parseInt|init HTTP/WS server, handle routing and WebSocket upgrades
 PATTERNS: custom HTTP routing|manual WebSocket frame parsing without deps
 EDGE_CASES: 15min auto-shutdown|unmasked server frames|ping/pong opcodes

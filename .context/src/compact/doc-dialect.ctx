@@ -1,29 +1,9 @@
 --- src/compact/doc-dialect.js ---
-@sig 7f138ef0
-resolveCtxPath(t,e)→a,r,l,i,s|null→extname,basename,dirname,join,existsSync|null→extname,basename,dirname,join,existsSync|null→extname,basename,dirname,join,existsSync|resolve .ctx path for source file|priority: colocated > mirror
+@sig bccef7f4
 export generateDocDialect(t,e)→r,s.push,c.push,c.join,edges.filter,h.push|generate compact doc-dialect string from graph|includes project/file/function levels
-walkCtxFiles(t,n)→s,e,i,c,walkCtxFiles,o.push|recursively find .ctx files|returns relative and absolute paths
-resolveCtxMdPath(t,e)→a,r,l,i,s|null→extname,basename,dirname,join,existsSync|null→extname,basename,dirname,join,existsSync|null→extname,basename,dirname,join,existsSync|resolve companion .ctx.md path|priority: colocated > mirror
-export readContextDocs(e)→i,walkCtxFiles,t,n.set,relPath.startsWith,n.keys|read manual docs (mirror + colocated)|colocated overrides mirror
-export getProjectDocs(e,s,n=)→readContextDocs,resolveCtxPath,t,generateDocDialect,t.indexOf,t.slice|get project docs|merges manual .ctx and auto-generated dialect
-computeSignature(t,e)→params.join,s.push,methods.sort,s.sort,f,s.join|compute structural signature hash from AST|used for staleness detection
-parseCtxDescriptions(t)→t.split,s.trim,t.startsWith,t.match,e.set|extract user descriptions from existing .ctx|preserves data on overwrite
-export checkStaleness(e,s)→i,walkCtxFiles,t,e.match,computeSignature,o.push|check .ctx files staleness vs current AST
-buildFileTemplate(t,e,s,n,o)→computeSignature,h.push,i.get,h.join,c.push,calls.slice|build rich AST template for single file|injects placeholder markers
+export readContextDocs(e)→i,x,t,n.set,relPath.startsWith,n.keys|read manual docs (mirror + colocated)|colocated overrides mirror
+export getProjectDocs(e,s,n=)→readContextDocs,j,t,generateDocDialect,t.indexOf,t.slice|get project docs|merges manual .ctx and auto-generated dialect
+export checkStaleness(e,s)→i,x,t,e.match,E,o.push|check .ctx files staleness vs current AST
 export generateContextFiles(t,e,c,a=)→i,s,n,r,c.push,c.join|generate .context/ templates|supports focus scope and overwrite merge
-processFileCtx(e,c,h,u,f,g,S)→a,r,l,i,s,n|generate or update .ctx and .ctx.md templates for a single file
-@names __top__:s=existsSync,n=readFileSync,c=writeFileSync,i=mkdirSync,a=readdirSync,l=statSync,h=join,u=dirname,t=basename,e=extname,o=relative,r=compressFile,f=resolveCtxPath,p=walkJSFiles,m=addTopLevelNewlines,d=resolveCtxMdPath,$=getProjectDocs,x=buildFileTemplate,g=generateContextFiles,S=processFileCtx,j=checkStaleness,C=parseCtxDescriptions,E=computeSignature,D=readContextDocs,y=generateDocDialect,b=walkCtxFiles,R=SUPPORTED_EXTS,W=SKIP_DIRS,w=DocDialectTemplates,P=DocDialectSyntax,v=DocDialectRenderers
-@names generateDocDialect:e=projectDir,r=options,s=dryRun,n=outputDir,t=srcDir,o=jsFiles,c=fileDetails,i=errors,h=totalDocsGenerated,a=relativePath,l=ctxPath,u=ctxContent
-@names walkCtxFiles:s=dir,t=rootDir,o=files,e=entry,n=entryPath
-@names resolveCtxPath:e=projectDir,t=filePath,o=dryRun,n=ctxFileName,c=fileDir,h=localCtxPath
-@names resolveCtxMdPath:e=projectDir,t=filePath,o=dryRun,n=ctxFileName,c=fileDir,h=localCtxPath
-@names readContextDocs:e=ctxPath,s=ctxContent,o=descriptions,n=line,t=match,c=symbol,l=doc,a=docs,h=docMatch
-@names getProjectDocs:n=projectDir,s=options,t=ctxFiles,e=fileDocs,i=ctxPath,r=ctxContent,c=descriptions
-@names computeSignature:e=ast,s=symbolName,n=signature,t=exportNode
-@names parseCtxDescriptions:t=ctxContent,s=descriptions,n=line,e=match,o=symbol,c=doc
-@names checkStaleness:i=ctxPath,e=jsPath,n=ctxStat,a=jsStat,r=ctxContent,s=jsContent,o=ctxHash,c=jsHash,t=isStale
-@names buildFileTemplate:t=filePath,n=ctxContent,o=descriptions,e=docs,r=lines,a=line,s=match,h=symbol,l=doc,i=template,c=templateLines,u=templateString
-@names generateContextFiles:a=projectDir,i=options,e=dryRun,s=outputDir,f=srcDir,n=jsFiles,t=fileDetails,c=errors,o=totalDocsGenerated,p=relativePath,d=ctxPath,m=ctxContent,x=mdPath,g=mdContent,S=template,j=docs
-@names processFileCtx:r=projectDir,e=filePath,i=options,f=ctxPath,C=ctxContent,E=mdPath,j=mdContent,g=template,s=docs,D=isStale,b=jsPath,S=jsContent,y=ctxHash,n=jsHash,W=ast,t=exportNode,c=signature,h=doc,u=docMatch,R=descriptions,o=line,w=match,P=symbol,v=docText
 PATTERNS: two-tier doc resolution (colocated > mirror)|AST signature hashing
 EDGE_CASES: preserves existing placeholders on overwrite|handles git diff for focus scope

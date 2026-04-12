@@ -2,8 +2,5 @@
 @sig 8675b153
 analyzeFile(e,t)→s,i,n.split,o,l.simple,h.push|parse file, count structures, and assign size rating
 export getLargeFiles(s,e=)→r,findJSFiles,analyzeFile,i.map,o.filter,o.sort|analyze directory to find overly large and complex files
-@names findJSFiles:s=dir,r=rootDir,o=files,l=entry,e=fullPath,u=relPath
-@names analyzeFile:e=filePath,t=rootDir,n=content,r=lines,a=size,c=functions,u=ast,p=funcs,f=classes,h=complexity,d=loc,g=rating
-@names getLargeFiles:s=projectPath,e=options,t=files,n=results,i=maxSize,o=maxLines,l=stats
 PATTERNS: AST visitor via Acorn|threshold-based scoring
 EDGE_CASES: ignores parse errors gracefully

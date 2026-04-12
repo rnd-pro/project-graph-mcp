@@ -1,16 +1,14 @@
+--- src/compact/compact.js ---
 @sig 596f30f0
-@vars d=SUPPORTED,f=SKIP_DIRS
+@enrich: Replace each (auto-documented) below. Read src/compact/compact.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+walkJSFiles(e,t=)→n,a.startsWith,r,o,f.has,walkJSFiles|(auto-documented)
 addTopLevelNewlines(e)→e.replace|insert newlines after minified semicolons to format top-level statements
+resolveCtxPath(e,t)→a,c,i,l,r,s|(auto-documented)
 compactFile(n,o)→e,s.trim,u,addTopLevelNewlines,resolveCtxPath,a.startsWith|minify single JS file, prepend @ctx header if .ctx exists
 beautifyFile(n)→e,o.trim,u,t|format single JS file with proper indentation
 export compactProject(t,n=)→walkJSFiles,a,e,u,addTopLevelNewlines,compactFile|compact all JS files in dir, per-file error handling, ret stats+savings%
-@names __top__:s=existsSync,a=readdirSync,n=statSync,o=readFileSync,u=writeFileSync,d=mkdirSync,f=join,r=basename,c=extname,e=dirname,i=relative,l=compressFile,t=resolveCtxPath
-@names walkJSFiles:e=dir,n=rootDir,a=files,s=entry,t=entryPath
-@names addTopLevelNewlines:e=code
-@names resolveCtxPath:t=projectDir,e=filePath,n=dryRun,u=ctxFileName,o=fileDir,d=localCtxPath,f=contextDirCtxPath
-@names compactFile:e=filePath,n=projectDir,s=options,c=sourceCode,o=beautified,a=compressed,r=ctxPath
-@names beautifyFile:n=filePath,o=projectDir,r=options,s=sourceCode
-@names compactProject:n=projectDir,t=options,s=dryRun,a=outputDir,e=srcDir,i=jsFiles,l=fileDetails,r=errors,c=totalSavings,d=relativePath
-@names expandProject:n=projectDir,t=options,s=dryRun,e=srcDir,i=jsFiles,l=fileDetails,r=errors,c=relativePath
 PATTERNS: Terser mangle:false preserves all names|per-file try/catch collects errors array|dryRun mode estimates without writing|skips node_modules,vendor,.git,.context
 EDGE_CASES: empty files return 0/0|syntax errors collected in errors[] not thrown|files with only comments become empty (correct behavior)
+export expandProject(t,n)→beautify|expand/beautify all project files

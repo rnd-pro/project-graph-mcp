@@ -1,12 +1,5 @@
 --- src/analysis/type-checker.js ---
-@sig fe1dc9f0
-detectTsc()→t|null, path: string|null →execSync|null, path: string|null →execSync|null, path: string|null →execSync|detect typescript compiler via local tsc or npx
-parseDiagnosticLine(t,e)→t.match,parseInt|null→line.match,parseInt|null→line.match,parseInt|null→line.match,parseInt|regex parse tsc output line into structured error object
-buildArgs(t,e=)→i,s,n.push|build arguments prioritizing local configs over defaults
-export checkTypes(t,s=)→n,detectTsc,buildArgs,path.includes,e,stdout.on|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|spawn tsc process, collect and parse type diagnostics
-@names detectTsc:e=hasTsc
-@names parseDiagnosticLine:t=line,e=file,s=diagnostic
-@names buildArgs:t=projectPath,e=options,n=args,r=tsconfig,o=flags
-@names checkTypes:t=projectPath,s=options,i=results,r=args,o=cmd,l=output,a=lines,c=line,n=diag,u=errors,p=warnings,d=stats,e=code,h=msg,m=file,f=loc
+@sig 5e85e31c
+export checkTypes(t,s=)→n,o,l,path.includes,e,stdout.on|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|spawn tsc process, collect and parse type diagnostics
 PATTERNS: subprocess spawning|regex CLI output parsing
 EDGE_CASES: falls back to npx if global tsc missing|auto-generates config args

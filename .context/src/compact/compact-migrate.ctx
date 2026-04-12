@@ -1,7 +1,8 @@
-# compact-migrate
-Converts formatted JS to compact mode 1. Reads --all or single files,
-applies Terser minification preserving imports, injects // @ctx header,
-writes minified output back. Handles shebang preservation and .mjs.
-## Exports
-- migrateFile(path): minify single file
-- migrateAll(root): batch-migrate src/ tree
+--- src/compact/compact-migrate.js ---
+@sig b7ae75d3
+@enrich: Replace each (auto-documented) below. Read src/compact/compact-migrate.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+export compactMigrate(t,n=)→m,message.includes,h,r,y,e|(auto-documented)
+PATTERNS: (auto-documented)
+EDGE_CASES: (auto-documented)

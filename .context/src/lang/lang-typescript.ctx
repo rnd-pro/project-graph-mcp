@@ -2,8 +2,5 @@
 @sig 9b26807c
 export parseTypeScript(t,e)→s,t.match,s.trim,imports.push,exports.push,classes.push|regex parsing of TypeScript classes, methods, and functions
 extractParams(s)→s.match,s.trim,s.startsWith|extract and clean parameters from signature line
-@names __top__:s=stripStringsAndComments
-@names parseTypeScript:t=sourceCode,e=filePath,r=result,c=lines,n=currentClass,a=currentFunction,s=lineIndex,o=lineNum,i=importRegex,l=namespaceRegex,p=exportRegex,u=exportNamedRegex,f=classRegex,m=callRegex,h=callMatch
-@names extractParams:s=signatureLine,t=match
 PATTERNS: regex line-by-line parsing|string/comment stripping preprocessing
 EDGE_CASES: ignores type-only declarations|cleans generics and optional marks

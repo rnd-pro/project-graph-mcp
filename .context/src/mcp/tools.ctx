@@ -1,30 +1,12 @@
 --- src/mcp/tools.js ---
-@sig 5f00f628
-@vars h=cachedGraph,d=cachedPath,m=cachedMtimes
-saveDiskCache(e,t)→p,Object.fromEntries,JSON.stringify,a|save graph cache to disk|.project-graph-cache.json
-loadDiskCache(e)→p,l,c,JSON.parse,m.clear,Object.entries|load graph cache from disk|validates version and path
-export getGraph(t)→detectChanges,loadDiskCache,e,s,snapshotMtimes,saveDiskCache|get or build project graph|uses smart mtime-based caching
-detectChanges(e)→n,m.keys,s.has,r.has,i,m.get|detect if any JS files changed via mtime
-snapshotMtimes(e)→m.clear,n,i,m.set|snapshot mtimes for all JS files in path
+@sig 1671e433
+export getGraph(t)→g,p,l,c,JSON.parse,m.clear|get or build project graph|uses smart mtime-based caching
 export getSkeleton(e)→getGraph,r,o|get compact project skeleton
 export getFocusZone(e=)→getGraph,u,e.endsWith,c,t,Object.keys|get enriched focus zone|auto-detects from git diff or recent files
-export expand(t)→getGraph,t.split,e,classes.find,functions.find,c|expand minified symbol to full details|extracts method code if specified
+export expand(t)→getGraph,t.split,e,classes.find,functions.find,e.slice|expand minified symbol to full details|extracts method code if specified
 export deps(e)→getGraph,edges.filter|get dependency tree for a symbol|shows imports, usedBy, calls
 export usages(t)→getGraph,e,calls.includes,e.includes,calls.some,c.push|find all usages of a symbol across project
-extractMethod(e,t)→e.slice|extract method code from file content using regex
 export getCallChain(e=)→getGraph,e.push,f.add,l.shift,e.split,t.map|Object>→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|Object>→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|Object>→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|find shortest call path between two symbols|uses BFS
 export invalidateCache()→p,l,f,m.clear|delete cache file and clear memory cache
-@names saveDiskCache:e=projectPath,t=graph,n=cacheFilePath,r=cacheData
-@names loadDiskCache:e=projectPath,t=cacheFilePath,n=cacheContent,r=cacheData
-@names getGraph:t=projectPath,n=projectAST
-@names detectChanges:e=projectPath,t=jsFiles,r=currentFilesSet,s=cachedFilesSet
-@names snapshotMtimes:e=projectPath,t=jsFiles
-@names getSkeleton:e=projectPath,t=graph,n=allFiles
-@names getFocusZone:e=options,n=targetPath,r=graph,s=recentFiles,o=expandedNodes,t=legendKey
-@names expand:t=symbol,n=targetPath,r=graph,s=className,o=methodName,i=fullSymbolName,a=ast,l=classNode,f=functionNode,e=node
-@names deps:e=symbol,t=targetPath,n=graph,r=node,s=incomingEdges,o=outgoingEdges
-@names usages:t=symbol,n=targetPath,r=graph,s=ast,o=fullSymbolName,c=usagesList,e=classNode
-@names extractMethod:e=fileContent,t=methodName,n=regexMatch,r=matchIndex,s=braceCount,o=currentIndex
-@names getCallChain:e=options,t=startSymbol,n=endSymbol,r=targetPath,s=resolvedPath,o=graph,c=startFull,i=endFull,a=adjacencyList,l=queue,f=visitedNodes,u=visitedClasses
 PATTERNS: smart mtime caching|BFS for call chain|regex for method extraction
 EDGE_CASES: gracefully handles unreadable files/mtimes|handles missing symbols

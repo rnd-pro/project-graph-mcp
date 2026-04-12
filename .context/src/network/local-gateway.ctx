@@ -1,22 +1,11 @@
-@sig 27d921c5
-readRegistry()→r.readFileSync,JSON.parse|read services.json registry from ~/.local-gateway
-writeRegistry(e)→r.mkdirSync,JSON.stringify,r.writeFileSync|write updated service routes to services.json registry
-export registerService(e,t,r=)→readRegistry,writeRegistry,o,ensureGateway,i.cleanup,Object.keys|register local domain/project route and trigger mDNS broadcast
-resolveBackend(e,t,r)→Object.keys,t.startsWith,process.kill,t.slice|match hostname and path to backend port and prefix
-readGatewayPid()→r.readFileSync,e.trim,JSON.parse,parseInt|read gateway PID and port from gateway.pid file
-isGatewayRunning()→readGatewayPid,process.kill|check if gateway process is alive via process.kill
-export getGatewayPort()→readGatewayPid|get active gateway port or fallback to 80
-startListening(e)→n.address,r.mkdirSync,JSON.stringify,r.writeFileSync,n.listen|start gateway HTTP/WS proxy server and save PID
-ensureGateway()→isGatewayRunning,readRegistry,resolveBackend,r.writeHead,Object.keys,r.end|spawn single global gateway proxy if not already running
-stopGateway()→r.unlinkSync|remove gateway.pid and services.json files
-@names __top__:s=gatewayDir,i=registryFile,a=pidFile
-@names writeRegistry:e=registryData
-@names registerService:e=name,t=port,r=options,n=hostname,s=registry,o=pathPrefix,i=mdnsService,a=gatewayPort,c=portStr,p=url
-@names resolveBackend:e=hostname,t=urlPath,r=registry,n=hostData,o=rewritePath
-@names readGatewayPid:e=content
-@names isGatewayRunning:e=pidData
-@names getGatewayPort:e=pidData
-@names ensureGateway:n=server,t=req,r=res,o=registry,s=backend,i=proxyReq,a=headers
-@names startListening:e=port
+--- src/network/local-gateway.js ---
+@sig b22646c7
+@enrich: Replace each (auto-documented) below. Read src/network/local-gateway.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+h()→r.readFileSync,t.trim,JSON.parse,parseInt|(auto-documented)
+d()→r.existsSync,r.readdirSync,t.endsWith,p,o.join,r.readFileSync|(auto-documented)
+export registerService(t,e,r=)→p,l,n,f,c.cleanup,process.on|register local domain/project route and trigger mDNS broadcast
+export getGatewayPort()→h|get active gateway port or fallback to 80
 PATTERNS: singleton global proxy across projects|transparent HTTP/WS routing
 EDGE_CASES: port 80 fallback to 8080 on EACCES|HTML injection for base href

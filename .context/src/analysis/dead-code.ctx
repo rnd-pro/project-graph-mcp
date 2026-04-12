@@ -1,12 +1,5 @@
 --- src/analysis/dead-code.js ---
-@sig 97df4d1d
-findProjectRoot(e)→a,r,o,s|walks up dir tree to find package.json
-analyzeFileLocals(e)→c,i.push,r.add,a.push,l.simple,d.add|parses AST to find unused local vars and imports
-export getDeadCode(t)→a,findJSFiles,findProjectRoot,e,i,analyzeFile|scans dir for unused fns, classes, exports, vars, imports
-@names findJSFiles:e=dir,s=rootDir,a=files,r=entry,t=fullPath,c=relPath
-@names findProjectRoot:e=filePath,t=dir
-@names analyzeFile:e=filePath,t=content,n=ast,s=exports,o=imports,i=requires,a=locals
-@names analyzeFileLocals:e=filePath,t=content,n=ast,s=locals,o=refs,i=scope,a=node,r=decl,d=id
-@names getDeadCode:t=projectPath,n=options,s=rootDir,o=files,d=exports,f=imports,p=used,m=dead,u=file,c=result,e=entry,l=item,a=ref,r=path,h=stats
+@sig 36cbbeca
+export getDeadCode(t)→i,m,u,e,a,h|scans dir for unused fns, classes, exports, vars, imports
 PATTERNS: AST traversal|cross-file dep tracking|heuristic usage regex
 EDGE_CASES: syntax err→skip file|test/css/tpl files→ignored

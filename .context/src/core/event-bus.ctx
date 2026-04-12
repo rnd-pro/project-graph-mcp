@@ -1,14 +1,9 @@
+--- src/core/event-bus.js ---
 @sig f4e3c62d
 export emitToolCall(o,e)→Date.now,t.emit|emit tool:call event with timestamp and arguments
 export emitToolResult(o,e,l,n,s)→Object.keys,Date.now,t.emit|emit tool:result event with duration, success status, and result keys
 export onToolCall(o)→t.on|register listener for tool:call events
 export onToolResult(o)→t.on|register listener for tool:result events
 export removeToolListener(o,e)→t.off|remove specific event listener from bus
-@names __top__:t=emitter
-@names emitToolCall:o=toolName,e=args
-@names emitToolResult:o=toolName,e=args,l=resultObj,n=durationMs,s=success
-@names onToolCall:o=listener
-@names onToolResult:o=listener
-@names removeToolListener:o=eventName,e=listener
 PATTERNS: Singleton EventEmitter|event name namespacing tool:*
 EDGE_CASES: max listeners increased to 50 to prevent warnings

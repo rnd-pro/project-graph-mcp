@@ -1,19 +1,11 @@
 --- src/analysis/full-analysis.js ---
-@sig 85f69e39
-calculateHealthScore(t)→Math.min,s.push,Math.round,Math.max,s.slice|calculate overall health score 0-100|applies penalties for dead code, complexity
-runCacheableAnalyses(e,s)→n,C,findJSFiles,o,t,y|run per-file cacheable metrics|checks complexity, undocumented, jsdoc
-aggregateComplexity(t,e=)→t.filter,s.sort,s.filter,s.reduce,Math.round,s.slice|aggregate complexity items to summary|groups by severity
-aggregateUndocumented(t)→t.filter,t.slice|aggregate undocumented items to summary|groups by class/function/method
-aggregateJSDoc(t)→t.filter|aggregate JSDoc issues to summary|counts errors and warnings
-export getFullAnalysis(t,e=)→n,C,a,runCacheableAnalyses,aggregateComplexity,aggregateUndocumented|run full code health analysis|combines cached and dynamic cross-file metrics
-export getAnalysisSummaryOnly(t)→C,a,runCacheableAnalyses,aggregateComplexity,aggregateUndocumented,aggregateJSDoc|get partial fast health score skipping cross-file analyses
-@names calculateHealthScore:t=stats,e=score,s=complexity,a=deadCode,o=undocumented,n=total,i=penalty,l=ratio,r=weight,c=maxScore
-@names findJSFiles:t=dir,n=rootDir,i=files,l=entry,e=fullPath,r=relPath
-@names runCacheableAnalyses:e=projectPath,s=options,a=results,i=cache,r=valid,d=data,u=cached,m=missing,x=entry,j=hash,n=file,b=cacheEntry,C=content
-@names aggregateComplexity:t=results,e=options,s=total,a=files
-@names aggregateUndocumented:t=results,e=total
-@names aggregateJSDoc:t=results,e=total,s=files,a=missing
-@names getFullAnalysis:t=projectPath,e=options,s=analysis,o=health,l=summary,c=stats,h=score,j=issues,b=time
-@names getAnalysisSummaryOnly:t=projectPath,e=summary,s=health,o=score,n=stats,i=issues
+@sig df2774af
+@enrich: Replace each (auto-documented) below. Read src/analysis/full-analysis.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+D(t,e=)→t.filter,s.sort,s.filter,s.reduce,Math.round,s.slice|(auto-documented)
+M(t)→t.filter,t.slice|(auto-documented)
+export getFullAnalysis(t,e=)→n,C,a,S,D,M|run full code health analysis|combines cached and dynamic cross-file metrics
+export getAnalysisSummaryOnly(t)→C,a,S,D,M,P|get partial fast health score skipping cross-file analyses
 PATTERNS: incremental caching for per-file metrics|score aggregation with clamping
 EDGE_CASES: cross-file metrics always dynamic|handles missing cache gracefully

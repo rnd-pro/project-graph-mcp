@@ -1,23 +1,13 @@
 --- src/compact/ctx-to-jsdoc.js ---
-@sig e378a248
-@vars p=SUPPORTED,f=SKIP_DIRS
+@sig 174ef437
+@enrich: Replace each (auto-documented) below. Read src/compact/ctx-to-jsdoc.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+m(t,e)→t.replace,r,o|(auto-documented)
+F(t)|(auto-documented)
 export parseCtxFile(t)→t.split,t.match,r.split,i.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|parse .ctx file into structured fn signatures with params+types
-buildJSDocBlock(t)→e.push,params.split,t.trim,t.match,e.join|build JSDoc /** */ block from ctx fn info with @param/@returns
-findCtxFile(t,e)→t.replace,r,o|null→sourceFile.replace,join,existsSync|null→sourceFile.replace,join,existsSync|null→sourceFile.replace,join,existsSync|locate .ctx file for source: check .context/ dir first, then colocated
-findExportStart(t)|find real start position for exported fns (before export keyword)
-export injectJSDoc(n,s=)→walkJSFiles,a,findCtxFile,t,parseCtxFile,c|inject JSDoc from .ctx into source, skip if JSDoc exists, AST-located
-export stripJSDoc(n,s=)→walkJSFiles,t,c,value.startsWith,f.filter,u.slice|strip all JSDoc via AST comments (safe—ignores strings), regex fallback
-splitTopLevelParams(t)→s.trim,e.push|split params by comma respecting brackets and parens
-export validateCtxContracts(e,n=)→walkJSFiles,a,findCtxFile,t,parseCtxFile,c|validate if .ctx signatures match source AST signatures
-@names __top__:e=readFileSync,n=writeFileSync,t=existsSync,s=readdirSync,a=statSync,c=join,i=basename,r=extname,p=dirname,f=relative,u=minify,m=parse,d=simple,h=ancestor,y=SUPPORTED_EXTS,g=SKIP_DIRS,x=JSDocTypeSyntax,S=JSDocParamSyntax,v=JSDocReturnSyntax,o=JSDocClassSyntax,j=JSDocMethodSyntax,C=JSDocPropertySyntax,k=JSDocEventSyntax,l=JSDocTypedefSyntax
-@names parseCtxFile:t=ctxContent,e=signatures,n=line,s=classMatch,c=methodMatch,a=functionMatch
-@names buildJSDocBlock:t=signature,e=lines,n=param,i=paramName,a=returnType
-@names findCtxFile:t=filePath,e=projectDir,n=ctxFileName,s=fileDir,i=localCtxPath
-@names findExportStart:g=ast,e=symbolName,t=exportNode
-@names injectJSDoc:s=filePath,n=ctxPath,i=options,r=sourceCode,m=ctxContent,d=signatures,h=ast,f=jsdocBlocks,y=finalCode,x=injectedCount,g=exportNode,e=signature,t=jsdoc,v=lines,o=line,S=classMatch,w=methodMatch,j=functionMatch,F=paramMatch,C=param,k=returnMatch,$=returnType,u=propertyMatch,p=eventMatch
-@names stripJSDoc:s=filePath,n=options,r=sourceCode,t=ast,f=jsdocBlocks,m=finalCode,e=jsdoc,u=lines,d=line,h=classMatch,i=methodMatch,p=functionMatch,l=paramMatch
-@names walkJSFiles:n=dir,t=rootDir,o=files,e=entry
-@names splitTopLevelParams:t=paramsString,o=params,n=paramText,s=typedMatch,e=untypedMatch
-@names validateCtxContracts:n=projectDir,e=options,o=dryRun,a=srcDir,p=jsFiles,i=fileDetails,t=errors,u=relativePath,m=ctxPath,d=ctxContent,h=signatures,f=sourceCode,r=ast,s=jsdocBlocks
+export injectJSDoc(n,s=)→d,a,m,t,parseCtxFile,c|inject JSDoc from .ctx into source, skip if JSDoc exists, AST-located
+export stripJSDoc(n,s=)→d,t,c,value.startsWith,f.filter,u.slice|strip all JSDoc via AST comments (safe—ignores strings), regex fallback
+export validateCtxContracts(e,n=)→d,a,m,t,parseCtxFile,c|validate if .ctx signatures match source AST signatures
 PATTERNS: AST-based comment detection via Acorn onComment array|reverse-order insertions preserve line numbers|export keyword detection for duplicate prevention
 EDGE_CASES: strings containing /** preserved by AST parser|blank lines between JSDoc and fn handled by trimEnd|unparseable files fall back to regex strip

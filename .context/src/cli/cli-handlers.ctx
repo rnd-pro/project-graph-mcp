@@ -1,8 +1,9 @@
 --- src/cli/cli-handlers.js ---
-@sig 7ab8a0e8
-getArg(r,e)→r.startsWith,r.find,s.split|undefined→a.startsWith,args.find,arg.split|undefined→a.startsWith,args.find,arg.split|undefined→a.startsWith,args.find,arg.split|extract flag argument value from args array
-getPath(r)→r.startsWith,r.find,q|extract and resolve first non-flag path argument
-@names getArg:r=args,e=flagName,s=match
-@names getPath:r=args,e=pathArg
+@sig 0737c704
+@enrich: Replace each (auto-documented) below. Read src/cli/cli-handlers.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+R(r)→r.startsWith,r.find,q|(auto-documented)
 PATTERNS: command definition map|lazy execution
 EDGE_CASES: falls back to cwd if no path given|validates required args
+export CLI_HANDLERS|map of CLI command handlers

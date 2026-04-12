@@ -4,10 +4,5 @@ export parseGo(t,e)→extractImports,s,r.exec,getBody,t.substring,n.split|parse 
 extractImports(s)→s.replace,l.exec,n.match,t.includes,t.push,e.add|extract Go imports and package names
 getBody(s,t)→s.substring|extract block body using brace counting
 extractCalls(s,t)→n.exec,s.includes,s.split,t.has,e.includes,e.push|extract function calls ignoring Go keywords
-@names __top__:s=stripStringsAndComments
-@names parseGo:t=sourceCode,e=filePath,n=result,l=imports,o=packageNames,i=strippedCode,c=classesMap,r=structRegex,a=match,s=name,p=interfaceRegex,u=methodRegex,f=functionRegex
-@names extractImports:s=sourceCode,t=imports,e=packageNames,n=strippedCode,l=importGroupRegex,o=match,i=singleImportRegex
-@names getBody:s=sourceCode,t=startIndex,e=openBraces,n=currentIndex
-@names extractCalls:s=sourceCode,t=packageNames,e=calls,n=callRegex,l=match
 PATTERNS: regex string extraction|brace counting for block scope
 EDGE_CASES: ignores Go keywords|strips package prefix if alias matches

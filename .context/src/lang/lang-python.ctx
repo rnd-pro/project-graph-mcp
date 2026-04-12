@@ -1,7 +1,5 @@
 --- src/lang/lang-python.js ---
 @sig 2e3acbc0
 export parsePython(t=,n=)→s,t.trim,t.match,classes.push,s.split,functions.push|parse Python classes, methods, and top-level functions
-@names __top__:s=stripStringsAndComments
-@names parsePython:t=sourceCode,n=filePath,e=result,o=lines,l=currentClass,i=currentFunction,c=classIndent,s=lineIndex,r=indentMatch,a=indent,u=classMatch,p=functionMatch,f=methodMatch,m=importMatch,h=fromImportMatch,d=callRegex,_=callMatch,x=keywords
 PATTERNS: indentation level tracking for scope|regex matching
 EDGE_CASES: handles async def|handles __all__ for explicit exports

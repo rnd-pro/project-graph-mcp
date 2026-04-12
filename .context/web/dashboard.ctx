@@ -1,1 +1,9 @@
-
+--- web/dashboard.js ---
+@sig 4540e0c4
+@enrich: Replace each (auto-documented) below. Read web/dashboard.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+i(e,t,o)→console.log,JSON.parse,projects.find,Object.assign,s,events.push|(auto-documented)
+l()→o,document.querySelector,document.createElement,n.setAttribute,e.appendChild,Object.entries|(auto-documented)
+PATTERNS: (auto-documented)
+EDGE_CASES: (auto-documented)

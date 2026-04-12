@@ -1,35 +1,15 @@
-@sig 72c52e0d
-@vars x=SOURCE_EXTENSIONS,S=DB_METHODS
-export findJSFiles(e,n=)→u,t,r,s,o,l.isDirectory|recursively find .js files in dir, respecting ignores and extensions
-export parseFile(e,t)→i,console.warn,buildJSDocTypeMap,imports.push,a.add,methods.push|parse single JS file to AST|extracts classes,functions,imports,exports
-extractCallsAndSQL(e,t,s,n)→t.includes,t.push,getCallMethodName,S.has,extractStringValue,g|walk AST to extract method calls and SQL queries
-getTagName(e)|null|null|null|extract tag name from tagged template expr|handles sql,Prisma.sql,db.sql
-getCallMethodName(e)|null|null|null|extract method name from CallExpression callee
-extractStringValue(e)→templateToString|null→templateToString|null→templateToString|null→templateToString|extract string from Literal or TemplateLiteral|replaces $N placeholders
-templateToString(e)|convert TemplateLiteral AST node to string with $N
-export discoverSubProjects(i)→a,r,n,t,s,e|find sub-projects in known monorepo directories
-export parseProject(t,s=)→a,findJSFiles,e,o,parseFileByExtension,files.push|parse all JS files in dir|returns aggregated ParseResult
-parseFileByExtension(e,t)→t.endsWith,h,d,m,f,parseFile|route file to correct parser based on extension
-isSourceFile(e)→e.endsWith,x.some|check if file extension is supported|excludes .css.js,.tpl.js
-export findAllProjectFiles(e,n=)→u,a,t,r,s,o|recursively find all files in dir, respecting gitignore and graphignore
-buildJSDocTypeMap(e,t)→value.startsWith,t.slice,a.exec,e.slice,a.startsWith,a.slice|build map of line numbers to JSDoc param/return types
-findJSDocForNode(e,t)→e.get|lookup JSDoc entry for AST node by line number
-enrichParamsWithTypes(e,t)→s.set,e.startsWith,e.endsWith,r.slice,s.get,o.startsWith|merge raw AST params with parsed JSDoc type info
-@names __top__:x=SOURCE_EXTENSIONS,S=DB_METHODS
-@names parseFile:e=content,t=filePath,s=result,n=comments,r=ast,o=jsdocMap,a=exportsSet
-@names extractCallsAndSQL:e=astNode,t=calls,s=dbReads,n=dbWrites,r=callee
-@names getTagName:e=node
-@names getCallMethodName:e=node,t=callee
-@names extractStringValue:e=node
-@names templateToString:e=node,t=str,s=i
-@names discoverSubProjects:i=dir,l=root,c=projects,p=dirs,a=dirName,t=fullPath,s=pkgJson
-@names parseProject:t=dir,s=options,n=result,i=root,l=files,e=content,r=relPath,a=parsed
-@names parseFileByExtension:e=content,t=filePath
-@names isSourceFile:e=fileName,t=ext
-@names findJSFiles:e=dir,n=root,a=files,i=item,t=fullPath,l=stat,u=relPath
-@names findAllProjectFiles:e=dir,n=root,i=files,l=rootDir,a=item,t=fullPath,u=stat,f=relPath
-@names buildJSDocTypeMap:e=comments,t=content,s=map,n=node,r=line,o=params,a=paramRegex,i=match,l=returns,c=returnMatch
-@names findJSDocForNode:e=jsdocMap,t=line,s=i,n=doc
-@names enrichParamsWithTypes:e=params,t=jsdoc,s=typeMap,r=name,o=type
+--- src/core/parser.js ---
+@sig c64e9ff4
+@enrich: Replace each (auto-documented) below. Read src/core/parser.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+v(e,s)→s.endsWith,h,d,m,f,parseFile|(auto-documented)
+j(e,s,t,n)→s.includes,s.push,b.has,S,g,y|(auto-documented)
+export findJSFiles(e,n=)→u,s,r,t,o,c.isDirectory|recursively find .js files in dir, respecting ignores and extensions
+E(e)→e.endsWith,x.some|(auto-documented)
+export parseFile(e,s)→a,console.warn,value.startsWith,s.slice,i.exec,e.slice|parse single JS file to AST|extracts classes,functions,imports,exports
+export discoverSubProjects(a)→i,r,n,s,t,e|find sub-projects in known monorepo directories
+export parseProject(s,t=)→i,findJSFiles,e,o,v,files.push|parse all JS files in dir|returns aggregated ParseResult
+export findAllProjectFiles(e,n=)→u,i,s,r,t,o|recursively find all files in dir, respecting gitignore and graphignore
 PATTERNS: AST visitor via walk.simple|extension-based parser routing
 EDGE_CASES: ignores parse errors (returns empty)|excludes specific presentation files

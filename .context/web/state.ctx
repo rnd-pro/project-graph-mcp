@@ -1,13 +1,10 @@
 --- web/state.js ---
-@sig d321147f
-i(e,t)→e.split,o|set nested state property by dot path|emit event
-l(e)→Object.assign,o,Object.keys|merge state object|set connected|emit events
+@sig 9a202a78
 o(e,n)→t.get,t,e.indexOf,e.slice,e|trigger event callbacks|handle dot path wildcards
-u(e)→JSON.parse,c.get,c.delete,e.reject,e.resolve,e|parse WS msg|resolve RPC calls|handle patch/snapshot
 export subscribe(e,n)→t.has,t.set,t.get|add state change listener|ret unsubscribe fn
 export onEvent(e)→n.add,n.delete|add global event listener|ret unsubscribe fn
-export call(e,t=)→a,c.set,JSON.stringify,s.send,c.has,c.delete|send JSONRPC req via WS|ret Promise|handle timeout
-export connect()→e.replace,o,clearTimeout,u,t,c.clear|init WS connection|handle reconnect|bind events
+export call(e,t=)→o,c.set,JSON.stringify,s.send,c.has,c.delete|send JSONRPC req via WS|ret Promise|handle timeout
+export connect()→e.replace,o,clearTimeout,JSON.parse,c.get,c.delete|init WS connection|handle reconnect|bind events
 export disconnect()→clearTimeout,s.close|close WS connection|clear reconnect timeout
 PATTERNS: WS RPC|pub/sub event system|reactive state mutations
 EDGE_CASES: WS disconnect|RPC timeout|invalid JSON payload|nested state init

@@ -5,10 +5,5 @@ export getCachePath(t,e)→e.replace,c|get cache file path for source file|.cont
 export readCache(e,n)→getCachePath,r,t,JSON.parse|read cached analysis file|returns CacheEntry or null
 export writeCache(t,r,c)→getCachePath,a,n,JSON.stringify,e|write analysis cache entry|includes timestamp
 export isCacheValid(t,e,n,r=)|check if cache is valid|supports interface or content hash level
-@names computeContentHash:t=sourceCode
-@names getCachePath:t=projectPath,e=sourceFile,n=cacheFile
-@names readCache:e=projectPath,n=sourceFile,c=cachePath
-@names writeCache:t=projectPath,r=sourceFile,c=cacheEntry,i=cachePath
-@names isCacheValid:t=cacheEntry,e=sig,n=contentHash,r=level
 PATTERNS: dual-hashing (sig vs content)|persistent file-based cache
 EDGE_CASES: ignores read/write cache errors|handles missing directories

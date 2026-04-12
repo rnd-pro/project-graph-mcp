@@ -1,4 +1,4 @@
-=== PROJECT: project-graph-mcp ===
-ARCH: Node.js MCP Server|Custom WS Proxy|Vanilla JS Compact Parsing|Single Gateway
-FLOW: parse source → compact/beautify → inject ctx JSDoc|gateway proxy → local UI
-STATS: 65 files|13 classes|291 functions
+=== PROJECT: . ===
+ARCH: (auto-documented)
+FLOW: (auto-documented)
+STATS: 65 files|13 classes|269 functions
