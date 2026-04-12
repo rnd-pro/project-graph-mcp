@@ -1,10 +1,8 @@
 // @ctx .context/src/compact/compact.ctx
-import{readFileSync as e,writeFileSync as t,readdirSync as n,statSync as o,existsSync as s}from"fs";import{join as r,extname as c,relative as a,basename as i,dirname as l}from"path";import{minify as u}from"../../vendor/terser.mjs";
-const d=new Set([".js",".mjs"]),f=new Set(["node_modules",".git","vendor",".context","dev-docs",".agent",".agents"]);function walkJSFiles(e,t=e){const s=[];try{for(const a of n(e)){if(a.startsWith(".")&&"."!==a)continue;
-const n=r(e,a);o(n).isDirectory()?f.has(a)||s.push(...walkJSFiles(n,t)):d.has(c(a).toLowerCase())&&s.push(n)}}catch{}return s}
+import{resolveCtxRelPath as resolveCtxPath}from"./ctx-resolver.js";import{walkJSFiles}from"../core/file-walker.js";import{readFileSync as e,writeFileSync as t,readdirSync as n,statSync as o,existsSync as s}from"fs";import{join as r,extname as c,relative as a,basename as i,dirname as l}from"path";import{minify as u}from"../../vendor/terser.mjs";
+
 function addTopLevelNewlines(e){return e.replace(/;(import )/g,";\n$1").replace(/;(export )/g,";\n$1").replace(/\}(export )/g,"}\n$1").replace(/\}(function )/g,"}\n$1").replace(/\}(async function )/g,"}\n$1").replace(/\}(class )/g,"}\n$1").replace(/;(const |let |var )/g,";\n$1")}
-function resolveCtxPath(e,t){const n=a(t,e),o=i(n,c(n))+".ctx",u=l(n),d=r(t,".context",u,o);if(s(d))return".context/"+u+"/"+o;
-const f=r(t,u,o);return s(f)?u+"/"+o:null}
+
 async function compactFile(n,o){const s=e(n,"utf-8"),r=s.length;if(!s.trim())return{original:0,compacted:0};
 const c=await u(s,{compress:{dead_code:!0,drop_console:!1,passes:1,reduce_funcs:!1,inline:!1},mangle:{keep_fnames:!0,module:!0},module:!0,output:{beautify:!1,comments:!1,semicolons:!0}});if(c.error)throw c.error;
 let a=addTopLevelNewlines(c.code);if(o){const e=resolveCtxPath(n,o);e&&(a.startsWith("#!")?a=a.replace(/^(#![^\n]*\n)/,"$1// @ctx "+e+"\n"):a="// @ctx "+e+"\n"+a)}return t(n,a,"utf-8"),{original:r,compacted:a.length}}

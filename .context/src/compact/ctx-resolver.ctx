@@ -1,0 +1,2 @@
+export resolveCtxPath(rootDir:string,filePath:string)|find .ctx file for a source file|checks .context/ then co-located
+export readCtxFile(rootDir:string,filePath:string)|read .ctx content for a source file|returns null if not found

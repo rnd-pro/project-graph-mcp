@@ -1,0 +1,4 @@
+export parseCtxParams(paramStr:string)|parse ctx param string into structured array|supports name:type, optional=, rest...
+export buildJSDocBlock(entry:Object)|generate JSDoc from parsed entry|skips @param for all-minified helpers
+export buildJSDocFromRaw(entry:Object)|generate JSDoc from raw ctx entry|params as unparsed string
+sanitize(text:string)|escape */ in JSDoc text

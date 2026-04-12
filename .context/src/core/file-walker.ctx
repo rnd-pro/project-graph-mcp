@@ -1,0 +1,1 @@
+export walkJSFiles(dir:string,root:string=)|recursively find all .js/.mjs files|excludes node_modules, .git, vendor, etc
