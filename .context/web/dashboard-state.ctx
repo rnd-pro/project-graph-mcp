@@ -1,5 +1,5 @@
 --- web/dashboard-state.js ---
 @sig 65b38725
-export emit(event,data=)→events.dispatchEvent|dispatch custom dashboard event
+export emit(event:string,data:Object=)→events.dispatchEvent|dispatch custom dashboard event
 PATTERNS: EventTarget pub/sub|centralized dashboard state
 EDGE_CASES: missing event detail payload

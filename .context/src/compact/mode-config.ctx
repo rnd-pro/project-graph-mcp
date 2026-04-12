@@ -1,8 +1,8 @@
 --- src/compact/mode-config.js ---
 @sig 84ca6758
-export getConfig(rootPath)→i,r,e,JSON.parse|read .context/config.json, merge with defaults
-export setConfig(rootPath,config)→i,c,r,o,getConfig,JSON.stringify|save mode config|validates mode 1-4
-export getModeDescription(mode)|return human-readable desc for mode 1-4
-export getModeWorkflow(mode)|return read/edit/docs/validate workflow per mode
+export getConfig(rootPath:string)→i,r,e,JSON.parse|read .context/config.json, merge with defaults
+export setConfig(rootPath:string,config:Object)→i,c,r,o,getConfig,JSON.stringify|save mode config|validates mode 1-4
+export getModeDescription(mode:number)|return human-readable desc for mode 1-4
+export getModeWorkflow(mode:number)|return read/edit/docs/validate workflow per mode
 PATTERNS: config merge with DEFAULTS|.context/config.json storage
 EDGE_CASES: missing config→defaults|invalid mode→throw error|missing dir→mkdirSync

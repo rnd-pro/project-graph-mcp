@@ -2,8 +2,8 @@
 @sig df2774af
 D(t,e=)→t.filter,s.sort,s.filter,s.reduce,Math.round,s.slice|{NEEDS_DESCRIPTION}
 M(t)→t.filter,t.slice|{NEEDS_DESCRIPTION}
-export getFullAnalysis(path,options=)→n,C,a,S,D,M|run full code health analysis|combines cached and dynamic cross-file metrics
-export getAnalysisSummaryOnly(path)→C,a,S,D,M,P|get partial fast health score skipping cross-file analyses
+export getFullAnalysis(path:string,options:Object=)→n,C,a,S,D,M|run full code health analysis|combines cached and dynamic cross-file metrics
+export getAnalysisSummaryOnly(path:string)→C,a,S,D,M,P|get partial fast health score skipping cross-file analyses
 PATTERNS: incremental caching for per-file metrics|score aggregation with clamping
 EDGE_CASES: cross-file metrics always dynamic|handles missing cache gracefully
 w(a)|calculateHealthScore — internal helper

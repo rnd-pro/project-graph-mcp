@@ -2,11 +2,11 @@
 @sig c64e9ff4
 v(e,s)→s.endsWith,h,d,m,f,parseFile|{NEEDS_DESCRIPTION}
 j(e,s,t,n)→s.includes,s.push,b.has,S,g,y|{NEEDS_DESCRIPTION}
-export findJSFiles(dir,rootDir=)→u,s,r,t,o,c.isDirectory|recursively find .js files in dir, respecting ignores and extensions
+export findJSFiles(dir:string,rootDir:string=)→u,s,r,t,o,c.isDirectory|recursively find .js files in dir, respecting ignores and extensions
 E(e)→e.endsWith,x.some|{NEEDS_DESCRIPTION}
-export parseFile(code,filename)→a,console.warn,value.startsWith,s.slice,i.exec,e.slice|parse single JS file to AST|extracts classes,functions,imports,exports
-export discoverSubProjects(rootPath)→i,r,n,s,t,e|find sub-projects in known monorepo directories
-export parseProject(dir)→i,findJSFiles,e,o,v,files.push|parse all JS files in dir|returns aggregated ParseResult
-export findAllProjectFiles(rootDir,options=)→u,i,s,r,t,o|recursively find all files in dir, respecting gitignore and graphignore
+export parseFile(code:string,filename:string)→a,console.warn,value.startsWith,s.slice,i.exec,e.slice|parse single JS file to AST|extracts classes,functions,imports,exports
+export discoverSubProjects(rootPath:string)→i,r,n,s,t,e|find sub-projects in known monorepo directories
+export parseProject(dir:string)→i,findJSFiles,e,o,v,files.push|parse all JS files in dir|returns aggregated ParseResult
+export findAllProjectFiles(rootDir:string,options:Object=)→u,i,s,r,t,o|recursively find all files in dir, respecting gitignore and graphignore
 PATTERNS: AST visitor via walk.simple|extension-based parser routing
 EDGE_CASES: ignores parse errors (returns empty)|excludes specific presentation files

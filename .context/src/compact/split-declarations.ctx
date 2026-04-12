@@ -3,7 +3,7 @@
 @enrich: Replace each (internal utility) below. Read src/compact/split-declarations.js for context.
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
-export splitDeclarations(code)→t,n.push,n.sort,r.slice,o.push,o.filter|split minified blob into one-declaration-per-line using AST
-export isSingleLineBlob(code)→r.split,t.startsWith,t|check if code has >3 declarations on ≤2 lines
+export splitDeclarations(code:string)→t,n.push,n.sort,r.slice,o.push,o.filter|split minified blob into one-declaration-per-line using AST
+export isSingleLineBlob(code:string)→r.split,t.startsWith,t|check if code has >3 declarations on ≤2 lines
 PATTERNS: Acorn AST node.start boundaries for splitting
 EDGE_CASES: (internal utility)

@@ -1,10 +1,10 @@
 --- src/network/backend-lifecycle.js ---
 @sig 3961b656
 B(e)→y,r,o,JSON.parse,process.kill,s|{NEEDS_DESCRIPTION}
-export writePortFile(rootPath,port)→n,l,f,Date.now,y,JSON.stringify|write active backend port and PID to project port file
-export removePortFile(rootPath)→y,s|delete project port file on exit
+export writePortFile(rootPath:string,port:number)→n,l,f,Date.now,y,JSON.stringify|write active backend port and PID to project port file
+export removePortFile(rootPath:string)→y,s|delete project port file on exit
 export listBackends()→r,i,e.endsWith,a,o,JSON.parse|read all valid backend port files in registry directory
-export ensureBackend(rootPath)→l,B,a,u,y,Date.now|check if backend running or spawn detached backend.js process
-export startStdioProxy(rootPath,options=)→t,o.write,d,Buffer.alloc,p,Buffer.from|proxy stdin/stdout to WebSocket connection via TCP
+export ensureBackend(rootPath:string)→l,B,a,u,y,Date.now|check if backend running or spawn detached backend.js process
+export startStdioProxy(rootPath:string,options:Object=)→t,o.write,d,Buffer.alloc,p,Buffer.from|proxy stdin/stdout to WebSocket connection via TCP
 PATTERNS: detached process spawning|manual WebSocket client protocol via stdio
 EDGE_CASES: stale port file cleanup|timeout waiting for backend spawn

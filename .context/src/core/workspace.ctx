@@ -2,6 +2,6 @@
 @sig 895f5c6b
 export setRoots(roots)→o.startsWith,o.slice,console.error|set workspace root dirs from MCP client (file:// URI or path)
 export getWorkspaceRoot()|return first workspace root or cwd fallback
-export resolvePath(filePath)→getWorkspaceRoot,o,r,s.startsWith|resolve relative path to absolute, enforce workspace boundary
+export resolvePath(filePath:string)→getWorkspaceRoot,o,r,s.startsWith|resolve relative path to absolute, enforce workspace boundary
 PATTERNS: workspace roots set once via MCP initialize|resolvePath prevents directory traversal attacks
 EDGE_CASES: file:// URIs auto-stripped to path|absolute paths outside workspace rejected|empty roots fall back to process.cwd()

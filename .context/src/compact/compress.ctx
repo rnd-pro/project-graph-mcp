@@ -1,7 +1,7 @@
 --- src/compact/compress.js ---
 @sig 094fad9d
-export compressFile(filePath,options=)→n,o.has,e,i,d.trim,a|minifies JS/TS via Terser, prepends JSDoc legend
-export editCompressed(rootPath,filePath,symbolName,newCode=)→e,s,l,m.slice,a|find symbol in file and replace its code safely
+export compressFile(filePath:string,options:Object=)→n,o.has,e,i,d.trim,a|minifies JS/TS via Terser, prepends JSDoc legend
+export editCompressed(rootPath:string,filePath:string,symbolName:string,newCode:string=)→e,s,l,m.slice,a|find symbol in file and replace its code safely
 PATTERNS: AST traversal|regex JSDoc extraction|Terser minification
 EDGE_CASES: validates syntax before writing|handles empty files
 c(a,b)|extractLegend — internal helper

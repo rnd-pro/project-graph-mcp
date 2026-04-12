@@ -2,7 +2,7 @@
 @sig 45b444a8
 f()→document.querySelector,document.createElement,body.appendChild|init app|bind state changes to DOM|load compression stats
 g()→document.getElementById,document.querySelector,document.createElement,e.appendChild|init UI layout|bind router to hashchange|register panels
-export api(endpoint,options=)→e.startsWith,n.args,r,e.replace,fetch,i.json|call API via WS RPC or HTTP fetch
+export api(endpoint:string,options:Object=)→e.startsWith,n.args,r,e.replace,fetch,i.json|call API via WS RPC or HTTP fetch
 PATTERNS: Symbiote layout|event-driven routing|WS over HTTP fallback
 EDGE_CASES: missing layout storage|unsupported API route|skeleton loading errors
 emit(t,n=)|p — internal helper

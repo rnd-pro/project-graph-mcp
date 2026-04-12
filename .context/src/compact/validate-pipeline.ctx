@@ -4,7 +4,7 @@
   Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
   Save this file after filling all markers. Remove @enrich lines when done.
 $(e,s)→c,t,f.split,u.startsWith,r.push,l|{NEEDS_DESCRIPTION}
-export validatePipeline(rootPath,options=)→Date.now,p,u,i,n,w|run full Mode 4 validation pipeline|returns PASS/FAIL with contract, AST, token reports
+export validatePipeline(rootPath:string,options:Object=)→Date.now,p,u,i,n,w|run full Mode 4 validation pipeline|returns PASS/FAIL with contract, AST, token reports
 PATTERNS: 4-step pipeline (contracts→decompile→AST verify→tokens)|single-call validation
 EDGE_CASES: missing .full/→skip AST verify|missing src/→skip tokens|strict mode for extra contract checks
 v(a)|estimateTokens — internal helper

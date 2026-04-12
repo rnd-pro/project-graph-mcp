@@ -5,7 +5,7 @@ export setFilters(updates)→getFilters|update filter configuration state
 export addExcludes(dirs)→getFilters|add directories to exclude list
 export removeExcludes(dirs)→e.includes,excludeDirs.filter,getFilters|remove directories from exclude list
 export resetFilters()→getFilters|restore default filter configuration
-export parseGitignore(rootDir)→r,t,e,e.trim,e.startsWith,e.replace|parse and load patterns from .gitignore
+export parseGitignore(rootDir:string)→r,t,e,e.trim,e.startsWith,e.replace|parse and load patterns from .gitignore
 export shouldExcludeDir(dirName,relativePath=)→e.startsWith,excludeDirs.includes,o|check if directory should be excluded by rules
 export shouldExcludeFile(fileName,relativePath=)→u,o|check if file should be excluded by rules
 PATTERNS: mutable module state|regex wildcard matching

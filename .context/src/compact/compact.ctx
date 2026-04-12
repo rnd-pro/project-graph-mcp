@@ -5,7 +5,7 @@ addTopLevelNewlines(e)→e.replace|insert newlines after minified semicolons to 
 resolveCtxPath(e,t)→a,c,i,l,r,s|{NEEDS_DESCRIPTION}
 compactFile(n,o)→e,s.trim,u,addTopLevelNewlines,resolveCtxPath,a.startsWith|minify single JS file, prepend @ctx header if .ctx exists
 beautifyFile(n)→e,o.trim,u,t|format single JS file with proper indentation
-export compactProject(path,options=)→walkJSFiles,a,e,u,addTopLevelNewlines,compactFile|compact all JS files in dir, per-file error handling, ret stats+savings%
+export compactProject(path:string,options:Object=)→walkJSFiles,a,e,u,addTopLevelNewlines,compactFile|compact all JS files in dir, per-file error handling, ret stats+savings%
 PATTERNS: Terser mangle:false preserves all names|per-file try/catch collects errors array|dryRun mode estimates without writing|skips node_modules,vendor,.git,.context
 EDGE_CASES: empty files return 0/0|syntax errors collected in errors[] not thrown|files with only comments become empty (correct behavior)
 expandProject(t,n=)|expandProject — internal helper

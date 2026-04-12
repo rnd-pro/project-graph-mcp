@@ -8,7 +8,7 @@ u(t)→t.replace|{NEEDS_DESCRIPTION}
 a(t,n,s)→e|extract and escape substring
 c(t)|check if char is valid identifier start
 e(t)|escape HTML special chars
-export highlight(code)→a,l.push,i.substring,n.startsWith,u,r|lex JS string|wrap tokens in HTML spans|ret HTML string
+export highlight(code:string)→a,l.push,i.substring,n.startsWith,u,r|lex JS string|wrap tokens in HTML spans|ret HTML string
 PATTERNS: custom manual lexer|zero dep syntax highlighting
 EDGE_CASES: unterminated strings|nested comments
 o(t)|o — internal helper

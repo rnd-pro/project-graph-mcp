@@ -5,7 +5,7 @@
   Save this file after filling all markers. Remove @enrich lines when done.
 h()→r.readFileSync,t.trim,JSON.parse,parseInt|{NEEDS_DESCRIPTION}
 d()→r.existsSync,r.readdirSync,t.endsWith,p,o.join,r.readFileSync|{NEEDS_DESCRIPTION}
-export registerService(name,port,options=)→p,l,n,f,c.cleanup,process.on|register local domain/project route and trigger mDNS broadcast
+export registerService(name:string,port:number,options:Object=)→p,l,n,f,c.cleanup,process.on|register local domain/project route and trigger mDNS broadcast
 export getGatewayPort()→h|get active gateway port or fallback to 80
 PATTERNS: singleton global proxy across projects|transparent HTTP/WS routing
 EDGE_CASES: port 80 fallback to 8080 on EACCES|HTML injection for base href

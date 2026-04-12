@@ -2,8 +2,8 @@
 @sig f4e3c62d
 export emitToolCall(toolName,args)→Date.now,t.emit|emit tool:call event with timestamp and arguments
 export emitToolResult(toolName,args,result,duration,success)→Object.keys,Date.now,t.emit|emit tool:result event with duration, success status, and result keys
-export onToolCall(callback)→t.on|register listener for tool:call events
-export onToolResult(callback)→t.on|register listener for tool:result events
-export removeToolListener(event,callback)→t.off|remove specific event listener from bus
+export onToolCall(callback:Function)→t.on|register listener for tool:call events
+export onToolResult(callback:Function)→t.on|register listener for tool:result events
+export removeToolListener(event:string,callback:Function)→t.off|remove specific event listener from bus
 PATTERNS: Singleton EventEmitter|event name namespacing tool:*
 EDGE_CASES: max listeners increased to 50 to prevent warnings
