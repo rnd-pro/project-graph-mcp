@@ -1,1 +1,1 @@
-export default'\n<div class="card">\n  <div class="title"><a ref="link">{{projectName}}</a><span class="token-badge" ref="tokenBadge"></span></div>\n  <div class="path">{{projectPath}}</div>\n</div>\n';
+export default'\n<div class="card">\n  <div class="title"><a ref="link">{{projectName}}</a><span class="token-badge" ref="tokenBadge"></span><button ref="deleteBtn" class="delete-btn" title="Remove project">×</button></div>\n  <div class="path">{{projectPath}}</div>\n</div>\n';
