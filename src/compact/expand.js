@@ -1,5 +1,5 @@
 // @ctx .context/src/compact/expand.ctx
-import{parseCtxParams as h,buildJSDocBlock as g}from"./jsdoc-builder.js";import{readCtxFile as $}from"./ctx-resolver.js";import{walkJSFiles}from"../core/file-walker.js";import{readFileSync as t,writeFileSync as e,mkdirSync as n,existsSync as s,readdirSync as o,statSync as r}from"fs";import{join as i,basename as a,extname as c,dirname as p,relative as l}from"path";import{minify as m}from"../../vendor/terser.mjs";import{parse as d}from"../../vendor/acorn.mjs";import{simple as f,ancestor as u}from"../../vendor/walk.mjs";
+import{parseCtxParams as h,buildJSDocBlock as g}from"./jsdoc-builder.js";import{readCtxFile as $}from"./ctx-resolver.js";import{walkJSFiles}from"../core/file-walker.js";import{readFileSync as t,writeFileSync as e,mkdirSync as n,existsSync as s}from"fs";import{join as i,basename as a,extname as c,dirname as p,relative as l}from"path";import{minify as m}from"../../vendor/terser.mjs";import{parse as d}from"../../vendor/acorn.mjs";import{simple as f,ancestor as u}from"../../vendor/walk.mjs";
 
 function y(t){if(!t)return null;const e=t.match(/^→([A-Z][\w<>\[\]|]*)/);return e?e[1]:null}
 
