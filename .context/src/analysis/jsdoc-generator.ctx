@@ -1,8 +1,5 @@
 --- src/analysis/jsdoc-generator.js ---
 @sig 1f2fddef
-@enrich: Replace each (auto-documented) below. Read src/analysis/jsdoc-generator.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
 export generateJSDoc(o,s=)→t,a,e,n,f.split,Math.max|(auto-documented)
 s(t)|(auto-documented)
 export generateJSDocFor(t,e,n=)→generateJSDoc,name.endsWith|null→generateJSDoc,name.endsWith,results.find|null→generateJSDoc,name.endsWith,results.find|null→generateJSDoc,name.endsWith,results.find|generate JSDoc for a specific named function

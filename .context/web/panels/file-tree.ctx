@@ -1,8 +1,5 @@
 --- web/panels/file-tree.js ---
 @sig aaf4f43d
-@enrich: Replace each (auto-documented) below. Read web/panels/file-tree.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
 class FileTree extends e|9m,4$|Symbiote component for project file explorer tree
   .initCallback()|bind skeleton and selection events|handle click delegation
   ._toggleDir()|(auto-documented)

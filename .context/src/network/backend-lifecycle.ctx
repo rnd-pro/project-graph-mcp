@@ -1,8 +1,5 @@
 --- src/network/backend-lifecycle.js ---
 @sig 3961b656
-@enrich: Replace each (auto-documented) below. Read src/network/backend-lifecycle.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
 B(e)→y,r,o,JSON.parse,process.kill,s|(auto-documented)
 export writePortFile(e,t)→n,l,f,Date.now,y,JSON.stringify|write active backend port and PID to project port file
 export removePortFile(e)→y,s|delete project port file on exit

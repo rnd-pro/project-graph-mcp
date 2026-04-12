@@ -1,8 +1,5 @@
 --- src/compact/compact-migrate.js ---
 @sig b7ae75d3
-@enrich: Replace each (auto-documented) below. Read src/compact/compact-migrate.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
 export compactMigrate(t,n=)→m,message.includes,h,r,y,e|(auto-documented)
 PATTERNS: (auto-documented)
 EDGE_CASES: (auto-documented)

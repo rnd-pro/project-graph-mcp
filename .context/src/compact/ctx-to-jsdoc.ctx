@@ -1,8 +1,5 @@
 --- src/compact/ctx-to-jsdoc.js ---
 @sig 174ef437
-@enrich: Replace each (auto-documented) below. Read src/compact/ctx-to-jsdoc.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
 m(t,e)→t.replace,r,o|(auto-documented)
 F(t)|(auto-documented)
 export parseCtxFile(t)→t.split,t.match,r.split,i.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|null, functions: Array<{name: string, params: string, exported: boolean, description: string→ctxContent.split,line.match,arrowParts.split,desc.trim,functions.push|parse .ctx file into structured fn signatures with params+types

@@ -1,8 +1,5 @@
 --- src/analysis/full-analysis.js ---
 @sig df2774af
-@enrich: Replace each (auto-documented) below. Read src/analysis/full-analysis.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
 D(t,e=)→t.filter,s.sort,s.filter,s.reduce,Math.round,s.slice|(auto-documented)
 M(t)→t.filter,t.slice|(auto-documented)
 export getFullAnalysis(t,e=)→n,C,a,S,D,M|run full code health analysis|combines cached and dynamic cross-file metrics

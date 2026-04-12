@@ -1,8 +1,5 @@
 --- src/lang/lang-sql.js ---
 @sig 676f0c3a
-@enrich: Replace each (auto-documented) below. Read src/lang/lang-sql.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
 export isSQLString(e)|test if string looks like a SQL query
 t(t)→t.toLowerCase,e.has|(auto-documented)
 export extractSQLFromString(e)→e.replace,a.exec,r.slice,t,n.add,i.exec|extract table READs and WRITEs from SQL string

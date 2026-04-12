@@ -1,8 +1,5 @@
 --- src/analysis/custom-rules.js ---
 @sig 683d58c0
-@enrich: Replace each (auto-documented) below. Read src/analysis/custom-rules.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
 b(t,s,n)→s.replace,e.endsWith,e,c,e.exec,j|(auto-documented)
 export getCustomRules()→x,Object.entries,rules.map|load and return summary of all custom rules
 export setCustomRule(e,t)→x,rules.findIndex,rules.push,v|add or update a single rule in a ruleset

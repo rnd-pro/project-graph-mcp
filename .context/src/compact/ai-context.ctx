@@ -1,8 +1,5 @@
 --- src/compact/ai-context.js ---
 @sig 8aed2da2
-@enrich: Replace each (auto-documented) below. Read src/compact/ai-context.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
 estimateTokens(e)→JSON.stringify,Math.ceil|(auto-documented)
 export getAiContext(a,l=)→e,s,estimateTokens,o,n,r|get project context including skeleton, docs, and optionally compressed files
 PATTERNS: token estimation heuristic|parallel generation

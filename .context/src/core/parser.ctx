@@ -1,8 +1,5 @@
 --- src/core/parser.js ---
 @sig c64e9ff4
-@enrich: Replace each (auto-documented) below. Read src/core/parser.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
 v(e,s)→s.endsWith,h,d,m,f,parseFile|(auto-documented)
 j(e,s,t,n)→s.includes,s.push,b.has,S,g,y|(auto-documented)
 export findJSFiles(e,n=)→u,s,r,t,o,c.isDirectory|recursively find .js files in dir, respecting ignores and extensions

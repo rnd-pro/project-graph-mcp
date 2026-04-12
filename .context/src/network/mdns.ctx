@@ -1,8 +1,5 @@
 --- src/network/mdns.js ---
 @sig bc73bb43
-@enrich: Replace each (auto-documented) below. Read src/network/mdns.js for context.
-  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
-  Save this file after filling all markers. Remove @enrich lines when done.
 n(e,r)→String,t,n.unref,n.kill|(auto-documented)
 export registerLocal(t,e)→n,c,o|route mDNS registration to dns-sd(mac)|Avahi(linux)|Node.js mcast
 PATTERNS: platform-specific mDNS implementation fallback

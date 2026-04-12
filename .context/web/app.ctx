@@ -5,6 +5,6 @@ g(e)→document.getElementById,document.querySelector,document.createElement,e.a
 export api(e,t=)→e.startsWith,n.args,r,e.replace,fetch,i.json|call API via WS RPC or HTTP fetch
 PATTERNS: Symbiote layout|event-driven routing|WS over HTTP fallback
 EDGE_CASES: missing layout storage|unsupported API route|skeleton loading errors
-export events|event bus instance
-export emit(e,t)|emit event to bus
+emit(a,b)|p — internal helper
 u()|e — internal helper
+export events|shared event bus instance
