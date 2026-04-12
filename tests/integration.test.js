@@ -741,6 +741,98 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
       assert.ok(code.split('\n').filter(l => l.trim()).length >= 3);
     });
 
+    it('semantic equivalence: original → compact → beautify → SAME result', async () => {
+      // Write a fresh file with testable functions
+      const { writeFileSync: wf } = await import('fs');
+      const testFile = join(FIXTURE_ROOT, 'src/semantic-test.js');
+      const originalCode = `\
+export function fibonacci(n) {
+  if (n <= 1) return n;
+  return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+export function transform(items) {
+  return items
+    .filter(x => x > 0)
+    .map(x => x * 2)
+    .reduce((sum, x) => sum + x, 0);
+}
+
+export class Stack {
+  constructor() { this.items = []; }
+  push(v) { this.items.push(v); }
+  pop() { return this.items.pop(); }
+  get size() { return this.items.length; }
+}
+
+export function makeCounter(start) {
+  let count = start;
+  return {
+    inc() { return ++count; },
+    get() { return count; },
+  };
+}
+`;
+      wf(testFile, originalCode, 'utf-8');
+
+      // Helper: execute code and return test results
+      const evaluate = (code) => {
+        // Strip exports/imports for eval
+        const clean = code
+          .replace(/^export\s+(default\s+)?/gm, '')
+          .replace(/^import\s+.*$/gm, '');
+        return new Function(`${clean}
+          const results = {};
+          results.fib10 = fibonacci(10);
+          results.transform = transform([1, -2, 3, -4, 5]);
+          const s = new Stack(); s.push(1); s.push(2); s.pop();
+          results.stackSize = s.size;
+          const c = makeCounter(5); c.inc(); c.inc();
+          results.counter = c.get();
+          return results;
+        `)();
+      };
+
+      // 1. Capture original execution results
+      const originalResults = evaluate(originalCode);
+      assert.strictEqual(originalResults.fib10, 55);
+      assert.strictEqual(originalResults.transform, 18);
+      assert.strictEqual(originalResults.stackSize, 1);
+      assert.strictEqual(originalResults.counter, 7);
+
+      // 2. Compact (minify)
+      await mcpClient.callTool('invalidate_cache');
+      await mcpClient.callTool('compact', { action: 'set_mode', path: '.', mode: 1 });
+      await mcpClient.callTool('compact', { action: 'compact_all', path: '.' });
+
+      // 3. Read compacted code, execute, compare
+      const compactedCode = readFileSync(testFile, 'utf-8');
+      assert.ok(compactedCode.length < originalCode.length, 'compacted should be shorter');
+      const compactedResults = evaluate(compactedCode);
+      assert.deepStrictEqual(compactedResults, originalResults,
+        'compact broke semantics');
+
+      // 4. Beautify (expand back)
+      await mcpClient.callTool('compact', { action: 'beautify', path: '.' });
+      const beautifiedCode = readFileSync(testFile, 'utf-8');
+      assert.ok(beautifiedCode.split('\n').length > 5, 'beautified should be multi-line');
+
+      // 5. Execute beautified code, compare
+      const beautifiedResults = evaluate(beautifiedCode);
+      assert.deepStrictEqual(beautifiedResults, originalResults,
+        'beautify broke semantics — round-trip NOT lossless');
+
+      // 6. Second round: beautified → compact → compare again
+      await mcpClient.callTool('compact', { action: 'compact_all', path: '.' });
+      const recompactedCode = readFileSync(testFile, 'utf-8');
+      const recompactedResults = evaluate(recompactedCode);
+      assert.deepStrictEqual(recompactedResults, originalResults,
+        '2nd compact broke semantics — NOT idempotent');
+
+      // Restore
+      await mcpClient.callTool('compact', { action: 'beautify', path: '.' });
+    });
+
     after(async () => {
       // Restore Mode 2 for subsequent tests
       await mcpClient.callTool('compact', { action: 'set_mode', path: '.', mode: 2 });
