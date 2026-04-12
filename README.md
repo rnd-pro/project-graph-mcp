@@ -366,19 +366,11 @@ Best used together with [**agent-pool-mcp**](https://www.npmjs.com/package/agent
 | **Primary IDE agent** | Navigates codebase, runs analysis | Delegates tasks, consults peer |
 | **Gemini CLI workers** | Available as MCP tool inside workers | Executes delegated tasks |
 
-```json
-{
-  "mcpServers": {
-    "project-graph": {
-      "command": "npx",
-      "args": ["-y", "project-graph-mcp"]
-    },
-    "agent-pool": {
-      "command": "npx",
-      "args": ["-y", "agent-pool-mcp"]
-    }
-  }
-}
+```bash
+# Generate configs with correct paths for both servers:
+npx -y project-graph-mcp config
+npx -y agent-pool-mcp config
+# Merge both outputs into your IDE's MCP config file.
 ```
 
 > [!IMPORTANT]
