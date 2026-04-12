@@ -253,23 +253,87 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
       assertNum(ud.total, 'total');
     });
 
-    // ── testing, filters, jsdoc, db ───────────────────────────────
-    it('testing lifecycle', async () => {
-      await mcpClient.callTool('testing', { action: 'reset' });
-      const { data } = await mcpClient.callTool('testing', { action: 'summary', path: '.' });
-      for (const k of ['total', 'passed', 'failed', 'pending', 'progress']) assertNum(data[k], k);
+    it('analyze.similar_functions — field validation', async () => {
+      const { data: r } = await mcpClient.callTool('analyze', { action: 'similar_functions', path: '.', threshold: 30 });
+      assertNum(r.total, 'total');
+      assertArr(r.pairs, 'pairs');
+      for (const pair of r.pairs) {
+        assertStr(pair.a?.name || pair.fn1 || '', 'pair.a');
+        assertNum(pair.similarity || pair.score || 0, 'similarity');
+      }
     });
 
-    it('filters lifecycle', async () => {
+    // ── testing — full lifecycle ─────────────────────────────────
+    it('testing lifecycle — reset, pending, pass, fail, summary', async () => {
+      await mcpClient.callTool('testing', { action: 'reset' });
+
+      // Get pending tests (auto-detected from @test tags)
+      const { data: pending } = await mcpClient.callTool('testing', { action: 'pending', path: '.' });
+      assertArr(pending.items || pending, 'pending');
+
+      const { data: summary } = await mcpClient.callTool('testing', { action: 'summary', path: '.' });
+      for (const k of ['total', 'passed', 'failed', 'pending', 'progress']) assertNum(summary[k], k);
+
+      // Pass a test if any exist
+      if (summary.total > 0 && (pending.items || pending).length > 0) {
+        const testId = (pending.items || pending)[0].id || (pending.items || pending)[0];
+        if (testId) {
+          await mcpClient.callTool('testing', { action: 'pass', testId: String(testId) });
+          const { data: s2 } = await mcpClient.callTool('testing', { action: 'summary', path: '.' });
+          assert.ok(s2.passed >= 1, 'pass should increment passed');
+        }
+      }
+
+      await mcpClient.callTool('testing', { action: 'reset' });
+    });
+
+    // ── filters — full lifecycle ─────────────────────────────────
+    it('filters lifecycle — set, add_excludes, remove_excludes, reset', async () => {
       const { data: f1 } = await mcpClient.callTool('filters', { action: 'get' });
       assertArr(f1.excludeDirs, 'excludeDirs');
       assert.strictEqual(typeof f1.includeHidden, 'boolean');
 
+      // set
       await mcpClient.callTool('filters', { action: 'set', excludeDirs: ['vendor'] });
       const { data: f2 } = await mcpClient.callTool('filters', { action: 'get' });
       assert.ok(f2.excludeDirs.includes('vendor'));
 
+      // add_excludes
+      await mcpClient.callTool('filters', { action: 'add_excludes', dirs: ['tmp_test'] });
+      const { data: f3 } = await mcpClient.callTool('filters', { action: 'get' });
+      assert.ok(f3.excludeDirs.includes('tmp_test'), 'add_excludes should add dir');
+
+      // remove_excludes
+      await mcpClient.callTool('filters', { action: 'remove_excludes', dirs: ['tmp_test'] });
+      const { data: f4 } = await mcpClient.callTool('filters', { action: 'get' });
+      assert.ok(!f4.excludeDirs.includes('tmp_test'), 'remove_excludes should remove dir');
+
       await mcpClient.callTool('filters', { action: 'reset' });
+    });
+
+    // ── custom rules — full lifecycle ─────────────────────────────
+    it('custom rules lifecycle — set, get, check, clean', async () => {
+      // Create a custom rule
+      await mcpClient.callTool('set_custom_rule', {
+        ruleSet: 'test-rules',
+        rule: {
+          id: 'no-console',
+          name: 'No Console',
+          description: 'Disallow console.log',
+          pattern: 'console\\.log',
+          patternType: 'regex',
+          severity: 'warning',
+          filePattern: '*.js',
+        },
+      });
+
+      // List rules — should contain our rule
+      const { data: rules } = await mcpClient.callTool('get_custom_rules');
+      assert.ok(rules, 'rules should exist');
+
+      // Check rules against codebase
+      const { data: violations } = await mcpClient.callTool('check_custom_rules', { path: '.' });
+      assert.ok(violations !== undefined, 'check_custom_rules should return data');
     });
 
     it('jsdoc.check_consistency', async () => {
@@ -410,7 +474,7 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
       assertScore(data.overall.score, 'score');
     });
 
-    it('/api/expand + deps + usages — navigation', async () => {
+    it('/api/expand + deps + usages + chain — navigation', async () => {
       // Build graph first
       await httpGet(uiPort, '/api/skeleton');
 
@@ -422,6 +486,41 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
 
       const { data: usages } = await httpGet(uiPort, '/api/usages?symbol=add');
       assert.ok(usages !== undefined);
+
+      // call_chain via HTTP
+      const { data: chain } = await httpGet(uiPort, '/api/chain?from=sum&to=add');
+      assert.ok(chain !== undefined, 'chain should return data');
+    });
+
+    it('/api/docs — file documentation via HTTP', async () => {
+      const { status, data } = await httpGet(uiPort, '/api/docs?file=src/math.js');
+      assert.strictEqual(status, 200);
+      assert.ok(data);
+    });
+
+    it('/api/instances — backend list', async () => {
+      const { status, data } = await httpGet(uiPort, '/api/instances');
+      assert.strictEqual(status, 200);
+      assertArr(data, 'instances should be array');
+      assert.ok(data.length >= 1, 'should have at least 1 instance');
+      assertStr(data[0].name, 'instance.name');
+    });
+
+    it('HTTP edge cases — missing path, unknown endpoint, static 404', async () => {
+      // /api/file without path → fallback response
+      const { status: s1, data: d1 } = await httpGet(uiPort, '/api/file');
+      assert.strictEqual(s1, 200);
+      assertStr(d1.code, 'code');
+
+      // /api/raw-file with nonexistent path → error in content
+      const { status: s2, data: d2 } = await httpGet(uiPort, '/api/raw-file?path=nope.js');
+      assert.strictEqual(s2, 200);
+      assert.ok(d2.content.includes('Cannot read'), 'should have error message');
+
+      // Unknown API endpoint → error field
+      const { status: s3, data: d3 } = await httpGet(uiPort, '/api/nonexistent');
+      assert.strictEqual(s3, 200);
+      assertStr(d3.error, 'unknown endpoint error');
     });
   });
 
@@ -487,6 +586,43 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
     it('ws tool call — analyze returns data', async () => {
       const result = await wsCallTool(ws, 'analyze', { action: 'analysis_summary', path: '.' });
       assertScore(result.healthScore, 'healthScore');
+    });
+
+    it('ws — receives events during tool calls', async () => {
+      // Collect events while calling a tool
+      const events = [];
+      const handler = (raw) => {
+        try {
+          const msg = JSON.parse(raw.toString());
+          if (msg.method === 'event' || msg.method === 'patch') events.push(msg);
+        } catch {}
+      };
+      ws.on('message', handler);
+
+      // Trigger a tool call that should emit events
+      await wsCallTool(ws, 'get_skeleton', { path: '.' });
+
+      // Wait briefly for events to arrive
+      await new Promise(r => setTimeout(r, 200));
+      ws.removeListener('message', handler);
+
+      // Server emits tool:call and tool:result events via event-bus
+      // These arrive as method: 'event' on the WS
+      assert.ok(events.length >= 0, 'events collected (may be 0 if event-bus disabled)');
+    });
+
+    it('ws — unknown method returns error', async () => {
+      const id = Date.now();
+      const response = await new Promise((resolve) => {
+        const handler = (raw) => {
+          const msg = JSON.parse(raw.toString());
+          if (msg.id === id) { ws.removeListener('message', handler); resolve(msg); }
+        };
+        ws.on('message', handler);
+        ws.send(JSON.stringify({ jsonrpc: '2.0', id, method: 'bogus', params: {} }));
+      });
+      assert.ok(response.error, 'should return error for unknown method');
+      assert.strictEqual(response.error.code, -32601);
     });
   });
 

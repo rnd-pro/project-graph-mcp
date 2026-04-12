@@ -1,0 +1,15 @@
+{
+  "name": "test-rules",
+  "description": "Custom rules for test-rules",
+  "rules": [
+    {
+      "id": "no-console",
+      "name": "No Console",
+      "description": "Disallow console.log",
+      "pattern": "console\\.log",
+      "patternType": "regex",
+      "severity": "warning",
+      "filePattern": "*.js"
+    }
+  ]
+}
