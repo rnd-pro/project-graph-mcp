@@ -130,18 +130,30 @@ Compact source saves **38% tokens** vs what a human reads. The agent works direc
 
 ### Compact Code Architecture
 
-Three modes for AI-native codebase editing — configure per project via `.context/config.json`:
+Four modes for AI-native codebase editing — configure per project via `.context/config.json`:
 
-| Mode | Storage | Agent reads | Agent edits |
-|------|---------|-------------|-------------|
-| **1 — Native Compact** | Minified JS | Files directly | Files directly |
-| **2 — Full Storage** (default) | Formatted JS | `get_compressed_file` | `edit_compressed` |
-| **3 — IDE Virtual** | Minified JS | IDE renders full view | IDE handles mapping |
+| Mode | Storage | Agent reads | Agent writes | Human reviews |
+|------|---------|-------------|--------------|---------------|
+| **1 — Native Compact** | Minified JS | Files directly | Files directly | `.ctx` + Web UI |
+| **2 — Full Storage** | Formatted JS | `get_compressed_file` | `edit_compressed` | Files directly |
+| **3 — IDE Virtual** | Minified JS | IDE renders full | IDE handles mapping | IDE |
+| **4 — Compact + Cache** ⭐ | Minified JS | Files directly | Files directly | `.expanded/` cache |
 
-**Mode 2 workflow** (recommended):
+**Mode 4 workflow** (recommended for AI-first projects):
+
+Source of truth is compact code. Agents read and write it directly — saving tokens in **both directions**. Output tokens typically cost 3-5x more than input, so compact output is the biggest cost saving. Humans review via auto-generated `.expanded/` cache with restored names and injected JSDoc.
 
 ```javascript
-// 1. Read compressed view (saves 20-55% tokens)
+// Agent reads and edits compact source directly (38% fewer tokens both ways)
+// After edits, validate and generate human-readable cache:
+compact({ action: "validate_pipeline", path: ".", strict: true })
+compact({ action: "expand_project", path: "." })
+```
+
+**Mode 2 workflow** (for existing projects with formatted source):
+
+```javascript
+// 1. Read compressed view (saves input tokens only)
 get_compressed_file({ path: "src/parser.js" })
 
 // 2. Edit by symbol name — server finds it via AST
@@ -163,7 +175,7 @@ parseFile(code:string,filename:string)→Promise<ParseResult>→parse,walk|parse
 
 ```bash
 # Set project mode
-npx project-graph-mcp set-mode . 2
+npx project-graph-mcp set-mode . 4
 
 # Validate .ctx documentation matches source
 npx project-graph-mcp validate-ctx . --strict
