@@ -64,14 +64,44 @@ analyze({ action: "full_analysis", path: "src/" });
 ```
 
 ## Compact Code
-Use the `compact` tool to compress and expand codebase files, or configure how code is presented to the AI.
+Use the `compact` tool to compress and expand codebase files, enforce compact mode standards, and configure how code is presented to the AI.
+
+### Compact Mode Standards
+Compact mode enforces 5 style rules for maximum token efficiency:
+- **`missing-ctx-header`**: Every `.js` file must start with `// @ctx .context/path/to/file.ctx`
+- **`missing-ctx-file`**: Every `.js` file must have a corresponding `.ctx` documentation file
+- **`multi-line-imports`**: All imports must be on a single line
+- **`indented-lines`**: No indentation — all code must be flat (terser-minified)
+- **`long-names`**: All identifiers (const/let/var/function) must be ≤2 chars — `.ctx` provides readability
+
+### .pgignore
+File exclusions are configured via `.pgignore` (created automatically if missing):
+```
+# Third-party vendored code
+vendor/
+
+# Generated files
+.context/
+.expanded/
+```
+
+### Bidirectional Workflow
+The compact pipeline works in both directions:
+1. **Compact (fix:true)**: Parses readable code → generates `.ctx` with full signatures → minifies with terser
+2. **Expand**: Reads `.ctx` → restores JSDoc, readable names, and formatting
 
 ```javascript
-// Compact a file to its structural essence
+// Validate compact mode compliance (read-only check)
+compact({ action: "validate_pipeline", path: "." });
+
+// Auto-fix all style violations + generate .ctx documentation
+compact({ action: "validate_pipeline", path: ".", fix: true });
+
+// Compact a single file
 compact({ action: "compact_file", path: "src/parser.js" });
 
 // Apply a targeted edit to a compacted file
-compact({ action: "edit", path: "src/parser.js", instruction: "Add error handling" });
+compact({ action: "edit", path: "src/parser.js", symbol: "parseFile", code: "..." });
 
 // Compact all files in a directory
 compact({ action: "compact_all", path: "src/" });
@@ -85,14 +115,11 @@ compact({ action: "expand_file", path: "src/parser.js" });
 // Expand the entire project back to full source
 compact({ action: "expand_project" });
 
-// Validate the compact/expand pipeline integrity
-compact({ action: "validate_pipeline" });
-
 // Get current compaction mode settings
 compact({ action: "get_mode" });
 
-// Set compaction mode (e.g., 'aggressive', 'safe')
-compact({ action: "set_mode", mode: "aggressive" });
+// Set compaction mode: 1 (compact, recommended) or 2 (full)
+compact({ action: "set_mode", mode: 1 });
 ```
 
 ## Documentation (.ctx)
