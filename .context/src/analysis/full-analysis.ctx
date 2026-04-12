@@ -9,3 +9,5 @@ export getFullAnalysis(t,e=)→n,C,a,S,D,M|run full code health analysis|combine
 export getAnalysisSummaryOnly(t)→C,a,S,D,M,P|get partial fast health score skipping cross-file analyses
 PATTERNS: incremental caching for per-file metrics|score aggregation with clamping
 EDGE_CASES: cross-file metrics always dynamic|handles missing cache gracefully
+w(a)|calculateHealthScore — internal helper
+F(a,b)|findJSFiles — internal helper

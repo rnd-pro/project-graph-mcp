@@ -7,3 +7,5 @@ export checkStaleness(e,s)→i,x,t,e.match,E,o.push|check .ctx files staleness v
 export generateContextFiles(t,e,c,a=)→i,s,n,r,c.push,c.join|generate .context/ templates|supports focus scope and overwrite merge
 PATTERNS: two-tier doc resolution (colocated > mirror)|AST signature hashing
 EDGE_CASES: preserves existing placeholders on overwrite|handles git diff for focus scope
+S(a,b)|resolveCtxMdPath — internal helper
+y(a,b,c,d,e,f,g)|buildFileTemplate — internal helper

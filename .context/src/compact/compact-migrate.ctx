@@ -6,3 +6,6 @@
 export compactMigrate(t,n=)→m,message.includes,h,r,y,e|(auto-documented)
 PATTERNS: (auto-documented)
 EDGE_CASES: (auto-documented)
+w(a,b)|extractNames — internal helper
+S(a,b,c)|buildNamesDirective — internal helper
+x(a)|updateCtxNames — internal helper

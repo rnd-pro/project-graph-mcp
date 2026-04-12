@@ -7,3 +7,4 @@ PATTERNS: Symbiote layout|event-driven routing|WS over HTTP fallback
 EDGE_CASES: missing layout storage|unsupported API route|skeleton loading errors
 export events|event bus instance
 export emit(e,t)|emit event to bus
+u()|e — internal helper

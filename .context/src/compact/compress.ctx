@@ -4,3 +4,4 @@ export compressFile(t,s=)→n,o.has,e,i,d.trim,a|minifies JS/TS via Terser, prep
 export editCompressed(t,n,r,o=)→e,s,l,m.slice,a|find symbol in file and replace its code safely
 PATTERNS: AST traversal|regex JSDoc extraction|Terser minification
 EDGE_CASES: validates syntax before writing|handles empty files
+c(a,b)|extractLegend — internal helper

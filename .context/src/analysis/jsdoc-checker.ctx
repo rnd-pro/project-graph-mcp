@@ -4,3 +4,7 @@ export checkJSDocFile(e,t)→o,n.exec,e.slice,o.exec,n.slice,o.startsWith|check 
 export checkJSDocConsistency(t)→i,f,e,r,checkJSDocFile,o.push|check JSDoc consistency in directory|aggregates errors and warnings
 PATTERNS: AST parsing|regex for initial JSDoc extraction|AST type inference
 EDGE_CASES: handles optional param [] syntax|handles union types in JSDoc
+m(a,b)|extractJSDocComments — internal helper
+p(a)|findJSDocBefore — internal helper
+h(a)|extractParamName — internal helper
+y(a)|inferTypeFromDefault — internal helper

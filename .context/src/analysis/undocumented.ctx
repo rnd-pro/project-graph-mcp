@@ -5,3 +5,4 @@ export getUndocumented(e,n=)→r,d,t,o,checkUndocumentedFile,i.push|scan directo
 export getUndocumentedSummary(t,e=)→getUndocumented,n.filter,n.slice|scan directory and return aggregated undocumented summary
 PATTERNS: AST traversal|regex JSDoc extraction
 EDGE_CASES: skips lifecycle methods|skips private prefixed methods
+p(a,b)|findJSDocBefore — internal helper

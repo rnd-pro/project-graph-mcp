@@ -11,3 +11,7 @@ export detectProjectRuleSets(t)→x,o,n,e,JSON.parse,Object.keys|auto-detect app
 export checkCustomRules(e,t=)→l,x,detectProjectRuleSets,r.push,Object.entries,detected.includes|run relevant custom rules against project directory
 PATTERNS: auto-detection via dependencies and imports|regex code scanning
 EDGE_CASES: state machine ignores matches inside strings/comments
+y(a)|parseGraphignore — internal helper
+g(a)|isGraphignored — internal helper
+$(a,b,c)|findFiles — internal helper
+S(a,b,c)|isInStringOrComment — internal helper

@@ -8,3 +8,4 @@ export validatePipeline(e,s=)→Date.now,p,u,i,n,w|run full Mode 4 validation pi
 PATTERNS: 4-step pipeline (contracts→decompile→AST verify→tokens)|single-call validation
 EDGE_CASES: missing .full/→skip AST verify|missing src/→skip tokens|strict mode for extra contract checks
 S(e,s)→fix|auto-fix compact style (exported as fixCompactStyle): generate .ctx + terser minify
+v(a)|estimateTokens — internal helper

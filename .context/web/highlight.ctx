@@ -11,3 +11,4 @@ e(t)|escape HTML special chars
 export highlight(i)→a,l.push,i.substring,n.startsWith,u,r|lex JS string|wrap tokens in HTML spans|ret HTML string
 PATTERNS: custom manual lexer|zero dep syntax highlighting
 EDGE_CASES: unterminated strings|nested comments
+o(a)|o — internal helper

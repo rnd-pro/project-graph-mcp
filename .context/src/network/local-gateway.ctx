@@ -9,3 +9,4 @@ export registerService(t,e,r=)→p,l,n,f,c.cleanup,process.on|register local dom
 export getGatewayPort()→h|get active gateway port or fallback to 80
 PATTERNS: singleton global proxy across projects|transparent HTTP/WS routing
 EDGE_CASES: port 80 fallback to 8080 on EACCES|HTML injection for base href
+u(a,b,c)|resolveBackend — internal helper

@@ -10,3 +10,4 @@ export getCallChain(e=)→getGraph,e.push,f.add,l.shift,e.split,t.map|Object>→
 export invalidateCache()→p,l,f,m.clear|delete cache file and clear memory cache
 PATTERNS: smart mtime caching|BFS for call chain|regex for method extraction
 EDGE_CASES: gracefully handles unreadable files/mtimes|handles missing symbols
+y(a)|getGraph — internal helper

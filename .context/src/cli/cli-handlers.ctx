@@ -7,3 +7,4 @@ R(r)→r.startsWith,r.find,q|(auto-documented)
 PATTERNS: command definition map|lazy execution
 EDGE_CASES: falls back to cwd if no path given|validates required args
 export CLI_HANDLERS|map of CLI command handlers
+O(a,b)|getArg — internal helper

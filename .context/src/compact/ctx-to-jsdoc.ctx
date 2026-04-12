@@ -11,3 +11,4 @@ export stripJSDoc(n,s=)→d,t,c,value.startsWith,f.filter,u.slice|strip all JSDo
 export validateCtxContracts(e,n=)→d,a,m,t,parseCtxFile,c|validate if .ctx signatures match source AST signatures
 PATTERNS: AST-based comment detection via Acorn onComment array|reverse-order insertions preserve line numbers|export keyword detection for duplicate prevention
 EDGE_CASES: strings containing /** preserved by AST parser|blank lines between JSDoc and fn handled by trimEnd|unparseable files fall back to regex strip
+h(a)|splitTopLevelParams — internal helper

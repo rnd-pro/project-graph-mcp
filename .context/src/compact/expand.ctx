@@ -4,3 +4,7 @@ export expandProject(t,o=)→i,s,S,l,$,expandFile|expand all src/ → .expanded/
 export expandFile(e,n,s=)→t,r.trim,m,i.split,s.trim,s.startsWith|beautify compact JS + inject JSDoc from .ctx|core hybrid mode expand
 PATTERNS: Terser beautify (no compress/mangle)|AST walk for injection points|reverse-order insertion|name-based symbol matching
 EDGE_CASES: */ in descriptions→sanitized|empty files→skip|parse errors→fallback to beautified|unmapped lines→null
+h(a)|parseCtxSignatures — internal helper
+y(a)|parseCtxParams — internal helper
+g(a)|extractReturnType — internal helper
+w(a,b,c,d,e)|sanitizeJSDocText — internal helper

@@ -7,3 +7,6 @@ vendor/
 
 # Test files (not production code)
 tests/
+
+# Utility scripts
+scripts/

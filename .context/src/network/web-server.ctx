@@ -16,3 +16,5 @@ A(e,a,s,i)→a.get,d.executeTool,n,s,a,o.dirname|(auto-documented)
 export startWebServer(t,a)→i,o.resolve,o.basename,n.createHash,f.slice,parseInt|init HTTP/WS server, handle routing and WebSocket upgrades
 PATTERNS: custom HTTP routing|manual WebSocket frame parsing without deps
 EDGE_CASES: 15min auto-shutdown|unmasked server frames|ping/pong opcodes
+g(a,b)|serveStatic — internal helper
+u(a)|computeWSAccept — internal helper

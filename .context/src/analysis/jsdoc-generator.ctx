@@ -8,3 +8,4 @@ s(t)|(auto-documented)
 export generateJSDocFor(t,e,n=)→generateJSDoc,name.endsWith|null→generateJSDoc,name.endsWith,results.find|null→generateJSDoc,name.endsWith,results.find|null→generateJSDoc,name.endsWith,results.find|generate JSDoc for a specific named function
 PATTERNS: AST tree walking via Acorn|reverse line scanning for existing JSDoc
 EDGE_CASES: skips getters/setters/constructors|infers types from AST defaults
+i(a)|buildJSDoc — internal helper
