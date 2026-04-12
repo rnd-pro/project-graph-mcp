@@ -4,14 +4,16 @@
 
 # project-graph-mcp
 
-**Your entire codebase in one context window.** An MCP server that compresses source code **10-50x** via AST-based minification — agents read, navigate, and edit your project without seeing a single irrelevant line. Includes a built-in Web Dashboard for visual code exploration.
+**Maximize your AI agent's context window.** An MCP server that lets agents read and edit your codebase in **compact mode** — minified source with all variable names preserved. Code tokens drop **↓40%**, and `.ctx` documentation is injected only in the focus zone. Fewer tokens per file → more files fit in context → **deeper understanding of your codebase**.
 
-![Expanded view — beautified code with JSDoc from .ctx files](docs/img/explorer-expanded.jpg)
+![Expanded view — formatted code with JSDoc, 28+ lines per function](docs/img/explorer-expanded.jpg)
 
-![Compact view — minified source as agents see it (7 lines vs 30+)](docs/img/explorer-compact.jpg)
+![Compact mode — same file, 14 lines total, ↓40% tokens. Agents read and edit this directly.](docs/img/explorer-compact.jpg)
+
+Includes a built-in [Web Dashboard](#web-dashboard) (`npx project-graph-mcp serve`) to visualize token metrics and compact ⇄ raw code in real-time.
 
 > [!TIP]
-> **18 MCP tools.** Add one line to your MCP config and the server downloads itself on the next IDE restart.
+> **18 MCP tools, zero config.** Add one line to your MCP config and the server downloads itself on the next IDE restart.
 
 ### Project Skeleton (10-50x compression)
 
