@@ -5,5 +5,10 @@ export getConfig(t)→a,d,e,JSON.parse|read .context/config.json, merge with def
 export setConfig(e,c)→a,n,d,o,getConfig,JSON.stringify|save mode config|validates mode 1-4
 export getModeDescription(e)|return human-readable desc for mode 1-4
 export getModeWorkflow(e)|return read/edit/docs/validate workflow per mode
+@names __top__:c=existsSync,o=readFileSync,t=writeFileSync,d=join,i=dirname,s=mkdirSync,f=resolve
+@names getConfig:t=projectDir,d=configPath,o=configContent,c=config
+@names setConfig:e=projectDir,i=config,s=configPath,c=configDir,f=configContent
+@names getModeDescription:e=mode
+@names getModeWorkflow:e=mode
 PATTERNS: config merge with DEFAULTS|.context/config.json storage
 EDGE_CASES: missing config→defaults|invalid mode→throw error|missing dir→mkdirSync

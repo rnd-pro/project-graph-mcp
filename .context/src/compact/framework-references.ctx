@@ -4,5 +4,9 @@
 fetchReference(t)→o,u.get,Date.now,AbortSignal.timeout,fetch,e.text|fetch remote markdown reference with caching and local fallback
 listAvailable()→Object.keys,r,t,r.endsWith,a,e.add|list available framework references from cache and local dir
 export getFrameworkReference(e=)→listAvailable,t.includes,fetchReference,r.split,i,o.includes|get full reference docs for a framework or auto-detect
+@names __top__:a=existsSync,s=readFileSync,c=writeFileSync,e=mkdirSync,r=join,t=dirname,o=fetch
+@names fetchReference:t=url,c=cachePath,a=cacheDir,e=response,r=text,s=data
+@names listAvailable:r=cacheDir,e=files
+@names getFrameworkReference:e=framework,t=options,r=cacheDir,o=cachePath,a=data,s=url
 PATTERNS: in-memory caching with TTL|fetch with AbortSignal timeout
 EDGE_CASES: gracefully handles fetch timeouts and write failures

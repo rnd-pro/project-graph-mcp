@@ -7,5 +7,13 @@ aggregateUndocumented(t)→t.filter,t.slice|aggregate undocumented items to summ
 aggregateJSDoc(t)→t.filter|aggregate JSDoc issues to summary|counts errors and warnings
 export getFullAnalysis(t,e=)→n,C,a,runCacheableAnalyses,aggregateComplexity,aggregateUndocumented|run full code health analysis|combines cached and dynamic cross-file metrics
 export getAnalysisSummaryOnly(t)→C,a,runCacheableAnalyses,aggregateComplexity,aggregateUndocumented,aggregateJSDoc|get partial fast health score skipping cross-file analyses
+@names calculateHealthScore:t=stats,e=score,s=complexity,a=deadCode,o=undocumented,n=total,i=penalty,l=ratio,r=weight,c=maxScore
+@names findJSFiles:t=dir,n=rootDir,i=files,l=entry,e=fullPath,r=relPath
+@names runCacheableAnalyses:e=projectPath,s=options,a=results,i=cache,r=valid,d=data,u=cached,m=missing,x=entry,j=hash,n=file,b=cacheEntry,C=content
+@names aggregateComplexity:t=results,e=options,s=total,a=files
+@names aggregateUndocumented:t=results,e=total
+@names aggregateJSDoc:t=results,e=total,s=files,a=missing
+@names getFullAnalysis:t=projectPath,e=options,s=analysis,o=health,l=summary,c=stats,h=score,j=issues,b=time
+@names getAnalysisSummaryOnly:t=projectPath,e=summary,s=health,o=score,n=stats,i=issues
 PATTERNS: incremental caching for per-file metrics|score aggregation with clamping
 EDGE_CASES: cross-file metrics always dynamic|handles missing cache gracefully

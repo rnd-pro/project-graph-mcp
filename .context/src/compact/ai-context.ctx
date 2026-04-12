@@ -2,5 +2,8 @@
 @sig 8aed2da2
 @vars a=COMPRESSIBLE
 export getAiContext(a,l=)→e,s,estimateTokens,o,n,r|get project context including skeleton, docs, and optionally compressed files
+@names __top__:c=existsSync,t=readFileSync,p=statSync,u=readdirSync,g=join,e=dirname,s=relative,o=extname,n=basename,h=minimatch,k=estimateTokens,y=getAiContext
+@names estimateTokens:e=text,t=length
+@names getAiContext:l=projectDir,e=options,a=ctxContent,d=mode,u=maxTokens,s=ignorePatterns,p=useMarkdown,m=skipDirs,o=systemCtxPath,n=systemCtx,f=walkDir,c=entries,h=entry,k=entryPath,g=stat,y=relativePath
 PATTERNS: token estimation heuristic|parallel generation
 EDGE_CASES: gracefully skips unreadable files|handles missing files

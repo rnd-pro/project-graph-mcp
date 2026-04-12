@@ -10,5 +10,15 @@ export markTestFailed(t,e)→t.split,updateTestState|mark specific test id as fa
 updateTestState(e,s,r,a)→process.cwd,o,findCtxMdFiles,s.split,parseInt,t|update test state string in .ctx.md file
 export getTestSummary(t)→getAllFeatures,a.push,Math.round|compute total, passed, failed, pending counts
 export resetTestState()→process.cwd,o,findCtxMdFiles,t,s.replace,n|reset all test states to pending [ ]
+@names findCtxMdFiles:t=dir,n=files,r=entry,e=fullPath
+@names parseAnnotations:t=content,e=file,s=annotations,n=regex,o=match,r=name,f=status,u=notes,l=line,p=col,d=test
+@names groupByName:t=annotations,e=name,s=group,n=tests
+@names getAllFeatures:e=annotations,s=features,n=test
+@names getPendingTests:t=annotations,e=pending,s=test,n=status
+@names markTestPassed:t=testName
+@names markTestFailed:t=testName,e=reason
+@names updateTestState:e=testName,s=status,r=file,a=options,i=annotations,c=test,f=index,o=content,u=newContent,t=regex,l=match
+@names getTestSummary:t=annotations,e=summary,s=total,n=passed,o=failed,r=pending,a=test
+@names resetTestState:e=annotations,s=test,o=file
 PATTERNS: regex markdown checklist parsing|file rewriting for state
 EDGE_CASES: handles unreadable files gracefully|handles missing failure reasons

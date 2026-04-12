@@ -1,6 +1,21 @@
 --- src/analysis/custom-rules.js ---
 @sig 0eb841f3
 @vars p=__dirname,h=RULES_DIR,m=graphignorePatterns
+@names __top__:p=ruleCache,h=cacheTime,m=defaultRules
+@names parseGraphignore:t=content,s=rules
+@names isGraphignored:e=filePath,t=relPath,s=ignored,n=rule
+@names loadRuleSets:t=projectPath,n=options,s=rules,r=loaded
+@names saveRuleSet:e=ruleSet,s=path
+@names findFiles:e=dir,t=rootDir,n=extensions,c=results,l=entry,u=fullPath,s=relPath,d=stat
+@names isExcluded:e=relPath,t=rules,s=excluded
+@names isInStringOrComment:e=sourceCode,t=index,s=inString,n=inComment,r=char,o=isQuote
+@names isWithinContext:e=sourceCode,t=index,s=context,n=start,r=end,o=block,i=node
+@names checkFileAgainstRule:t=filePath,s=content,n=rule,r=matches,o=regex,c=match,e=line,i=col
+@names getCustomRules:e=rules,t=cache,s=now
+@names setCustomRule:e=ruleId,t=ruleDef,s=rules,n=path,r=json
+@names deleteCustomRule:e=ruleId,t=ruleDef,s=rules,n=path,r=json
+@names detectProjectRuleSets:t=projectPath,s=rules,r=pkg,c=deps,l=rule,e=ruleSet,o=loaded
+@names checkCustomRules:e=projectPath,t=options,s=rules,n=files,r=results,o=file,i=content,c=rule,u=match,f=line,a=col,d=result,p=cache
 parseGraphignore(t)→c,o,n,e,s.split,e.trim|parse .graphignore patterns by walking up directory tree
 isGraphignored(e)→e.split,s.endsWith,s.slice,e.startsWith,t.startsWith,s.startsWith|check if relative path matches any graphignore pattern
 loadRuleSets()→n,s,n.endsWith,o,e,JSON.parse|load all JSON ruleset configs from rules directory

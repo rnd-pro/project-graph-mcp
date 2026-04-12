@@ -4,5 +4,9 @@ export minifyLegend(e)→createShortName,t.has,t.add|create minified legend from
 createShortName(e)→e.replace,s.slice,e.match,e.slice|generate short name from full name|uses PascalCase/camelCase initials
 export buildGraph(e)→s.map,t.map,s.flatMap,minifyLegend,Object.entries,Object.fromEntries|build minified graph from parsed data|tracks nodes, edges, orphans, duplicates
 export createSkeleton(e,s=)→Object.entries,e.push,Object.values,c.add,Object.keys,c.has|create compact project skeleton|minimizes tokens for AI context
+@names minifyLegend:e=names,s=legend,t=seen,o=name,n=counter
+@names createShortName:e=name,s=consonants,t=caps
+@names buildGraph:e=data,s=classes,t=functions,o=names,n=legend,c=reverseLegend,f=graph,r=seenNodes,l=methodMap
+@names createSkeleton:e=graph,s=changedFiles,t=legendMap,o=nodesMap,n=exportsMap,c=referencedFiles,f=filesMap,r=skeleton
 PATTERNS: adjacency list for edges|minified legend for token savings
 EDGE_CASES: skips empty classes|handles unreferenced functions as orphans

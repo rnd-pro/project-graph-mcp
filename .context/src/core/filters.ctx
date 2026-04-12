@@ -11,5 +11,15 @@ export shouldExcludeDir(e,t=)→e.startsWith,excludeDirs.includes,matchGitignore
 export shouldExcludeFile(e,t=)→matchWildcard,matchGitignorePattern|check if file should be excluded by rules
 matchWildcard(e,t)→e.replace|check if string matches wildcard pattern
 matchGitignorePattern(e,t,r)→e.includes,matchWildcard|check string against gitignore pattern rules
+@names __top__:i=DEFAULT_EXCLUDES,n=DEFAULT_EXCLUDE_PATTERNS,s=config
+@names setFilters:e=newConfig
+@names addExcludes:e=directories
+@names removeExcludes:e=directories,t=dir
+@names resetFilters:s=config
+@names parseGitignore:i=dirPath,n=ignoreFilePath,t=patterns,e=line
+@names shouldExcludeDir:e=dirName,t=basePath,r=pattern
+@names shouldExcludeFile:e=fileName,t=basePath,r=pattern
+@names matchWildcard:e=pattern,t=string,r=regexStr
+@names matchGitignorePattern:e=pattern,t=string,r=basePath
 PATTERNS: mutable module state|regex wildcard matching
 EDGE_CASES: ignores gitignore comments|handles hidden files option

@@ -6,5 +6,14 @@ hasReturnValue(e)→a.simple|check if function body has return value
 validateFunction(e,t,n,r,s,i)→o.push,Math.min,extractParamName,hasReturnValue,inferTypeFromDefault,n.toLowerCase|validate JSDoc vs AST for single function|checks count, names, returns, types
 export checkJSDocFile(e,t)→o,extractJSDocComments,findJSDocBefore,validateFunction,n.push,a.simple|check JSDoc consistency in single file
 export checkJSDocConsistency(t)→i,findJSFiles,e,s,checkJSDocFile,o.push|check JSDoc consistency in directory|aggregates errors and warnings
+@names findJSFiles:e=dir,i=rootDir,o=files,a=entry,t=fullPath,u=relPath
+@names extractJSDocComments:e=sourceCode,t=comments,n=regex,r=match,s=doc,i=start,o=end,a=lines,c=node
+@names findJSDocBefore:e=comments,t=line,n=doc
+@names extractParamName:e=paramDoc
+@names inferTypeFromDefault:e=defaultValue,t=type
+@names hasReturnValue:e=astNode,t=hasReturn
+@names validateFunction:e=name,t=node,n=doc,r=file,s=line,i=results,o=params,a=returns,c=missing
+@names checkJSDocFile:e=filePath,t=options,n=content,r=ast,s=docs,i=results,o=funcs,a=node
+@names checkJSDocConsistency:t=projectPath,n=options,r=files,o=results,i=stats,a=total,c=missing,l=file,e=entry
 PATTERNS: AST parsing|regex for initial JSDoc extraction|AST type inference
 EDGE_CASES: handles optional param [] syntax|handles union types in JSDoc

@@ -6,5 +6,12 @@ buildSignature(t,e,a)→extractParamName,params.map,s.push,l.simple,hashBodyStru
 hashBodyStructure(t)→e.push,l.simple,e.join|traverse function body to build structural flow sequence string
 calculateSimilarity(t,e)→a.push,paramNames.includes,paramNames.filter,Math.max,Math.round,r.join|compare two signatures to calculate similarity percentage score
 export getSimilarFunctions(t,e=)→r,findJSFiles,extractSignatures,i.push,calculateSimilarity,l.push|extract and compare signatures across directory for similar pairs
+@names findJSFiles:t=dir,r=rootDir,i=files,l=entry,e=fullPath,h=relPath
+@names extractSignatures:e=filePath,a=rootDir,n=content,r=ast,o=funcs,c=node
+@names buildSignature:t=node,e=name,a=file,n=sig,s=params,r=body
+@names extractParamName:t=node
+@names hashBodyStructure:t=node,e=hash
+@names calculateSimilarity:t=sig1,e=sig2,a=score,n=diff,s=match,r=total,i=len
+@names getSimilarFunctions:t=projectPath,e=options,a=files,n=funcs,s=similar,i=pairs,l=threshold,r=sig1,o=sig2
 PATTERNS: structural hashing of control flow|pair-wise comparison scoring
 EDGE_CASES: skips very small functions|ignores overloads (same name/file)

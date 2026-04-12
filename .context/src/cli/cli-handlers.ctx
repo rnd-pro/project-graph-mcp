@@ -2,5 +2,7 @@
 @sig 7ab8a0e8
 getArg(r,e)→r.startsWith,r.find,s.split|undefined→a.startsWith,args.find,arg.split|undefined→a.startsWith,args.find,arg.split|undefined→a.startsWith,args.find,arg.split|extract flag argument value from args array
 getPath(r)→r.startsWith,r.find,q|extract and resolve first non-flag path argument
+@names getArg:r=args,e=flagName,s=match
+@names getPath:r=args,e=pathArg
 PATTERNS: command definition map|lazy execution
 EDGE_CASES: falls back to cwd if no path given|validates required args

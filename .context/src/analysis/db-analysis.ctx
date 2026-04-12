@@ -4,5 +4,9 @@ export getDBSchema(t)→e,a.map,a.reduce|read parsed project to list all defined
 export getTableUsage(a,s)→e,t,readers.some,readers.push,writers.some,writers.push|find readers and writers for tables using parsed graph edges
 export getDBDeadTables(a)→e,t,r.add,r.has,o.filter,collectReferencedColumns|find schema tables not referenced by any read/write in code
 collectReferencedColumns(e)→t.add|heuristically collect all potential column names from code
+@names getDBSchema:t=projectPath,a=schema
+@names getTableUsage:a=schema,s=sourceCode,n=usage,o=tables,r=table,l=regex,d=match,c=col
+@names getDBDeadTables:a=schema,s=deadTables,n=tables,o=table,r=usage,l=unused,d=refs,c=col,e=ref,t=tableRef
+@names collectReferencedColumns:e=table,t=cols,a=refs
 PATTERNS: dependency graph analysis|heuristic DB column extraction
 EDGE_CASES: hardcoded standard columns prevent false positive dead tables

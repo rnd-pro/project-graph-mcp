@@ -4,5 +4,9 @@
 estimateTokens(s)→Math.ceil|estimate token count from char length (÷4)
 walkJSFiles(s)→e,n.startsWith,r,t,d.has,walkJSFiles|walk dir for .js/.mjs files, skip vendor/node_modules
 export validatePipeline(e,t=)→Date.now,c,l,r,o,walkJSFiles|run full Mode 4 validation pipeline|returns PASS/FAIL with contract, AST, token reports
+@names __top__:d=existsSync,o=readFileSync,n=readdirSync,e=statSync,m=join,u=extname,p=relative,S=basename,t=parse,j=simple,y=minify,a=compressFile,i=beautifyFile,w=resolveCtxPath,h=walkJSFiles,v=SUPPORTED_EXTS,g=SKIP_DIRS
+@names walkJSFiles:e=dir,s=rootDir,n=files,d=entry,o=entryPath
+@names estimateTokens:s=text
+@names validatePipeline:t=projectDir,e=options,a=dryRun,p=outputDir,s=srcDir,i=jsFiles,S=fileDetails,j=errors,y=totalSavings,d=relativePath,m=ctxPath,h=ctxContent,v=jsPath,g=jsContent,w=ast,u=compressed
 PATTERNS: 4-step pipeline (contracts→decompile→AST verify→tokens)|single-call validation
 EDGE_CASES: missing .full/→skip AST verify|missing src/→skip tokens|strict mode for extra contract checks

@@ -5,5 +5,11 @@ extractLegend(e,n)→t,a.push,s,Math.max,e.slice,e.replace|parses AST to extract
 export compressFile(t,s=)→n,o.has,e,estimateTokens,l.trim,a|minifies JS/TS via Terser, prepends JSDoc legend
 export editCompressed(t,n,r,o=)→e,s,findSymbolRange,l.slice,a|find symbol in file and replace its code safely
 findSymbolRange(e,t,n)→r|traverse AST to find byte range for a named symbol
+@names __top__:e=readFileSync,t=basename,n=extname,a=minify,s=parse,r=simple,o=SUPPORTED_EXTENSIONS
+@names estimateTokens:e=code
+@names extractLegend:e=sourceCode,n=filePath,a=lines,t=ast,s=jsdoc,r=walk
+@names compressFile:t=filePath,s=options,r=beautify,i=legend,c=ext,l=sourceCode,m=originalTokens,d=terserOptions,p=compressedCode,e=minifiedResult,f=extractedLegend,u=finalCode,y=compressedTokens
+@names editCompressed:t=filePath,n=symbolName,r=newCode,o=options,i=beautify,c=dryRun,l=sourceCode,m=ast,d=symbolRange,p=modifiedCode,e=minifiedResult
+@names findSymbolRange:e=ast,t=sourceCode,n=symbolName,a=symbolRange
 PATTERNS: AST traversal|regex JSDoc extraction|Terser minification
 EDGE_CASES: validates syntax before writing|handles empty files

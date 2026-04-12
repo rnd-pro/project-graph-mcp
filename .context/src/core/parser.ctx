@@ -15,5 +15,21 @@ export findAllProjectFiles(e,n=)→u,a,t,r,s,o|recursively find all files in dir
 buildJSDocTypeMap(e,t)→value.startsWith,t.slice,a.exec,e.slice,a.startsWith,a.slice|build map of line numbers to JSDoc param/return types
 findJSDocForNode(e,t)→e.get|lookup JSDoc entry for AST node by line number
 enrichParamsWithTypes(e,t)→s.set,e.startsWith,e.endsWith,r.slice,s.get,o.startsWith|merge raw AST params with parsed JSDoc type info
+@names __top__:x=SOURCE_EXTENSIONS,S=DB_METHODS
+@names parseFile:e=content,t=filePath,s=result,n=comments,r=ast,o=jsdocMap,a=exportsSet
+@names extractCallsAndSQL:e=astNode,t=calls,s=dbReads,n=dbWrites,r=callee
+@names getTagName:e=node
+@names getCallMethodName:e=node,t=callee
+@names extractStringValue:e=node
+@names templateToString:e=node,t=str,s=i
+@names discoverSubProjects:i=dir,l=root,c=projects,p=dirs,a=dirName,t=fullPath,s=pkgJson
+@names parseProject:t=dir,s=options,n=result,i=root,l=files,e=content,r=relPath,a=parsed
+@names parseFileByExtension:e=content,t=filePath
+@names isSourceFile:e=fileName,t=ext
+@names findJSFiles:e=dir,n=root,a=files,i=item,t=fullPath,l=stat,u=relPath
+@names findAllProjectFiles:e=dir,n=root,i=files,l=rootDir,a=item,t=fullPath,u=stat,f=relPath
+@names buildJSDocTypeMap:e=comments,t=content,s=map,n=node,r=line,o=params,a=paramRegex,i=match,l=returns,c=returnMatch
+@names findJSDocForNode:e=jsdocMap,t=line,s=i,n=doc
+@names enrichParamsWithTypes:e=params,t=jsdoc,s=typeMap,r=name,o=type
 PATTERNS: AST visitor via walk.simple|extension-based parser routing
 EDGE_CASES: ignores parse errors (returns empty)|excludes specific presentation files

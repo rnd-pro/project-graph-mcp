@@ -3,5 +3,10 @@
 buildJSDoc(t)→e.push,extractParamName,inferParamType,e.join|construct JSDoc string with inferred parameters
 inferParamType(t)|infer primitive or collection types from AST parameter defaults
 export generateJSDocFor(t,e,r=)→generateJSDoc,name.endsWith|null→generateJSDoc,name.endsWith,results.find|null→generateJSDoc,name.endsWith,results.find|null→generateJSDoc,name.endsWith,results.find|generate JSDoc for a specific named function
+@names generateJSDoc:i=funcName,o=params,s=doc,c=paramDocs,m=returnDoc,f=template,e=param,r=type,t=name,n=desc,a=opts
+@names buildJSDoc:t=node,e=doc,r=params,n=returns
+@names extractParamName:t=node
+@names inferParamType:t=node,e=type
+@names generateJSDocFor:t=filePath,e=funcName,r=options
 PATTERNS: AST tree walking via Acorn|reverse line scanning for existing JSDoc
 EDGE_CASES: skips getters/setters/constructors|infers types from AST defaults

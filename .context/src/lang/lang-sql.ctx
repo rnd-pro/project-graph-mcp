@@ -1,5 +1,13 @@
 @sig f561b2a3
 @vars e=SQL_KEYWORDS,t=ORM_READ_METHODS,n=ORM_WRITE_METHODS
+@names isSQLString:e=query
+@names isValidTableName:t=tableName
+@names extractSQLFromString:e=query,t=reads,n=writes,s=cleanedQuery,a=fromRegex,r=match,i=joinRegex,o=insertRegex,l=updateRegex,c=deleteRegex
+@names parseSQL:e=sourceCode,t=filePath,n=result,s=createTableRegex,a=match,r=columnsBlock,i=line,o=parsedColumns
+@names parseColumns:t=columnsBlock,n=columns,s=splitColumns,a=match
+@names splitByTopLevelComma:e=columnsString,t=result,n=currentToken,s=parensLevel,a=index,r=char
+@names extractSQLFromCode:e=sourceCode,t=reads,n=writes,s=regexes,a=regex
+@names extractORMFromCode:e=sourceCode,s=reads,a=writes,r=prismaRegex,i=match,o=tableName,l=knexRegex,c=knexFromRegex
 export isSQLString(e)|test if string looks like a SQL query
 isValidTableName(t)→t.toLowerCase,e.has|validate table name against SQL keywords and casing rules
 export extractSQLFromString(e)→e.replace,a.exec,s.slice,isValidTableName,t.add,i.exec|extract table READs and WRITEs from SQL string

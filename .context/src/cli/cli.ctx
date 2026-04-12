@@ -2,5 +2,7 @@
 @sig daa9547d
 export printHelp()→console.log|log usage instructions and available commands to stdout
 export runCLI(n,t)→printHelp,console.error,process.exit,o.handler,console.log,JSON.stringify|parse args, validate, and route to corresponding cli handler
+@names __top__:e=CLI_HANDLERS
+@names runCLI:n=command,t=args,o=handlerDef,e=result
 PATTERNS: generic command router|table help text
 EDGE_CASES: handles unknown commands gracefully|validates required args
