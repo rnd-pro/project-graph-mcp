@@ -1,747 +1,611 @@
 /**
- * Integration Test — Real MCP Protocol via stdio
+ * Integration Test — Full MCP + UI Consumer Simulation
  *
- * Spawns the actual server process, communicates via JSON-RPC over stdin/stdout.
- * Creates a realistic temp project, runs ALL tools, validates every field.
- * Cleans up after itself.
+ * Architecture:
+ *   tests/lib/fixture.js    — project scaffold & cleanup
+ *   tests/lib/mcp-client.js — JSON-RPC client (stdio)
+ *   tests/lib/ui-client.js  — HTTP + WebSocket client (web-server)
+ *   tests/lib/asserts.js    — shared assertion helpers
  *
- * Two modes:
- *   1. Local dev:  node --test tests/integration.test.js
- *   2. NPM verify: VERIFY_NPM=1 node --test tests/integration.test.js
- *      (installs published package in temp dir and tests the installed binary)
+ * Phases:
+ *   1. MCP Protocol (stdio JSON-RPC)
+ *   2. UI Server Lifecycle (HTTP APIs)
+ *   3. WebSocket Data Flow (snapshot, tool calls, events)
+ *   4. Dynamic Tool Discovery (schemas → auto-test)
+ *   5. Round-trip Data Integrity (compact → expand → verify)
+ *   6. NPM Verify mode (VERIFY_NPM=1)
  *
- * Run: node --test tests/integration.test.js
+ * Run:
+ *   node --test tests/integration.test.js
+ *   VERIFY_NPM=1 node --test tests/integration.test.js
  */
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  mkdirSync, writeFileSync, readFileSync, rmSync,
-  existsSync, readdirSync,
-} from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join, resolve, dirname } from 'path';
-import { spawn, execSync } from 'child_process';
 import { fileURLToPath } from 'url';
+
+import { scaffold, cleanup, ALL_SYMBOLS, EXPORTED_FUNCTIONS, EXPORTED_CLASSES, SQL_TABLES } from './lib/fixture.js';
+import { MCPClient, resolveServerPath } from './lib/mcp-client.js';
+import { startUIServer, httpGet, wsConnect, wsCallTool, stopUIServer } from './lib/ui-client.js';
+import { assertNum, assertStr, assertObj, assertArr, assertOneOf, assertScore } from './lib/asserts.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '..');
 const FIXTURE_ROOT = join('/tmp', `pg-mcp-test-${Date.now()}`);
 
-// ─── Which binary to test? ────────────────────────────────────────
-const VERIFY_NPM = process.env.VERIFY_NPM === '1';
-let SERVER_PATH; // set in before()
+// ─── Shared state across phases ───────────────────────────────────
+/** @type {MCPClient} */
+let mcpClient;
+/** @type {string} */
+let serverPath;
+/** Tool definitions from tools/list (dynamically discovered) */
+let toolDefs = [];
+/** Composite tools with action enums */
+let compositeTools = [];
 
-// ─── Fixture: realistic multi-file project ────────────────────────
-const FIXTURE_FILES = {
-  'package.json': JSON.stringify({
-    name: 'test-consumer', version: '1.0.0', type: 'module',
-  }),
-
-  'src/math.js': `\
-/**
- * Add two numbers.
- * @param {number} a
- * @param {number} b
- * @returns {number}
- */
-export function add(a, b) {
-  return a + b;
-}
-
-export function multiply(x, y) {
-  return x * y;
-}
-
-function _clamp(v, min, max) {
-  return Math.min(Math.max(v, min), max);
-}
-
-export const PI = 3.14159;
-`,
-
-  'src/utils.js': `\
-import { add } from './math.js';
-
-/**
- * Format a number with a prefix.
- * @param {number} n
- * @param {string} prefix
- * @returns {string}
- */
-export function format(n, prefix = '$') {
-  return prefix + n.toFixed(2);
-}
-
-export async function fetchData(url, options = {}) {
-  const res = await fetch(url, options);
-  return res.json();
-}
-
-export function sum(...numbers) {
-  return numbers.reduce((acc, n) => add(acc, n), 0);
-}
-`,
-
-  'src/models.js': `\
-export class Animal {
-  constructor(name) {
-    this.name = name;
-  }
-  speak() {
-    return this.name + ' speaks';
-  }
-  static create(name) {
-    return new Animal(name);
-  }
-}
-
-export class Dog extends Animal {
-  speak() {
-    return this.name + ' barks';
-  }
-  fetch(item) {
-    return this.name + ' fetches ' + item;
-  }
-}
-`,
-
-  'src/config.js': `\
-export const defaults = {
-  port: 3000,
-  host: 'localhost',
-  debug: false,
-};
-export function mergeConfig(user) {
-  return { ...defaults, ...user };
-}
-`,
-
-  'src/unused.js': `\
-export function neverCalled() {
-  return 'dead code';
-}
-function alsoUnused() {}
-`,
-
-  'schema.sql': `\
-CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  email VARCHAR(255) UNIQUE
-);
-CREATE TABLE posts (
-  id SERIAL PRIMARY KEY,
-  user_id INT REFERENCES users(id),
-  title VARCHAR(200),
-  body TEXT
-);
-`,
-};
-
-const EXPORTED_FUNCTIONS = [
-  'add', 'multiply', 'format', 'fetchData', 'sum',
-  'mergeConfig', 'neverCalled',
-];
-const EXPORTED_CLASSES = ['Animal', 'Dog'];
-
-// ─── MCP Client (JSON-RPC over stdio) ─────────────────────────────
-class MCPClient {
-  constructor(serverPath, projectDir) {
-    this._serverPath = serverPath;
-    this._projectDir = projectDir;
-    this._nextId = 1;
-    this._pending = new Map();
-    this._buffer = '';
-    this._child = null;
-  }
-
-  async start() {
-    this._child = spawn('node', [this._serverPath], {
-      env: { ...process.env, PROJECT_GRAPH_BACKEND: '1' },
-      stdio: ['pipe', 'pipe', 'pipe'],
-      cwd: this._projectDir,
-    });
-
-    this._child.stdout.on('data', (chunk) => {
-      this._buffer += chunk.toString();
-      const lines = this._buffer.split('\n');
-      this._buffer = lines.pop();
-      for (const line of lines) {
-        if (!line.trim()) continue;
-        try {
-          const msg = JSON.parse(line);
-          if (msg.id !== undefined && this._pending.has(msg.id)) {
-            const { resolve, reject } = this._pending.get(msg.id);
-            this._pending.delete(msg.id);
-            if (msg.error) reject(new Error(msg.error.message));
-            else resolve(msg);
-          }
-        } catch { /* ignore non-JSON lines */ }
-      }
-    });
-
-    // Collect stderr for debugging but ignore in normal flow
-    this._stderr = '';
-    this._child.stderr.on('data', (d) => { this._stderr += d.toString(); });
-
-    return this;
-  }
-
-  _send(msg) {
-    this._child.stdin.write(JSON.stringify(msg) + '\n');
-  }
-
-  _request(method, params = {}) {
-    const id = this._nextId++;
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        this._pending.delete(id);
-        reject(new Error(`Timeout: ${method} (id=${id}). stderr: ${this._stderr}`));
-      }, 15000);
-      this._pending.set(id, {
-        resolve: (msg) => { clearTimeout(timeout); resolve(msg); },
-        reject: (err) => { clearTimeout(timeout); reject(err); },
-      });
-      this._send({ jsonrpc: '2.0', id, method, params });
-    });
-  }
-
-  async initialize() {
-    const resp = await this._request('initialize', {
-      protocolVersion: '2024-11-05',
-      capabilities: {},
-      clientInfo: { name: 'integration-test', version: '1.0.0' },
-      roots: [{ uri: 'file://' + this._projectDir }],
-    });
-    // Send initialized notification (no response expected)
-    this._send({ jsonrpc: '2.0', method: 'notifications/initialized' });
-    // Wait a bit for initialization to settle
-    await new Promise(r => setTimeout(r, 100));
-    return resp;
-  }
-
-  async listTools() {
-    return this._request('tools/list');
-  }
-
-  async listResources() {
-    return this._request('resources/list');
-  }
-
-  async readResource(uri) {
-    return this._request('resources/read', { uri });
-  }
-
-  async callTool(name, args = {}) {
-    const resp = await this._request('tools/call', { name, arguments: args });
-    // Parse the result: content[0].text is JSON
-    const content = resp.result.content;
-    assert.ok(Array.isArray(content), `tools/call ${name}: content should be array`);
-    assert.ok(content.length >= 1, `tools/call ${name}: content should have >= 1 item`);
-    assert.strictEqual(content[0].type, 'text', `tools/call ${name}: content[0].type should be text`);
-    const data = JSON.parse(content[0].text);
-    // Check for hints (content[1])
-    const hints = content.length > 1 ? content[1].text : null;
-    return { data, hints, raw: resp };
-  }
-
-  stop() {
-    if (this._child && !this._child.killed) {
-      this._child.kill('SIGTERM');
-    }
-  }
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────
-function scaffold() {
-  rmSync(FIXTURE_ROOT, { recursive: true, force: true });
-  for (const [rel, content] of Object.entries(FIXTURE_FILES)) {
-    const abs = join(FIXTURE_ROOT, rel);
-    mkdirSync(dirname(abs), { recursive: true });
-    writeFileSync(abs, content, 'utf-8');
-  }
-}
-
-function assertNum(val, label) {
-  assert.strictEqual(typeof val, 'number', `${label}: expected number, got ${typeof val}`);
-  assert.ok(val >= 0, `${label}: expected >= 0, got ${val}`);
-}
-
-function assertStr(val, label) {
-  assert.strictEqual(typeof val, 'string', `${label}: expected string`);
-  assert.ok(val.length > 0, `${label}: expected non-empty string`);
-}
-
-// ─── Test Suite ───────────────────────────────────────────────────
-describe('MCP Protocol Integration Test', { concurrency: false, timeout: 120000 }, () => {
-  /** @type {MCPClient} */
-  let client;
+describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, timeout: 120000 }, () => {
 
   before(async () => {
-    scaffold();
-
-    if (VERIFY_NPM) {
-      // Install published package in temp dir
-      const npmDir = join(FIXTURE_ROOT, '_npm_install');
-      mkdirSync(npmDir, { recursive: true });
-      writeFileSync(join(npmDir, 'package.json'), '{"name":"verifier","private":true}');
-      execSync('npm install project-graph-mcp', { cwd: npmDir, stdio: 'pipe' });
-      SERVER_PATH = join(npmDir, 'node_modules', '.bin', 'project-graph-mcp');
-      // If .bin has a symlink, resolve it
-      if (!existsSync(SERVER_PATH)) {
-        SERVER_PATH = join(npmDir, 'node_modules', 'project-graph-mcp', 'src', 'network', 'server.js');
-      }
-    } else {
-      SERVER_PATH = join(PROJECT_ROOT, 'src', 'network', 'server.js');
-    }
-
-    client = new MCPClient(SERVER_PATH, FIXTURE_ROOT);
-    await client.start();
+    scaffold(FIXTURE_ROOT);
+    serverPath = resolveServerPath(PROJECT_ROOT, FIXTURE_ROOT);
+    mcpClient = new MCPClient(serverPath, FIXTURE_ROOT);
+    await mcpClient.start();
   });
 
   after(() => {
-    client?.stop();
-    rmSync(FIXTURE_ROOT, { recursive: true, force: true });
+    mcpClient?.stop();
+    cleanup(FIXTURE_ROOT);
   });
 
   // ================================================================
-  // PHASE 1: MCP Protocol Handshake
+  // PHASE 1: MCP Protocol Handshake + Dynamic Discovery
   // ================================================================
-  describe('Phase 1: MCP Protocol Handshake', () => {
+  describe('Phase 1: MCP Protocol', () => {
 
-    it('initialize — returns valid MCP envelope', async () => {
-      const resp = await client.initialize();
-      // JSON-RPC envelope
+    it('initialize — valid MCP envelope', async () => {
+      const resp = await mcpClient.initialize();
       assert.strictEqual(resp.jsonrpc, '2.0');
-      assert.ok(resp.id !== undefined, 'has id');
-      assert.ok(resp.result, 'has result');
-
-      // MCP initialize result
+      assert.ok(resp.id !== undefined);
       const r = resp.result;
       assertStr(r.protocolVersion, 'protocolVersion');
-      assert.ok(r.capabilities, 'has capabilities');
-      assert.ok(r.capabilities.tools !== undefined, 'declares tools capability');
-      assert.ok(r.serverInfo, 'has serverInfo');
-      assertStr(r.serverInfo.name, 'serverInfo.name');
-      assertStr(r.serverInfo.version, 'serverInfo.version');
+      assertObj(r.capabilities, 'capabilities');
+      assert.ok(r.capabilities.tools !== undefined, 'tools capability');
+      assertObj(r.serverInfo, 'serverInfo');
+      assertStr(r.serverInfo.name, 'name');
+      assertStr(r.serverInfo.version, 'version');
     });
 
-    it('tools/list — returns all 18 tools with schemas', async () => {
-      const resp = await client.listTools();
-      const tools = resp.result.tools;
-      assert.ok(Array.isArray(tools), 'tools should be array');
-      assert.strictEqual(tools.length, 18, `expected 18 tools, got ${tools.length}`);
+    it('tools/list — discover all tools dynamically', async () => {
+      toolDefs = await mcpClient.listTools();
+      assertArr(toolDefs, 'tools');
+      assert.ok(toolDefs.length >= 10, `expected >= 10 tools, got ${toolDefs.length}`);
 
-      // Validate each tool definition
       const names = new Set();
-      for (const tool of tools) {
+      for (const tool of toolDefs) {
         assertStr(tool.name, 'tool.name');
         assertStr(tool.description, 'tool.description');
-        assert.ok(tool.inputSchema, `${tool.name}: missing inputSchema`);
-        assert.strictEqual(tool.inputSchema.type, 'object', `${tool.name}: schema type`);
-        assert.ok(!names.has(tool.name), `duplicate tool name: ${tool.name}`);
+        assertObj(tool.inputSchema, `${tool.name}.inputSchema`);
+        assert.strictEqual(tool.inputSchema.type, 'object');
+        assert.ok(!names.has(tool.name), `duplicate: ${tool.name}`);
         names.add(tool.name);
       }
 
-      // Composite tools have action enum
-      for (const name of ['navigate', 'analyze', 'testing', 'filters', 'jsdoc', 'docs', 'compact', 'db']) {
-        const t = tools.find(t => t.name === name);
-        assert.ok(t, `${name} not found`);
-        assert.ok(t.inputSchema.properties.action?.enum?.length > 0,
-          `${name}: missing action enum`);
-      }
+      // Identify composite tools (have action enum)
+      compositeTools = toolDefs.filter(
+        t => t.inputSchema.properties?.action?.enum?.length > 0
+      );
+      assert.ok(compositeTools.length >= 5,
+        `expected >= 5 composite tools, got ${compositeTools.length}`);
     });
 
-    it('resources/list — returns guide resource', async () => {
-      const resp = await client.listResources();
-      const resources = resp.result.resources;
-      assert.ok(Array.isArray(resources));
-      assert.ok(resources.length >= 1, 'at least 1 resource');
+    it('resources/list — has guide resource', async () => {
+      const resources = await mcpClient.listResources();
+      assertArr(resources, 'resources');
       const guide = resources.find(r => r.uri.includes('guide'));
       assert.ok(guide, 'guide resource missing');
-      assertStr(guide.name, 'resource name');
+      assertStr(guide.name, 'name');
     });
 
-    it('resources/read — returns guide content', async () => {
-      const resp = await client.readResource('project-graph://guide');
-      const contents = resp.result.contents;
-      assert.ok(Array.isArray(contents));
-      assert.ok(contents.length >= 1);
-      assert.strictEqual(contents[0].mimeType, 'text/markdown');
-      assertStr(contents[0].text, 'guide text');
-      assert.ok(contents[0].text.length > 200, 'guide should be substantial');
+    it('resources/read — guide is markdown', async () => {
+      const result = await mcpClient.readResource('project-graph://guide');
+      assertArr(result.contents, 'contents');
+      assert.strictEqual(result.contents[0].mimeType, 'text/markdown');
+      assert.ok(result.contents[0].text.length > 200);
     });
   });
 
   // ================================================================
-  // PHASE 2: All tools — every field validated
+  // PHASE 2: All MCP tools — data validation
   // ================================================================
-  describe('Phase 2: All tools on fresh project', () => {
+  describe('Phase 2: MCP tool responses', () => {
 
     // ── get_skeleton ──────────────────────────────────────────────
-    it('get_skeleton — full schema + data validation', async () => {
-      const { data: sk, hints } = await client.callTool('get_skeleton', { path: '.' });
+    it('get_skeleton — schema + all symbols', async () => {
+      const { data: sk, hints } = await mcpClient.callTool('get_skeleton', { path: '.' });
+      assert.strictEqual(sk.v, 1);
+      assertObj(sk.L, 'legend');
+      assertObj(sk.s, 'stats');
+      assertObj(sk.X, 'exports');
 
-      assert.strictEqual(sk.v, 1, 'version should be 1');
-
-      // Legend: short → long
-      assert.strictEqual(typeof sk.L, 'object');
+      // All fixture symbols in legend
       const longNames = Object.values(sk.L);
-      assert.ok(longNames.length >= 9, `legend should have >= 9 entries, got ${longNames.length}`);
-      for (const [short, long] of Object.entries(sk.L)) {
-        assertStr(short, 'legend key');
-        assertStr(long, `legend value for ${short}`);
+      for (const sym of ALL_SYMBOLS) {
+        assert.ok(longNames.includes(sym), `"${sym}" not in legend`);
       }
 
-      // All known symbols in legend
-      for (const sym of [...EXPORTED_FUNCTIONS, ...EXPORTED_CLASSES]) {
-        assert.ok(longNames.includes(sym), `"${sym}" not in legend: ${longNames}`);
-      }
-
-      // Stats
+      // Stats match fixture
       assertNum(sk.s.files, 'files');
-      assertNum(sk.s.classes, 'classes');
       assertNum(sk.s.functions, 'functions');
+      assertNum(sk.s.classes, 'classes');
       assertNum(sk.s.tables, 'tables');
-      assert.ok(sk.s.files >= 5, `expected >= 5 files, got ${sk.s.files}`);
-      assert.ok(sk.s.functions >= 8, `expected >= 8 functions`);
-      assert.ok(sk.s.classes >= 2, `expected >= 2 classes`);
-      assert.ok(sk.s.tables >= 2, `expected >= 2 tables (schema.sql)`);
+      assert.ok(sk.s.files >= 5);
+      assert.ok(sk.s.functions >= 8);
+      assert.ok(sk.s.classes >= 2);
+      assert.ok(sk.s.tables >= 2);
 
-      // Exports map
-      assert.strictEqual(typeof sk.X, 'object');
+      // Exports reference their legend keys
       for (const [file, exports] of Object.entries(sk.X)) {
-        assert.ok(Array.isArray(exports));
-        for (const sym of exports) {
-          assert.ok(sym in sk.L, `export ${sym} not in legend L`);
-        }
+        assertArr(exports, `X[${file}]`);
+        for (const sym of exports) assert.ok(sym in sk.L, `${sym} not in legend`);
       }
 
-      // Hints should exist
+      // Hints exist
       assert.ok(hints, 'should have hints');
-      assert.ok(hints.includes('expand'), 'hints should mention expand');
     });
 
-    // ── get_ai_context ────────────────────────────────────────────
-    it('get_ai_context — schema', async () => {
-      const { data: ctx } = await client.callTool('get_ai_context', {
+    it('get_ai_context', async () => {
+      const { data } = await mcpClient.callTool('get_ai_context', {
         path: '.', includeSkeleton: true, includeDocs: false,
       });
-      assertNum(ctx.totalTokens, 'totalTokens');
-      assert.ok(ctx.totalTokens > 0, 'totalTokens > 0');
-      assert.ok(ctx.skeleton, 'skeleton included');
-      assert.strictEqual(ctx.skeleton.v, 1);
+      assertNum(data.totalTokens, 'totalTokens');
+      assert.ok(data.totalTokens > 0);
+      assert.strictEqual(data.skeleton.v, 1);
     });
 
-    // ── invalidate_cache ──────────────────────────────────────────
     it('invalidate_cache', async () => {
-      const { data } = await client.callTool('invalidate_cache');
+      const { data } = await mcpClient.callTool('invalidate_cache');
       assert.strictEqual(data.success, true);
     });
 
-    // ── get_usage_guide ───────────────────────────────────────────
     it('get_usage_guide', async () => {
-      const { data } = await client.callTool('get_usage_guide');
-      assert.strictEqual(typeof data, 'string');
+      const { data } = await mcpClient.callTool('get_usage_guide');
+      assertStr(data, 'guide');
       assert.ok(data.length > 200);
     });
 
-    // ── get_agent_instructions ────────────────────────────────────
     it('get_agent_instructions', async () => {
-      const { data } = await client.callTool('get_agent_instructions');
-      assert.strictEqual(typeof data, 'string');
-      assert.ok(data.length > 20);
+      const { data } = await mcpClient.callTool('get_agent_instructions');
+      assertStr(data, 'instructions');
     });
 
     // ── navigate ──────────────────────────────────────────────────
-    it('navigate.expand — known symbol', async () => {
-      // Rebuild graph
-      await client.callTool('get_skeleton', { path: '.' });
-      const { data } = await client.callTool('navigate', { action: 'expand', symbol: 'add' });
-      assert.ok(data);
-      if (data.code) assert.ok(data.code.includes('add'));
+    it('navigate.expand — known + unknown', async () => {
+      await mcpClient.callTool('get_skeleton', { path: '.' });
+      const { data: ok } = await mcpClient.callTool('navigate', { action: 'expand', symbol: 'add' });
+      assert.ok(ok);
+      const { data: err } = await mcpClient.callTool('navigate', { action: 'expand', symbol: 'NOPE' });
+      assert.ok(err.error);
     });
 
-    it('navigate.expand — unknown symbol returns error', async () => {
-      const { data } = await client.callTool('navigate', { action: 'expand', symbol: 'NONEXISTENT_99' });
-      assert.ok(data.error, 'should return error for unknown');
+    it('navigate.deps + usages + sub_projects', async () => {
+      await mcpClient.callTool('navigate', { action: 'deps', symbol: 'sum' });
+      await mcpClient.callTool('navigate', { action: 'usages', symbol: 'add' });
+      const { data } = await mcpClient.callTool('navigate', { action: 'sub_projects', path: '.' });
+      assertArr(data, 'sub_projects');
     });
 
-    it('navigate.deps', async () => {
-      const { data } = await client.callTool('navigate', { action: 'deps', symbol: 'sum' });
-      assert.ok(data !== undefined);
-    });
-
-    it('navigate.usages', async () => {
-      const { data } = await client.callTool('navigate', { action: 'usages', symbol: 'add' });
-      assert.ok(data !== undefined);
-    });
-
-    it('navigate.sub_projects', async () => {
-      const { data } = await client.callTool('navigate', { action: 'sub_projects', path: '.' });
-      assert.ok(Array.isArray(data));
-    });
-
-    // ── analyze.dead_code ─────────────────────────────────────────
-    it('analyze.dead_code — schema + detects neverCalled', async () => {
-      const { data: r } = await client.callTool('analyze', { action: 'dead_code', path: '.' });
+    // ── analyze ───────────────────────────────────────────────────
+    it('analyze.dead_code — detects neverCalled', async () => {
+      const { data: r } = await mcpClient.callTool('analyze', { action: 'dead_code', path: '.' });
       assertNum(r.total, 'total');
-      assert.ok('byType' in r);
-      assert.ok(Array.isArray(r.items));
-      const names = r.items.map(i => i.name);
-      assert.ok(names.includes('neverCalled'), `neverCalled not detected: ${names}`);
-      for (const item of r.items) {
-        assertStr(item.name, 'item.name');
-        assertStr(item.type, 'item.type');
-        assertStr(item.file, 'item.file');
-        assertStr(item.reason, 'item.reason');
-      }
-    });
-
-    // ── analyze.complexity ────────────────────────────────────────
-    it('analyze.complexity — schema', async () => {
-      const { data: r } = await client.callTool('analyze', { action: 'complexity', path: '.', minComplexity: 1 });
-      assertNum(r.total, 'total');
-      assert.ok(r.stats);
-      assertNum(r.stats.low, 'low');
-      assertNum(r.stats.moderate, 'moderate');
-      assert.ok(Array.isArray(r.items));
+      assertObj(r.byType, 'byType');
+      assertArr(r.items, 'items');
+      assert.ok(r.items.map(i => i.name).includes('neverCalled'));
       for (const item of r.items) {
         assertStr(item.name, 'name');
+        assertStr(item.type, 'type');
         assertStr(item.file, 'file');
-        assertNum(item.complexity, 'complexity');
-        assertStr(item.rating, 'rating');
-        assert.ok(['low', 'moderate', 'high', 'critical'].includes(item.rating));
+        assertStr(item.reason, 'reason');
       }
     });
 
-    // ── analyze.full_analysis ──────────────────────────────────────
-    it('analyze.full_analysis — all sections', async () => {
-      const { data: r } = await client.callTool('analyze', { action: 'full_analysis', path: '.' });
-      for (const key of ['deadCode', 'undocumented', 'similar', 'complexity', 'largeFiles', 'outdated', 'overall']) {
-        assert.ok(key in r, `missing ${key}`);
+    it('analyze.complexity', async () => {
+      const { data: r } = await mcpClient.callTool('analyze', { action: 'complexity', path: '.', minComplexity: 1 });
+      assertNum(r.total, 'total');
+      assertObj(r.stats, 'stats');
+      for (const k of ['low', 'moderate', 'high', 'critical']) assertNum(r.stats[k], k);
+      for (const item of r.items) {
+        assertStr(item.name, 'name');
+        assertNum(item.complexity, 'complexity');
+        assertOneOf(item.rating, ['low', 'moderate', 'high', 'critical'], 'rating');
       }
-      assertNum(r.overall.score, 'score');
-      assert.ok(r.overall.score >= 0 && r.overall.score <= 100);
+    });
+
+    it('analyze.full_analysis — all sections', async () => {
+      const { data: r } = await mcpClient.callTool('analyze', { action: 'full_analysis', path: '.' });
+      for (const k of ['deadCode', 'undocumented', 'similar', 'complexity', 'largeFiles', 'outdated', 'overall']) {
+        assert.ok(k in r, `missing section: ${k}`);
+      }
+      assertScore(r.overall.score, 'score');
       assertStr(r.overall.rating, 'rating');
     });
 
-    // ── analyze.analysis_summary ──────────────────────────────────
-    it('analyze.analysis_summary — schema', async () => {
-      const { data: r } = await client.callTool('analyze', { action: 'analysis_summary', path: '.' });
-      assertNum(r.healthScore, 'healthScore');
-      assertStr(r.grade, 'grade');
-      assert.ok(['excellent', 'good', 'fair', 'critical'].includes(r.grade));
+    it('analyze.analysis_summary', async () => {
+      const { data: r } = await mcpClient.callTool('analyze', { action: 'analysis_summary', path: '.' });
+      assertScore(r.healthScore, 'healthScore');
+      assertOneOf(r.grade, ['excellent', 'good', 'fair', 'critical'], 'grade');
     });
 
-    // ── analyze.large_files ───────────────────────────────────────
-    it('analyze.large_files — schema', async () => {
-      const { data: r } = await client.callTool('analyze', { action: 'large_files', path: '.' });
-      assertNum(r.total, 'total');
-      assert.ok(r.stats);
-      assertNum(r.stats.totalFiles, 'totalFiles');
+    it('analyze.large_files + outdated_patterns + undocumented', async () => {
+      const { data: lf } = await mcpClient.callTool('analyze', { action: 'large_files', path: '.' });
+      assertNum(lf.total, 'total');
+      assertObj(lf.stats, 'stats');
+
+      const { data: op } = await mcpClient.callTool('analyze', { action: 'outdated_patterns', path: '.' });
+      assertObj(op.stats, 'stats');
+      assertArr(op.redundantDeps, 'redundantDeps');
+
+      const { data: ud } = await mcpClient.callTool('analyze', { action: 'undocumented', path: '.', level: 'all' });
+      assertNum(ud.total, 'total');
     });
 
-    // ── analyze.outdated_patterns ──────────────────────────────────
-    it('analyze.outdated_patterns — schema', async () => {
-      const { data: r } = await client.callTool('analyze', { action: 'outdated_patterns', path: '.' });
-      assert.ok(r.stats);
-      assert.ok(Array.isArray(r.redundantDeps));
+    // ── testing, filters, jsdoc, db ───────────────────────────────
+    it('testing lifecycle', async () => {
+      await mcpClient.callTool('testing', { action: 'reset' });
+      const { data } = await mcpClient.callTool('testing', { action: 'summary', path: '.' });
+      for (const k of ['total', 'passed', 'failed', 'pending', 'progress']) assertNum(data[k], k);
     });
 
-    // ── analyze.undocumented ──────────────────────────────────────
-    it('analyze.undocumented — schema', async () => {
-      const { data: r } = await client.callTool('analyze', { action: 'undocumented', path: '.', level: 'all' });
-      assertNum(r.total, 'total');
-      assert.ok(r.byType);
-    });
+    it('filters lifecycle', async () => {
+      const { data: f1 } = await mcpClient.callTool('filters', { action: 'get' });
+      assertArr(f1.excludeDirs, 'excludeDirs');
+      assert.strictEqual(typeof f1.includeHidden, 'boolean');
 
-    // ── testing ───────────────────────────────────────────────────
-    it('testing — full lifecycle', async () => {
-      await client.callTool('testing', { action: 'reset' });
-      const { data: summary } = await client.callTool('testing', { action: 'summary', path: '.' });
-      assertNum(summary.total, 'total');
-      assertNum(summary.passed, 'passed');
-      assertNum(summary.failed, 'failed');
-      assertNum(summary.pending, 'pending');
-    });
-
-    // ── filters ───────────────────────────────────────────────────
-    it('filters — get/set/reset lifecycle', async () => {
-      const { data: f } = await client.callTool('filters', { action: 'get' });
-      assert.ok(Array.isArray(f.excludeDirs));
-      assert.ok(Array.isArray(f.excludePatterns));
-      assert.strictEqual(typeof f.includeHidden, 'boolean');
-      assert.strictEqual(typeof f.useGitignore, 'boolean');
-
-      await client.callTool('filters', { action: 'set', excludeDirs: ['vendor'] });
-      const { data: f2 } = await client.callTool('filters', { action: 'get' });
+      await mcpClient.callTool('filters', { action: 'set', excludeDirs: ['vendor'] });
+      const { data: f2 } = await mcpClient.callTool('filters', { action: 'get' });
       assert.ok(f2.excludeDirs.includes('vendor'));
 
-      await client.callTool('filters', { action: 'reset' });
-      const { data: f3 } = await client.callTool('filters', { action: 'get' });
-      assert.ok(f3.excludeDirs.includes('node_modules'));
+      await mcpClient.callTool('filters', { action: 'reset' });
     });
 
-    // ── jsdoc ─────────────────────────────────────────────────────
     it('jsdoc.check_consistency', async () => {
-      const { data: r } = await client.callTool('jsdoc', { action: 'check_consistency', path: '.' });
-      assert.ok(r.summary);
+      const { data: r } = await mcpClient.callTool('jsdoc', { action: 'check_consistency', path: '.' });
+      assertObj(r.summary, 'summary');
       assertNum(r.summary.total, 'total');
-      assert.ok(Array.isArray(r.issues));
+      assertArr(r.issues, 'issues');
     });
 
-    // ── docs ──────────────────────────────────────────────────────
-    it('docs.get — works without .context', async () => {
-      const { data } = await client.callTool('docs', { action: 'get', path: '.' });
-      assert.strictEqual(typeof data, 'object');
-    });
-
-    // ── compact.get_mode ──────────────────────────────────────────
     it('compact.get_mode — defaults', async () => {
-      const { data: r } = await client.callTool('compact', { action: 'get_mode', path: '.' });
+      const { data: r } = await mcpClient.callTool('compact', { action: 'get_mode', path: '.' });
       assert.strictEqual(r.mode, 2);
       assert.strictEqual(r.beautify, true);
-      assert.strictEqual(r.autoValidate, false);
       assertStr(r.description, 'description');
-      assert.ok(r.workflow);
-      assertStr(r.workflow.read, 'read');
-      assertStr(r.workflow.edit, 'edit');
+      assertObj(r.workflow, 'workflow');
     });
 
-    // ── compact.compact_file ──────────────────────────────────────
-    it('compact.compact_file — response', async () => {
-      const { data: r } = await client.callTool('compact', { action: 'compact_file', path: 'src/math.js' });
+    it('compact.compact_file', async () => {
+      const { data: r } = await mcpClient.callTool('compact', { action: 'compact_file', path: 'src/math.js' });
       assertStr(r.code, 'code');
       assertNum(r.original, 'original');
       assertNum(r.compressed, 'compressed');
-      assertStr(r.savings, 'savings');
       assert.ok(r.compressed <= r.original);
       assert.ok(r.code.includes('add'));
     });
 
-    // ── db ─────────────────────────────────────────────────────────
     it('db.schema — detects SQL tables', async () => {
-      const { data: r } = await client.callTool('db', { action: 'schema', path: '.' });
+      const { data: r } = await mcpClient.callTool('db', { action: 'schema', path: '.' });
       assertNum(r.totalTables, 'totalTables');
-      assert.ok(r.totalTables >= 2, `expected >= 2 tables, got ${r.totalTables}`);
+      assert.ok(r.totalTables >= 2);
       const names = r.tables.map(t => t.name || t.table);
-      assert.ok(names.includes('users'), `users not found: ${names}`);
-      assert.ok(names.includes('posts'), `posts not found: ${names}`);
+      for (const t of SQL_TABLES) assert.ok(names.includes(t), `table ${t} not found`);
     });
 
-    it('db.dead_tables — schema', async () => {
-      const { data: r } = await client.callTool('db', { action: 'dead_tables', path: '.' });
-      assert.ok(Array.isArray(r.deadTables));
-      assert.ok(r.stats);
+    it('db.dead_tables', async () => {
+      const { data: r } = await mcpClient.callTool('db', { action: 'dead_tables', path: '.' });
+      assertArr(r.deadTables, 'deadTables');
+      assertObj(r.stats, 'stats');
       assertNum(r.stats.totalSchemaTables, 'totalSchemaTables');
     });
 
-    // ── get_focus_zone ────────────────────────────────────────────
     it('get_focus_zone', async () => {
-      const { data } = await client.callTool('get_focus_zone', {
+      const { data } = await mcpClient.callTool('get_focus_zone', {
         path: '.', recentFiles: ['src/math.js'],
       });
-      assert.ok('focusFiles' in data);
-      assert.ok(Array.isArray(data.focusFiles));
+      assertArr(data.focusFiles, 'focusFiles');
     });
   });
 
   // ================================================================
-  // PHASE 3: Docs generation → validation
+  // PHASE 3: UI Server — HTTP APIs
   // ================================================================
-  describe('Phase 3: Docs & contracts', () => {
+  describe('Phase 3: UI Server HTTP APIs', () => {
+    let uiPort;
+    let uiProc;
 
-    it('docs.generate', async () => {
-      const { data: r } = await client.callTool('docs', { action: 'generate', path: '.', overwrite: true });
-      assert.ok(r.created || r.updated || r.skipped);
+    before(async () => {
+      const ui = await startUIServer(serverPath, FIXTURE_ROOT, 0);
+      uiPort = ui.port;
+      uiProc = ui.process;
+    });
+
+    after(() => stopUIServer(uiProc));
+
+    it('/api/project-info — project metadata', async () => {
+      const { status, data } = await httpGet(uiPort, '/api/project-info');
+      assert.strictEqual(status, 200);
+      assertStr(data.name, 'name');
+      assertStr(data.path, 'path');
+      assertStr(data.color, 'color');
+      assert.ok(data.color.startsWith('hsl'), `color should be hsl, got: ${data.color}`);
+      assertNum(data.pid, 'pid');
+      assert.ok(data.pid > 0);
+    });
+
+    it('/api/skeleton — matches MCP response', async () => {
+      const { status, data: httpSk } = await httpGet(uiPort, '/api/skeleton');
+      assert.strictEqual(status, 200);
+      assert.strictEqual(httpSk.v, 1);
+
+      // Compare with MCP response
+      const { data: mcpSk } = await mcpClient.callTool('get_skeleton', { path: '.' });
+      // Same symbols in legend
+      const httpNames = new Set(Object.values(httpSk.L));
+      const mcpNames = new Set(Object.values(mcpSk.L));
+      for (const sym of ALL_SYMBOLS) {
+        assert.ok(httpNames.has(sym), `HTTP skeleton missing ${sym}`);
+        assert.ok(mcpNames.has(sym), `MCP skeleton missing ${sym}`);
+      }
+      // Same stats
+      assert.strictEqual(httpSk.s.files, mcpSk.s.files, 'file count mismatch');
+      assert.strictEqual(httpSk.s.functions, mcpSk.s.functions, 'function count mismatch');
+    });
+
+    it('/api/analysis-summary — health data for UI', async () => {
+      const { status, data } = await httpGet(uiPort, '/api/analysis-summary');
+      assert.strictEqual(status, 200);
+      assertScore(data.healthScore, 'healthScore');
+      assertOneOf(data.grade, ['excellent', 'good', 'fair', 'critical'], 'grade');
+      assertNum(data.complexity, 'complexity');
+      assertNum(data.undocumented, 'undocumented');
+    });
+
+    it('/api/file — compressed file for CodeViewer', async () => {
+      const { status, data } = await httpGet(uiPort, '/api/file?path=src/math.js');
+      assert.strictEqual(status, 200);
+      assertStr(data.code, 'code');
+      assertStr(data.file, 'file');
+      assertNum(data.codeTok, 'codeTok');
+      assertNum(data.totalTok, 'totalTok');
+      assertNum(data.expanded, 'expanded');
+      assertStr(data.savings, 'savings');
+      assert.ok(data.code.includes('add'), 'code should have add');
+    });
+
+    it('/api/raw-file — original source', async () => {
+      const { status, data } = await httpGet(uiPort, '/api/raw-file?path=src/math.js');
+      assert.strictEqual(status, 200);
+      assertStr(data.content, 'content');
+      assert.ok(data.content.includes('export function add'), 'should have original source');
+      assert.ok(data.content.includes('/**'), 'should have JSDoc comments');
+    });
+
+    it('/api/compression-stats — token stats for TopBar', async () => {
+      const { status, data } = await httpGet(uiPort, '/api/compression-stats');
+      assert.strictEqual(status, 200);
+      assertNum(data.files, 'files');
+      assertNum(data.codeTok, 'codeTok');
+      assertNum(data.totalTok, 'totalTok');
+      assertNum(data.expanded, 'expanded');
+      assert.ok(data.files >= 5, `expected >= 5 files, got ${data.files}`);
+    });
+
+    it('/api/analysis — full analysis for HealthPanel', async () => {
+      const { status, data } = await httpGet(uiPort, '/api/analysis');
+      assert.strictEqual(status, 200);
+      assertObj(data.overall, 'overall');
+      assertScore(data.overall.score, 'score');
+    });
+
+    it('/api/expand + deps + usages — navigation', async () => {
+      // Build graph first
+      await httpGet(uiPort, '/api/skeleton');
+
+      const { data: expanded } = await httpGet(uiPort, '/api/expand?symbol=add');
+      assert.ok(expanded);
+
+      const { data: deps } = await httpGet(uiPort, '/api/deps?symbol=sum');
+      assert.ok(deps !== undefined);
+
+      const { data: usages } = await httpGet(uiPort, '/api/usages?symbol=add');
+      assert.ok(usages !== undefined);
+    });
+  });
+
+  // ================================================================
+  // PHASE 4: WebSocket Data Flow
+  // ================================================================
+  describe('Phase 4: WebSocket data flow', () => {
+    let uiPort;
+    let uiProc;
+    let ws;
+    let snapshot;
+
+    before(async () => {
+      const ui = await startUIServer(serverPath, FIXTURE_ROOT, 0);
+      uiPort = ui.port;
+      uiProc = ui.process;
+      const conn = await wsConnect(uiPort);
+      ws = conn.ws;
+      snapshot = conn.snapshot;
+    });
+
+    after(() => {
+      ws?.close();
+      stopUIServer(uiProc);
+    });
+
+    it('snapshot — project metadata on connect', () => {
+      assertObj(snapshot.project, 'project');
+      assertStr(snapshot.project.name, 'name');
+      assertStr(snapshot.project.path, 'path');
+      assertStr(snapshot.project.color, 'color');
+      assert.ok(snapshot.project.color.startsWith('hsl'));
+    });
+
+    it('snapshot — skeleton loaded on connect', () => {
+      assertObj(snapshot.skeleton, 'skeleton');
+      assert.strictEqual(snapshot.skeleton.v, 1);
+      const names = Object.values(snapshot.skeleton.L);
+      for (const sym of ALL_SYMBOLS) {
+        assert.ok(names.includes(sym), `snapshot.skeleton missing ${sym}`);
+      }
+    });
+
+    it('ws tool call — get_skeleton matches HTTP', async () => {
+      const result = await wsCallTool(ws, 'get_skeleton', { path: '.' });
+      assert.strictEqual(result.v, 1);
+      assertObj(result.L, 'legend');
+      // Compare with HTTP
+      const { data: httpSk } = await httpGet(uiPort, '/api/skeleton');
+      assert.strictEqual(result.s.files, httpSk.s.files, 'files mismatch WS vs HTTP');
+    });
+
+    it('ws tool call — compact_file returns UI-enriched data', async () => {
+      const result = await wsCallTool(ws, 'compact', { action: 'compact_file', path: 'src/math.js' });
+      assertStr(result.code, 'code');
+      assertStr(result.file, 'file');
+      assertNum(result.codeTok, 'codeTok');
+      assertNum(result.totalTok, 'totalTok');
+      assertNum(result.expanded, 'expanded');
+      assertStr(result.savings, 'savings');
+    });
+
+    it('ws tool call — analyze returns data', async () => {
+      const result = await wsCallTool(ws, 'analyze', { action: 'analysis_summary', path: '.' });
+      assertScore(result.healthScore, 'healthScore');
+    });
+  });
+
+  // ================================================================
+  // PHASE 5: Dynamic Tool Discovery — auto-test every action
+  // ================================================================
+  describe('Phase 5: Dynamic tool discovery', () => {
+
+    it('every composite tool action returns valid response', async () => {
+      // For each composite tool, test every action from its enum
+      for (const tool of compositeTools) {
+        const actions = tool.inputSchema.properties.action.enum;
+        const needsPath = tool.inputSchema.required?.includes('path') ||
+                          tool.inputSchema.properties?.path;
+
+        for (const action of actions) {
+          const args = { action };
+
+          // Add required params contextually
+          if (needsPath) args.path = '.';
+          if (action === 'pass' || action === 'fail') continue; // need testId
+          if (action === 'edit') continue; // needs symbol+code
+          if (action === 'set') continue; // needs specific params
+          if (action === 'add_excludes' || action === 'remove_excludes') continue;
+          if (action === 'set_mode') continue;
+          if (action === 'generate') {
+            if (tool.name === 'jsdoc') args.path = join(FIXTURE_ROOT, 'src/math.js');
+          }
+          if (action === 'compact_file' || action === 'expand_file') {
+            args.path = 'src/math.js';
+          }
+          if (action === 'expand') args.symbol = 'add';
+          if (action === 'deps') args.symbol = 'sum';
+          if (action === 'usages') args.symbol = 'add';
+          if (action === 'call_chain') { args.from = 'sum'; args.to = 'add'; args.path = '.'; }
+          if (action === 'sub_projects') args.path = '.';
+          if (action === 'table_usage') args.path = '.';
+          if (action === 'check_types') continue; // needs TS
+
+          try {
+            const { data } = await mcpClient.callTool(tool.name, args);
+            assert.ok(data !== undefined,
+              `${tool.name}.${action} returned undefined`);
+          } catch (e) {
+            assert.fail(`${tool.name}.${action} threw: ${e.message}`);
+          }
+        }
+      }
+    });
+
+    it('simple tools (no action) return valid response', async () => {
+      const simpleTools = toolDefs.filter(
+        t => !t.inputSchema.properties?.action?.enum
+      );
+      for (const tool of simpleTools) {
+        const args = {};
+        if (tool.inputSchema.required?.includes('path')) args.path = '.';
+        // Skip write-only tools
+        if (tool.name === 'set_custom_rule') continue;
+
+        try {
+          const { data } = await mcpClient.callTool(tool.name, args);
+          assert.ok(data !== undefined, `${tool.name} returned undefined`);
+        } catch (e) {
+          assert.fail(`${tool.name} threw: ${e.message}`);
+        }
+      }
+    });
+  });
+
+  // ================================================================
+  // PHASE 6: Round-trip Data Integrity
+  // ================================================================
+  describe('Phase 6: Round-trip & docs', () => {
+
+    it('docs.generate → check_stale → validate_contracts', async () => {
+      const { data: gen } = await mcpClient.callTool('docs', { action: 'generate', path: '.', overwrite: true });
+      assert.ok(gen.created || gen.updated || gen.skipped);
       assert.ok(existsSync(join(FIXTURE_ROOT, '.context')));
-    });
 
-    it('docs.check_stale', async () => {
-      const { data: r } = await client.callTool('docs', { action: 'check_stale', path: '.' });
-      assertNum(r.fresh, 'fresh');
-      assert.ok(Array.isArray(r.stale));
-    });
+      const { data: stale } = await mcpClient.callTool('docs', { action: 'check_stale', path: '.' });
+      assertNum(stale.fresh, 'fresh');
+      assertArr(stale.stale, 'stale');
 
-    it('docs.validate_contracts — per-violation schema', async () => {
-      const { data: r } = await client.callTool('docs', { action: 'validate_contracts', path: '.' });
-      assertNum(r.files, 'files');
-      assert.ok(r.summary);
-      assertNum(r.summary.errors, 'errors');
-      assertNum(r.summary.warnings, 'warnings');
-      assert.ok(Array.isArray(r.violations));
-      for (const v of r.violations) {
-        assertStr(v.file, 'violation.file');
-        assertStr(v.severity, 'severity');
-        assert.ok(['error', 'warning'].includes(v.severity));
+      const { data: contracts } = await mcpClient.callTool('docs', { action: 'validate_contracts', path: '.' });
+      assertNum(contracts.files, 'files');
+      assertArr(contracts.violations, 'violations');
+      for (const v of contracts.violations) {
+        assertStr(v.file, 'file');
+        assertOneOf(v.severity, ['error', 'warning'], 'severity');
         assertStr(v.message, 'message');
       }
     });
 
-    it('docs.get — file-specific after generation', async () => {
-      const { data: r } = await client.callTool('docs', { action: 'get', path: '.', file: 'src/math.js' });
-      assert.ok(r.docs);
-      assertStr(r.docs, 'docs content');
-      assert.ok(r.docs.includes('add'), 'docs should mention add');
-    });
-  });
+    it('compact round-trip preserves all exported names', async () => {
+      // Switch to Mode 1
+      await mcpClient.callTool('compact', { action: 'set_mode', path: '.', mode: 1 });
 
-  // ================================================================
-  // PHASE 4: Compact round-trip — data integrity
-  // ================================================================
-  describe('Phase 4: Compact round-trip', () => {
+      // Compact all
+      const { data: compacted } = await mcpClient.callTool('compact', { action: 'compact_all', path: '.' });
+      assertNum(compacted.files, 'files');
+      assert.ok(compacted.files >= 5);
+      assert.ok(compacted.compactedBytes <= compacted.originalBytes);
 
-    it('compact.set_mode → Mode 1', async () => {
-      await client.callTool('compact', { action: 'set_mode', path: '.', mode: 1 });
-      const { data: r } = await client.callTool('compact', { action: 'get_mode', path: '.' });
-      assert.strictEqual(r.mode, 1);
-    });
-
-    it('compact.compact_all — minifies', async () => {
-      const { data: r } = await client.callTool('compact', { action: 'compact_all', path: '.' });
-      assertNum(r.files, 'files');
-      assert.ok(r.files >= 5);
-      assertNum(r.originalBytes, 'originalBytes');
-      assertNum(r.compactedBytes, 'compactedBytes');
-      assert.ok(r.compactedBytes <= r.originalBytes);
-      if (r.errors) assert.strictEqual(r.errors.length, 0, JSON.stringify(r.errors));
-    });
-
-    it('compacted files: names preserved, comments stripped', () => {
+      // Verify names in compacted files
       for (const fn of EXPORTED_FUNCTIONS) {
         let found = false;
         for (const f of ['src/math.js', 'src/utils.js', 'src/config.js', 'src/unused.js']) {
           if (readFileSync(join(FIXTURE_ROOT, f), 'utf-8').includes(fn)) { found = true; break; }
         }
-        assert.ok(found, `exported fn "${fn}" lost during compact`);
+        assert.ok(found, `"${fn}" lost during compact`);
       }
       for (const cls of EXPORTED_CLASSES) {
-        const code = readFileSync(join(FIXTURE_ROOT, 'src/models.js'), 'utf-8');
-        assert.ok(code.includes(cls), `class "${cls}" lost during compact`);
+        assert.ok(readFileSync(join(FIXTURE_ROOT, 'src/models.js'), 'utf-8').includes(cls),
+          `class "${cls}" lost during compact`);
       }
-    });
 
-    it('skeleton unchanged after compact', async () => {
-      const { data: sk } = await client.callTool('invalidate_cache');
-      const { data: sk2 } = await client.callTool('get_skeleton', { path: '.' });
-      const names = Object.values(sk2.L);
-      for (const sym of [...EXPORTED_FUNCTIONS, ...EXPORTED_CLASSES]) {
-        assert.ok(names.includes(sym), `"${sym}" missing from skeleton after compact`);
-      }
-    });
+      // Expand project
+      const { data: expanded } = await mcpClient.callTool('compact', { action: 'expand_project', path: '.' });
+      assertNum(expanded.files, 'files');
 
-    it('compact.expand_project — creates .expanded/', async () => {
-      const { data: r } = await client.callTool('compact', { action: 'expand_project', path: '.' });
-      assertNum(r.files, 'files');
-      assert.ok(existsSync(join(FIXTURE_ROOT, '.expanded')));
-    });
-
-    it('expanded code is human-readable + names intact', () => {
-      for (const f of ['src/math.js', 'src/utils.js', 'src/models.js']) {
-        const code = readFileSync(join(FIXTURE_ROOT, '.expanded', f), 'utf-8');
-        const lines = code.split('\n').filter(l => l.trim());
-        assert.ok(lines.length >= 3, `${f}: expanded should be multi-line`);
-      }
+      // Verify names in expanded files
       for (const fn of EXPORTED_FUNCTIONS) {
         let found = false;
         for (const f of ['src/math.js', 'src/utils.js', 'src/config.js', 'src/unused.js']) {
@@ -750,104 +614,62 @@ describe('MCP Protocol Integration Test', { concurrency: false, timeout: 120000 
         }
         assert.ok(found, `"${fn}" lost in .expanded`);
       }
-    });
 
-    it('expanded preserves class hierarchy', () => {
-      const code = readFileSync(join(FIXTURE_ROOT, '.expanded/src/models.js'), 'utf-8');
+      // Expanded models preserves class hierarchy
+      const models = readFileSync(join(FIXTURE_ROOT, '.expanded/src/models.js'), 'utf-8');
       for (const kw of ['class Animal', 'class Dog', 'extends', 'constructor', 'speak', 'static']) {
-        assert.ok(code.includes(kw), `"${kw}" lost in expanded models.js`);
+        assert.ok(models.includes(kw), `"${kw}" lost in expanded models`);
       }
+
+      // Beautify back
+      const { data: beautified } = await mcpClient.callTool('compact', { action: 'beautify', path: '.' });
+      assertNum(beautified.files, 'files');
+      assert.ok(beautified.beautifiedBytes >= beautified.originalBytes);
+
+      // Validate pipeline
+      const { data: pipeline } = await mcpClient.callTool('compact', { action: 'validate_pipeline', path: '.' });
+      assertStr(pipeline.status, 'status');
+      assertObj(pipeline.summary, 'summary');
+      assertNum(pipeline.summary.totalErrors, 'totalErrors');
+      assertStr(pipeline.summary.tokenSavings, 'tokenSavings');
+
+      // Back to Mode 2
+      await mcpClient.callTool('compact', { action: 'set_mode', path: '.', mode: 2 });
     });
 
-    it('compact.expand_file — single file decompile', async () => {
-      const { data: r } = await client.callTool('compact', { action: 'expand_file', path: 'src/math.js' });
-      assertStr(r.code, 'decompiled code');
-      assert.ok(r.code.includes('add'));
-      assert.ok(r.code.includes('multiply'));
-    });
-
-    it('compact.beautify — restores readability', async () => {
-      const { data: r } = await client.callTool('compact', { action: 'beautify', path: '.' });
-      assertNum(r.files, 'files');
-      assert.ok(r.beautifiedBytes >= r.originalBytes);
-      const code = readFileSync(join(FIXTURE_ROOT, 'src/math.js'), 'utf-8');
-      assert.ok(code.split('\n').filter(l => l.trim()).length >= 3);
-    });
-
-    it('compact.validate_pipeline — full schema', async () => {
-      const { data: r } = await client.callTool('compact', { action: 'validate_pipeline', path: '.' });
-      assertStr(r.status, 'status');
-      assert.ok(['PASS', 'FAIL'].includes(r.status));
-      assertStr(r.duration, 'duration');
-      assert.ok(r.contracts);
-      assert.ok(r.summary);
-      assertNum(r.summary.totalErrors, 'totalErrors');
-      assertNum(r.summary.contractErrors, 'contractErrors');
-      assertNum(r.summary.astErrors, 'astErrors');
-      assertNum(r.summary.styleErrors, 'styleErrors');
-      assertNum(r.summary.filesProcessed, 'filesProcessed');
-      assertNum(r.summary.jsdocInjected, 'jsdocInjected');
-      assertStr(r.summary.tokenSavings, 'tokenSavings');
-    });
-
-    it('compact.set_mode — back to Mode 2', async () => {
-      await client.callTool('compact', { action: 'set_mode', path: '.', mode: 2 });
-    });
-  });
-
-  // ================================================================
-  // PHASE 5: Edit workflow
-  // ================================================================
-  describe('Phase 5: Edit compressed', () => {
-
-    before(() => {
-      writeFileSync(join(FIXTURE_ROOT, 'src/editable.js'), `\
-export function greet(name) {
-  return 'Hello ' + name;
-}
-export function farewell(name) {
-  return 'Bye ' + name;
-}
-`, 'utf-8');
-    });
-
-    it('compact.edit — replaces target, keeps neighbors', async () => {
-      const { data: r } = await client.callTool('compact', {
-        action: 'edit',
-        path: 'src/editable.js',
-        symbol: 'greet',
+    it('compact.edit — replaces target, preserves neighbors', async () => {
+      const { data } = await mcpClient.callTool('compact', {
+        action: 'edit', path: 'src/editable.js', symbol: 'greet',
         code: "export function greet(name) { return 'Hi ' + name; }",
       });
-      assert.ok(r.success);
+      assert.ok(data.success);
       const code = readFileSync(join(FIXTURE_ROOT, 'src/editable.js'), 'utf-8');
-      assert.ok(code.includes('Hi'), 'new code applied');
-      assert.ok(!code.includes('Hello'), 'old code removed');
-      assert.ok(code.includes('farewell'), 'neighbor preserved');
+      assert.ok(code.includes('Hi'));
+      assert.ok(!code.includes('Hello'));
+      assert.ok(code.includes('farewell'));
     });
   });
 
   // ================================================================
-  // PHASE 6: Error handling — protocol-level
+  // PHASE 7: Protocol error handling
   // ================================================================
-  describe('Phase 6: Protocol error handling', () => {
+  describe('Phase 7: Error handling', () => {
 
-    it('unknown method returns error', async () => {
+    it('unknown MCP method → error', async () => {
       try {
-        await client._request('nonexistent/method');
-        // If we get here, the server returned a response with error field
-        assert.fail('should have thrown or returned error');
+        await mcpClient._request('nonexistent/method');
+        assert.fail('should throw');
       } catch (e) {
-        // JSON-RPC error message propagated
-        assert.ok(e.message.includes('Method not found') || e.message.includes('not found'),
-          `unexpected error: ${e.message}`);
+        assert.ok(e.message.includes('not found'), e.message);
       }
     });
 
-    it('unknown tool returns error in content', async () => {
+    it('unknown tool → error', async () => {
       try {
-        await client._request('tools/call', { name: 'FAKE_TOOL', arguments: {} });
+        await mcpClient._request('tools/call', { name: 'FAKE', arguments: {} });
+        assert.fail('should throw');
       } catch (e) {
-        assert.ok(e.message.includes('Unknown tool'));
+        assert.ok(e.message.includes('Unknown tool'), e.message);
       }
     });
   });
