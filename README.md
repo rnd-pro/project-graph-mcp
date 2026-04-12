@@ -243,6 +243,14 @@ Every project-graph-mcp instance includes a built-in web UI at `http://localhost
 - **Health panel** — analysis results
 - **Live monitor** — real-time agent activity via WebSocket
 
+**Expanded view** — beautified code with JSDoc injection from `.ctx` files:
+
+![Expanded view with JSDoc](docs/img/explorer-expanded.jpg)
+
+**Compact view** — minified source as agents see it (7 lines vs 30+):
+
+![Compact minified view](docs/img/explorer-compact.jpg)
+
 With the optional gateway, all projects are accessible under `http://project-graph.local/{project-name}/`.
 
 ### Compression Metrics
