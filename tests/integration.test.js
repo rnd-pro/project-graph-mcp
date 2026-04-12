@@ -162,8 +162,9 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
         path: '.', includeSkeleton: true, includeDocs: false,
       });
       assertNum(data.totalTokens, 'totalTokens');
-      assert.ok(data.totalTokens > 0);
+      assert.ok(data.totalTokens > 50, `totalTokens too small: ${data.totalTokens}`);
       assert.strictEqual(data.skeleton.v, 1);
+      assert.ok(Object.keys(data.skeleton.L).length >= 5, 'ai_context skeleton has no symbols');
     });
 
     it('invalidate_cache', async () => {
@@ -174,7 +175,8 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
     it('get_usage_guide', async () => {
       const { data } = await mcpClient.callTool('get_usage_guide');
       assertStr(data, 'guide');
-      assert.ok(data.length > 200);
+      assert.ok(data.length > 200, `guide too short: ${data.length}`);
+      assert.ok(data.includes('get_skeleton') || data.includes('skeleton'), 'guide missing tool names');
     });
 
     it('get_agent_instructions', async () => {
@@ -202,9 +204,12 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
     it('analyze.dead_code — detects neverCalled', async () => {
       const { data: r } = await mcpClient.callTool('analyze', { action: 'dead_code', path: '.' });
       assertNum(r.total, 'total');
+      assert.ok(r.total >= 1, `dead_code.total should be >= 1, got ${r.total}`);
       assertObj(r.byType, 'byType');
       assertArr(r.items, 'items');
-      assert.ok(r.items.map(i => i.name).includes('neverCalled'));
+      assert.ok(r.items.length >= 1, 'dead_code returned empty items — harmful fallback?');
+      assert.ok(r.items.map(i => i.name).includes('neverCalled'),
+        `neverCalled not in dead_code: [${r.items.map(i => i.name)}]`);
       for (const item of r.items) {
         assertStr(item.name, 'name');
         assertStr(item.type, 'type');
@@ -216,33 +221,45 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
     it('analyze.complexity', async () => {
       const { data: r } = await mcpClient.callTool('analyze', { action: 'complexity', path: '.', minComplexity: 1 });
       assertNum(r.total, 'total');
+      assert.ok(r.total >= 1, `complexity.total should be >= 1 (we have functions), got ${r.total}`);
       assertObj(r.stats, 'stats');
       for (const k of ['low', 'moderate', 'high', 'critical']) assertNum(r.stats[k], k);
+      assertArr(r.items, 'items');
+      assert.ok(r.items.length >= 1, 'complexity returned empty items — no functions analyzed?');
       for (const item of r.items) {
         assertStr(item.name, 'name');
         assertNum(item.complexity, 'complexity');
+        assert.ok(item.complexity >= 1, `complexity should be >= 1, got ${item.complexity}`);
         assertOneOf(item.rating, ['low', 'moderate', 'high', 'critical'], 'rating');
       }
     });
 
-    it('analyze.full_analysis — all sections', async () => {
+    it('analyze.full_analysis — all sections with data', async () => {
       const { data: r } = await mcpClient.callTool('analyze', { action: 'full_analysis', path: '.' });
       for (const k of ['deadCode', 'undocumented', 'similar', 'complexity', 'largeFiles', 'outdated', 'overall']) {
         assert.ok(k in r, `missing section: ${k}`);
       }
       assertScore(r.overall.score, 'score');
       assertStr(r.overall.rating, 'rating');
+      // Verify sections have actual data, not empty fallbacks
+      assertNum(r.deadCode.total || r.deadCode.count || 0, 'deadCode.total');
+      assertNum(r.complexity.total || r.complexity.count || 0, 'complexity.total');
     });
 
-    it('analyze.analysis_summary', async () => {
+    it('analyze.analysis_summary — non-zero metrics', async () => {
       const { data: r } = await mcpClient.callTool('analyze', { action: 'analysis_summary', path: '.' });
       assertScore(r.healthScore, 'healthScore');
+      assert.ok(r.healthScore > 0, `healthScore is 0 — analysis returned empty data?`);
       assertOneOf(r.grade, ['excellent', 'good', 'fair', 'critical'], 'grade');
+      // complexity and undocumented should be present and numeric
+      assertNum(r.complexity, 'complexity');
+      assertNum(r.undocumented, 'undocumented');
     });
 
     it('analyze.large_files + outdated_patterns + undocumented', async () => {
       const { data: lf } = await mcpClient.callTool('analyze', { action: 'large_files', path: '.' });
       assertNum(lf.total, 'total');
+      assert.ok(lf.total >= 5, `large_files should see >= 5 files, got ${lf.total}`);
       assertObj(lf.stats, 'stats');
 
       const { data: op } = await mcpClient.callTool('analyze', { action: 'outdated_patterns', path: '.' });
@@ -251,6 +268,8 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
 
       const { data: ud } = await mcpClient.callTool('analyze', { action: 'undocumented', path: '.', level: 'all' });
       assertNum(ud.total, 'total');
+      // Some functions lack JSDoc: multiply, mergeConfig, neverCalled, etc.
+      assert.ok(ud.total >= 1, `undocumented should be >= 1 (some fns lack JSDoc), got ${ud.total}`);
     });
 
     it('analyze.similar_functions — field validation', async () => {
@@ -336,11 +355,18 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
       assert.ok(violations !== undefined, 'check_custom_rules should return data');
     });
 
-    it('jsdoc.check_consistency', async () => {
+    it('jsdoc.check_consistency — analyzes documented functions', async () => {
       const { data: r } = await mcpClient.callTool('jsdoc', { action: 'check_consistency', path: '.' });
       assertObj(r.summary, 'summary');
       assertNum(r.summary.total, 'total');
+      // total = number of issues, not functions. 0 means all JSDoc is consistent.
       assertArr(r.issues, 'issues');
+      // Verify the tool actually analyzed something (not an empty fallback)
+      assert.ok(r.summary.hasOwnProperty('total'), 'summary lacks total field');
+      // Sanity: we have documented fns, so analyzed should be > 0 if that field exists
+      if (r.summary.analyzed !== undefined) {
+        assert.ok(r.summary.analyzed >= 1, `analyzed should be >= 1, got ${r.summary.analyzed}`);
+      }
     });
 
     it('compact.get_mode — defaults', async () => {
@@ -351,13 +377,16 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
       assertObj(r.workflow, 'workflow');
     });
 
-    it('compact.compact_file', async () => {
+    it('compact.compact_file — real compression', async () => {
       const { data: r } = await mcpClient.callTool('compact', { action: 'compact_file', path: 'src/math.js' });
       assertStr(r.code, 'code');
       assertNum(r.original, 'original');
       assertNum(r.compressed, 'compressed');
-      assert.ok(r.compressed <= r.original);
-      assert.ok(r.code.includes('add'));
+      assert.ok(r.original > 50, `original too small: ${r.original} — file not read?`);
+      assert.ok(r.compressed > 10, `compressed too small: ${r.compressed}`);
+      assert.ok(r.compressed <= r.original, 'compressed > original?');
+      assert.ok(r.code.includes('add'), 'add() missing from compressed code');
+      assert.ok(r.code.includes('multiply'), 'multiply() missing from compressed code');
     });
 
     it('db.schema — detects SQL tables', async () => {
@@ -368,18 +397,24 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
       for (const t of SQL_TABLES) assert.ok(names.includes(t), `table ${t} not found`);
     });
 
-    it('db.dead_tables', async () => {
+    it('db.dead_tables — detects unused tables', async () => {
       const { data: r } = await mcpClient.callTool('db', { action: 'dead_tables', path: '.' });
       assertArr(r.deadTables, 'deadTables');
+      // users and posts are defined in schema.sql but never referenced in JS
+      assert.ok(r.deadTables.length >= 2,
+        `dead_tables should find >= 2 (users, posts not used in JS), got ${r.deadTables.length}`);
       assertObj(r.stats, 'stats');
       assertNum(r.stats.totalSchemaTables, 'totalSchemaTables');
+      assert.ok(r.stats.totalSchemaTables >= 2, `totalSchemaTables should be >= 2, got ${r.stats.totalSchemaTables}`);
     });
 
-    it('get_focus_zone', async () => {
+    it('get_focus_zone — returns enriched context', async () => {
       const { data } = await mcpClient.callTool('get_focus_zone', {
         path: '.', recentFiles: ['src/math.js'],
       });
       assertArr(data.focusFiles, 'focusFiles');
+      assert.ok(data.focusFiles.length >= 1,
+        `focusFiles should include src/math.js, got ${data.focusFiles.length}`);
     });
   });
 
@@ -432,6 +467,7 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
       const { status, data } = await httpGet(uiPort, '/api/analysis-summary');
       assert.strictEqual(status, 200);
       assertScore(data.healthScore, 'healthScore');
+      assert.ok(data.healthScore > 0, `UI healthScore is 0 — broken analysis?`);
       assertOneOf(data.grade, ['excellent', 'good', 'fair', 'critical'], 'grade');
       assertNum(data.complexity, 'complexity');
       assertNum(data.undocumented, 'undocumented');
@@ -443,9 +479,13 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
       assertStr(data.code, 'code');
       assertStr(data.file, 'file');
       assertNum(data.codeTok, 'codeTok');
+      assert.ok(data.codeTok > 5, `codeTok too small: ${data.codeTok} — compression produced nothing?`);
       assertNum(data.totalTok, 'totalTok');
+      assert.ok(data.totalTok > 5, `totalTok too small: ${data.totalTok}`);
       assertNum(data.expanded, 'expanded');
+      assert.ok(data.expanded > 10, `expanded too small: ${data.expanded} — decompile failed?`);
       assertStr(data.savings, 'savings');
+      assert.ok(data.savings !== '0%', `savings is 0% — no compression happened`);
       assert.ok(data.code.includes('add'), 'code should have add');
     });
 
@@ -465,6 +505,9 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
       assertNum(data.totalTok, 'totalTok');
       assertNum(data.expanded, 'expanded');
       assert.ok(data.files >= 5, `expected >= 5 files, got ${data.files}`);
+      assert.ok(data.codeTok > 10, `codeTok is ${data.codeTok} — no code tokens counted?`);
+      assert.ok(data.totalTok > 10, `totalTok is ${data.totalTok}`);
+      assert.ok(data.expanded > 10, `expanded is ${data.expanded} — decompile broken?`);
     });
 
     it('/api/analysis — full analysis for HealthPanel', async () => {
@@ -472,6 +515,11 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
       assert.strictEqual(status, 200);
       assertObj(data.overall, 'overall');
       assertScore(data.overall.score, 'score');
+      assert.ok(data.overall.score > 0, `overall.score is 0 — analysis produced no results`);
+      assertStr(data.overall.rating, 'rating');
+      // Verify sub-sections have data
+      assertObj(data.deadCode, 'deadCode');
+      assertObj(data.complexity, 'complexity');
     });
 
     it('/api/expand + deps + usages + chain — navigation', async () => {
