@@ -6,6 +6,14 @@
 
 An MCP server that parses your source code into a **10-50x compressed skeleton** — classes, functions, imports, and dependencies in a minified JSON. Agents navigate the graph using `expand`, `deps`, and `usages` without reading irrelevant files. The **AI Context Layer** compresses an entire codebase into ~3K tokens (93% savings) with a single `get_ai_context` call. Supports **monorepo scanning** and **streaming analysis** for large codebases.
 
+**Expanded view** — beautified code with JSDoc injection from `.ctx` files:
+
+![Expanded view with JSDoc](docs/img/explorer-expanded.jpg)
+
+**Compact view** — minified source as agents see it (7 lines vs 30+):
+
+![Compact minified view](docs/img/explorer-compact.jpg)
+
 > [!TIP]
 > **18 MCP tools.** Add one line to your MCP config and the server downloads itself on the next IDE restart.
 
@@ -243,13 +251,7 @@ Every project-graph-mcp instance includes a built-in web UI at `http://localhost
 - **Health panel** — analysis results
 - **Live monitor** — real-time agent activity via WebSocket
 
-**Expanded view** — beautified code with JSDoc injection from `.ctx` files:
 
-![Expanded view with JSDoc](docs/img/explorer-expanded.jpg)
-
-**Compact view** — minified source as agents see it (7 lines vs 30+):
-
-![Compact minified view](docs/img/explorer-compact.jpg)
 
 With the optional gateway, all projects are accessible under `http://project-graph.local/{project-name}/`.
 
