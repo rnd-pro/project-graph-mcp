@@ -9,7 +9,7 @@ function reconcileBackends(){if(!r.existsSync(backendsDir))return;const files=r.
 export function registerService(e,t,r={}){const n=`${e}.local`,s=readRegistry();if(r.projectName){s[n]||(s[n]={name:e,routes:{}});
 const o=`/${r.projectName}`;s[n].routes=s[n].routes||{},s[n].routes[o]={port:t,pid:process.pid,projectPath:r.projectPath,projectName:r.projectName}}else s[n]={port:t,pid:process.pid,name:e};writeRegistry(s);
 const i=o(n,80);ensureGateway();
-const cleanup=()=>{i.cleanup();try{const e=readRegistry();r.projectName&&e[n]?.routes?(delete e[n].routes[`/${r.projectName}`],0===Object.keys(e[n].routes).length&&delete e[n]):delete e[n],writeRegistry(e),0===Object.keys(e).length&&stopGateway()}catch{}};process.on("exit",cleanup),process.on("SIGINT",()=>{cleanup(),process.exit()}),process.on("SIGTERM",()=>{cleanup(),process.exit()});
+const cleanup=()=>{i.cleanup()};process.on("exit",cleanup),process.on("SIGINT",()=>{cleanup(),process.exit()}),process.on("SIGTERM",()=>{cleanup(),process.exit()});
 const a=getGatewayPort(),c=80===a?"":`:${a}`,p=r.projectName?`http://${n}${c}/${r.projectName}/`:`http://${n}${c}/`;return{cleanup:cleanup,url:p,directUrl:`http://localhost:${t}/`}}
 function resolveBackend(e,t,r){const n=r[e];if(!n)return null;if(n.routes){const e=Object.keys(n.routes).sort((e,t)=>t.length-e.length);for(const r of e)if(t===r||t.startsWith(r+"/")){const e=n.routes[r];try{process.kill(e.pid,0)}catch{continue}const o=t.slice(r.length)||"/";return{port:e.port,rewritePath:o,prefix:r}}for(const r of e)try{const e=n.routes[r];process.kill(e.pid,0);
 const o="/"===t||""===t?"/dashboard.html":t;return{port:e.port,rewritePath:o}}catch{continue}}if(n.port){const e="/"===t||""===t?"/dashboard.html":t;return{port:n.port,rewritePath:e}}return null}
