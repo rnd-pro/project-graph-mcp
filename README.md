@@ -107,18 +107,17 @@ get_focus_zone({ path: ".", useGitDiff: true })
 // → Context for recently changed files only
 ```
 
-**Real-world token budget** (45-file project):
+**Real-world token budget** (45-file project, Mode 4 — compact source):
 
 ```
-Skeleton + docs only:         3.2K tok — 93% savings, full project overview
-Overview (compact, no .ctx):  compressed code — 20-55% savings per file
-Focus (compact + .ctx files): code + ~200 tok per .ctx — semantic descriptions
+Skeleton + docs only:          3.2K tok — 93% savings, full project overview
+src/ (compact, agent reads):  46.9K tok — what the agent works with
+.expanded/ (human review):    76.0K tok — beautified + JSDoc from .ctx
+
+Agent savings vs human-readable: 38% ↓
 ```
 
-Compact code saves **20-55% per file** (typical projects with descriptive variable names) by minifying via Terser while preserving all exports. The `.ctx` cost is **per-file** (~200 tok each) and only loaded for the focus area — the agent gets typed signatures and descriptions that the raw source never had.
-
-> [!NOTE]
-> This project itself uses compact-style source code (single-letter variables), so self-benchmarks show minimal per-file savings. Projects with conventional naming see 34-55% compression.
+Compact source saves **38% tokens** vs what a human reads. The agent works directly with minified code; humans review via `.expanded/` cache with restored names and injected JSDoc. The `.ctx` layer (~200 tok per file) provides typed signatures and descriptions for both.
 
 **Per-file metrics breakdown:**
 
