@@ -1,0 +1,10 @@
+# Third-party vendored code
+vendor/
+
+# Tests (written in expanded format)
+tests/
+test/
+
+# Generated files
+.context/
+.expanded/
