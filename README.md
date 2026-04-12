@@ -288,28 +288,13 @@ Every tool response includes contextual coaching — if the agent finds a massiv
 
 ## Quick Start
 
-Add to your IDE's MCP configuration:
+Generate the MCP config for your IDE (with correct paths):
 
-```json
-{
-  "mcpServers": {
-    "project-graph": {
-      "command": "npx",
-      "args": ["-y", "project-graph-mcp"]
-    }
-  }
-}
+```bash
+npx -y project-graph-mcp config
 ```
 
-Restart your IDE — project-graph-mcp will be downloaded and started automatically.
-
-> [!WARNING]
-> **`npx: executable file not found in $PATH`?** Some MCP clients don't inherit your shell's PATH. Use the full path instead:
-> ```bash
-> # Find your npx path:
-> which npx   # e.g. /usr/local/bin/npx or /opt/homebrew/bin/npx
-> ```
-> Then replace `"command": "npx"` with `"command": "/usr/local/bin/npx"` (your actual path).
+Copy the output JSON into your IDE's MCP config file, then restart.
 
 #### Grouped Tools (v2.0)
 
