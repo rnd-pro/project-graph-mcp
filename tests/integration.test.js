@@ -62,6 +62,84 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
   });
 
   // ================================================================
+  // PHASE 0: Clean Project Initialization
+  // Verifies that a virgin project (no .context/, no rules/, no config)
+  // initializes without errors. Catches harmful fallbacks that hide
+  // missing data behind empty responses.
+  // ================================================================
+  describe('Phase 0: Clean project init', () => {
+
+    it('no .context/ exists before first run', () => {
+      assert.ok(!existsSync(join(FIXTURE_ROOT, '.context')),
+        '.context/ should NOT exist before first tool call');
+      assert.ok(!existsSync(join(FIXTURE_ROOT, '.context', 'config.json')),
+        'config.json should NOT pre-exist');
+    });
+
+    it('get_skeleton works on virgin project', async () => {
+      const resp = await mcpClient.initialize();
+      assert.ok(resp.result, 'initialize failed on clean project');
+
+      const { data } = await mcpClient.callTool('get_skeleton', { path: '.' });
+      assert.strictEqual(data.v, 1, 'skeleton version');
+      assertObj(data.s, 'stats');
+      assert.ok(data.s.files >= 5, `files should be >= 5, got ${data.s.files}`);
+      assert.ok(data.s.functions >= 5, `functions should be >= 5, got ${data.s.functions}`);
+
+      // All known symbols must be discoverable
+      const names = new Set(Object.values(data.L));
+      for (const sym of ALL_SYMBOLS) {
+        assert.ok(names.has(sym), `skeleton missing ${sym} on virgin project`);
+      }
+    });
+
+    it('analyze works without .context/ or rules/', async () => {
+      const { data: analysis } = await mcpClient.callTool('analyze', { action: 'analysis_summary', path: '.' });
+      assertScore(analysis.healthScore, 'healthScore');
+      assert.ok(analysis.healthScore > 0, 'healthScore is 0 on clean project — analysis broken');
+    });
+
+    it('compact.get_mode returns defaults without config file', async () => {
+      const { data } = await mcpClient.callTool('compact', { action: 'get_mode', path: '.' });
+      assert.strictEqual(data.mode, 2, 'default mode should be 2');
+      assert.strictEqual(data.beautify, true, 'default beautify should be true');
+    });
+
+    it('filters.get returns defaults without prior set', async () => {
+      const { data } = await mcpClient.callTool('filters', { action: 'get' });
+      assertArr(data.excludeDirs, 'excludeDirs');
+      assert.ok(data.excludeDirs.length >= 1, 'should have default excludeDirs (node_modules etc)');
+    });
+
+    it('docs.generate creates .context/ from scratch', async () => {
+      const { data } = await mcpClient.callTool('docs', { action: 'generate', path: '.', scope: 'all' });
+      assertArr(data.created, 'created');
+      assert.ok(data.created.length >= 1, `docs.generate created nothing on virgin project`);
+      // .context/ should now exist
+      assert.ok(existsSync(join(FIXTURE_ROOT, '.context')),
+        '.context/ should be created by docs.generate');
+    });
+
+    it('get_custom_rules returns empty or default on clean project', async () => {
+      // rules/ doesn't exist yet — should not crash
+      const { data } = await mcpClient.callTool('get_custom_rules');
+      assert.ok(data !== undefined, 'get_custom_rules crashed on clean project');
+    });
+
+    it('compact_file works without mode config', async () => {
+      const { data } = await mcpClient.callTool('compact', { action: 'compact_file', path: 'src/math.js' });
+      assertStr(data.code, 'code');
+      assert.ok(data.code.includes('add'), 'add() missing from clean project compact');
+      assert.ok(data.original > 50, `original too small: ${data.original}`);
+    });
+
+    it('invalidate_cache on clean project', async () => {
+      const { data } = await mcpClient.callTool('invalidate_cache');
+      assert.ok(data !== undefined, 'invalidate_cache failed on clean project');
+    });
+  });
+
+  // ================================================================
   // PHASE 1: MCP Protocol Handshake + Dynamic Discovery
   // ================================================================
   describe('Phase 1: MCP Protocol', () => {
