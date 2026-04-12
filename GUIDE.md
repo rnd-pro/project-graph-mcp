@@ -73,6 +73,7 @@ Compact mode enforces 5 style rules for maximum token efficiency:
 - **`multi-line-imports`**: All imports must be on a single line
 - **`indented-lines`**: No indentation — all code must be flat (terser-minified)
 - **`long-names`**: All identifiers (const/let/var/function) must be ≤2 chars — `.ctx` provides readability
+- **`incomplete-ctx`**: Every export must be documented in `.ctx`, no `{DESCRIBE}` placeholders allowed
 
 ### .pgignore
 File exclusions are configured via `.pgignore` (created automatically if missing):
