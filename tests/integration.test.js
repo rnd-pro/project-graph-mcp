@@ -681,13 +681,11 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
       assert.ok(snapshot.project.color.startsWith('hsl'));
     });
 
-    it('snapshot — skeleton loaded on connect', () => {
-      assertObj(snapshot.skeleton, 'skeleton');
-      assert.strictEqual(snapshot.skeleton.v, 1);
-      const names = Object.values(snapshot.skeleton.L);
-      for (const sym of ALL_SYMBOLS) {
-        assert.ok(names.includes(sym), `snapshot.skeleton missing ${sym}`);
-      }
+    it('snapshot — skeleton not in snapshot (loaded via HTTP)', () => {
+      // skeleton is no longer sent in WS snapshot for performance
+      // (226KB payload avoided through gateway proxy)
+      // FileTree fetches it independently via HTTP /api/skeleton
+      assert.strictEqual(snapshot.skeleton, undefined, 'skeleton should not be in snapshot');
     });
 
     it('ws tool call — get_skeleton matches HTTP', async () => {

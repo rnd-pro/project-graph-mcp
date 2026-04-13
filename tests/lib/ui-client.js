@@ -56,9 +56,10 @@ export async function startUIServer(serverPath, projectDir, port = 0) {
  * HTTP GET a JSON API endpoint.
  * @param {number} port
  * @param {string} path — e.g. '/api/skeleton'
+ * @param {number} [timeoutMs=10000] — request timeout in ms
  * @returns {Promise<object>}
  */
-export function httpGet(port, path) {
+export function httpGet(port, path, timeoutMs = 10000) {
   return new Promise((resolve, reject) => {
     const req = http.get(`http://127.0.0.1:${port}${path}`, (res) => {
       let data = '';
@@ -72,7 +73,7 @@ export function httpGet(port, path) {
       });
     });
     req.on('error', reject);
-    req.setTimeout(10000, () => { req.destroy(); reject(new Error('HTTP timeout')); });
+    req.setTimeout(timeoutMs, () => { req.destroy(); reject(new Error('HTTP timeout')); });
   });
 }
 
