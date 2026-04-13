@@ -1,6 +1,6 @@
 {
   "name": "project-graph-mcp",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "type": "module",
   "description": "MCP server for AI agents — project graph, code quality analysis, visual web explorer. JS, TS, Python, Go.",
   "main": "src/network/server.js",
