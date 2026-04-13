@@ -10,7 +10,7 @@
  */
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'fs';
+import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
@@ -19,6 +19,9 @@ import { startUIServer, httpGetStatus, httpGet, stopUIServer } from './lib/ui-cl
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '..');
 const INSTALL_DIR = join('/tmp', `pg-npm-test-${Date.now()}`);
+const EXPECTED_VERSION = JSON.parse(
+  readFileSync(join(PROJECT_ROOT, 'package.json'), 'utf8')
+).version;
 
 describe('NPM Install Simulation', { concurrency: false, timeout: 60000 }, () => {
   let tarball;
@@ -121,5 +124,21 @@ describe('NPM Install Simulation', { concurrency: false, timeout: 60000 }, () =>
     assert.strictEqual(status, 200);
     assert.ok(data.name, 'name missing');
     assert.ok(data.pid > 0, 'pid missing');
+  });
+
+  // ── Version consistency ──────────────────────────────────────────
+
+  it('/api/server-status → version matches package.json', async () => {
+    const { status, data } = await httpGet(uiPort, '/api/server-status');
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.version, EXPECTED_VERSION,
+      `server-status version "${data.version}" !== package.json "${EXPECTED_VERSION}"`);
+  });
+
+  it('/api/project-info → version matches package.json', async () => {
+    const { status, data } = await httpGet(uiPort, '/api/project-info');
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.version, EXPECTED_VERSION,
+      `project-info version "${data.version}" !== package.json "${EXPECTED_VERSION}"`);
   });
 });
