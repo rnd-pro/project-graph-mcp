@@ -1,7 +1,7 @@
 // @ctx .context/web/panels/code-viewer.ctx
 import e from"@symbiotejs/symbiote";import{api as n,events as t,state as o,formatStats}from"../app.js";import"../components/code-block.js";
 
-const _extLang={'.md':'md','.markdown':'md','.sql':'sql','.json':'json','.css':'css','.html':'html','.htm':'html','.xml':'xml','.yaml':'yaml','.yml':'yaml','.toml':'toml','.sh':'sh','.bash':'bash','.env':'env','.ini':'ini','.conf':'conf','.cfg':'cfg','.txt':'plain','.csv':'csv','.gitignore':'plain','.dockerignore':'plain','.editorconfig':'plain'};
+const _extLang={'.md':'md','.markdown':'md','.sql':'sql','.json':'json','.css':'css','.html':'html','.htm':'html','.xml':'xml','.yaml':'yaml','.yml':'yaml','.toml':'toml','.sh':'sh','.bash':'bash','.env':'env','.ini':'ini','.conf':'conf','.cfg':'cfg','.txt':'plain','.csv':'csv','.gitignore':'plain','.dockerignore':'plain','.editorconfig':'plain','.png':'image','.jpg':'image','.jpeg':'image','.gif':'image','.svg':'image','.webp':'image','.bmp':'image','.ico':'image','.pdf':'binary','.zip':'binary','.tar':'binary','.gz':'binary','.woff':'binary','.woff2':'binary','.ttf':'binary','.eot':'binary','.mp3':'binary','.mp4':'binary','.wav':'binary','.avi':'binary','.mov':'binary'};
 function _getLang(path){if(!path)return'js';const i=path.lastIndexOf('.');if(i<0){const base=path.split('/').pop()||'';if(['Dockerfile','Makefile','Procfile','LICENSE','README','CHANGELOG'].some(n=>base.startsWith(n)))return'plain';return'plain'}return _extLang[path.substring(i).toLowerCase()]||'js'}
 
 export class CodeViewer extends e{init$={filename:"Select a file",hasFile:!1,viewMode:"compact",modeLabel:"compact",statsText:"",onToggleMode:()=>{
@@ -37,6 +37,22 @@ if(lang==='md'){
 e.$.lang=lang;
 if("compact"===this.$.viewMode){if(this._isReadable){if(this._compactCache){e.$.code=this._compactCache;return}if(this._loadingCompact)return;this._loadingCompact=!0;e.$.code="// Compressing...";try{const t=await n("/api/compact-file",{path:this._currentPath});this._compactCache=t?.code||"// Compression unavailable";e.$.code=this._compactCache}catch{e.$.code="// Compression failed"}finally{this._loadingCompact=!1}return}e.$.code=this._fileData.compact}else e.$.code=this._fileData.raw}async _loadFile(e){this.$.filename=e,this.$.hasFile=!1,this._fileData=null,this.$.statsText="",this._compactCache=null,this._currentPath=e;
 const lang=_getLang(e);
+if(lang==='image'){
+  const i=this._getCodeBlock();
+  if(i){i.$.lang='image';i.setBasePath(e);i.$.code=e}
+  this.$.viewMode="rendered";
+  this.$.modeLabel="image";
+  this.$.hasFile=!0;
+  return;
+}
+if(lang==='binary'){
+  const i=this._getCodeBlock();
+  if(i){i.$.lang='plain';i.$.code=`// Binary file: ${e}\n// Cannot display binary content`}
+  this.$.viewMode="compact";
+  this.$.modeLabel="binary";
+  this.$.hasFile=!0;
+  return;
+}
 try{const[t,_raw]=await Promise.all([n("/api/file",{path:e}),n("/api/raw-file",{path:e}).catch(()=>null)]);const o="string"==typeof t.code?t.code:"string"==typeof t.compressed?t.compressed:t.content||JSON.stringify(t,null,2);
 let s=_raw?.content||o;this._isReadable=!!(t.expanded&&t.codeTok&&t.codeTok<t.expanded*.85),this._fileData={compact:o,raw:s,codeTok:t.codeTok||0,ctxTok:t.ctxTok||0,totalTok:t.totalTok||0,expanded:t.expanded||0,savings:t.savings||"0%"},t.codeTok&&t.expanded&&(this.$.statsText=formatStats(t));const i=this._getCodeBlock();
 if(lang==='md'){

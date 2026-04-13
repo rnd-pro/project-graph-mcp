@@ -12,7 +12,7 @@ import"./panels/SettingsPanel/SettingsPanel.js";
 import"./components/quick-open.js";
 export const state={skeleton:null,activeFile:null,ws:null,monitorEvents:[]};
 export{formatStats}from"./stats-format.js";
-const l=new URL(".",import.meta.url).href;
+export const baseUrl=new URL(".",import.meta.url).href;const l=baseUrl;
 export async function api(e,t={}){if(a.connected&&e.startsWith("/api/")){const n=await async function(e,t){const n={"/api/skeleton":{name:"get_skeleton",args:e=>({path:e.path})},"/api/file":{name:"compact",args:e=>({action:"compact_file",path:e.path,beautify:!0})},"/api/analysis":{name:"analyze",args:e=>({action:"full_analysis",path:e.path})},"/api/analysis-summary":{name:"analyze",args:e=>({action:"analysis_summary",path:e.path})},"/api/deps":{name:"navigate",args:e=>({action:"deps",symbol:e.symbol})},"/api/usages":{name:"navigate",args:e=>({action:"usages",symbol:e.symbol})},"/api/expand":{name:"navigate",args:e=>({action:"expand",symbol:e.symbol})},"/api/chain":{name:"navigate",args:e=>({action:"call_chain",from:e.from,to:e.to})}}[e];return n?r(n.name,n.args(t)):null}(e,t);if(null!==n)return n}const n=new URLSearchParams(t).toString(),o=e.replace(/^\//, ""),s=n?`${l}${o}?${n}`:`${l}${o}`,i=await fetch(s);if(!i.ok)throw new Error(`API error: ${i.status}`);return i.json()}
 export const events=new EventTarget;
 export function emit(e,t={}){events.dispatchEvent(new CustomEvent(e,{detail:t}))}
