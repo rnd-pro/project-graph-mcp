@@ -1,7 +1,7 @@
 // @ctx .context/src/compact/ai-context.ctx
 import{estimateTokens}from"../core/utils.js";import{resolve as e,extname as t,relative as _rel}from"path";import{getSkeleton as s,getGraph as o}from"../mcp/tools.js";import{getProjectDocs as n}from"./doc-dialect.js";import{compressFile as i}from"./compress.js";import{findJSFiles as r}from"../core/parser.js";
 const c=new Set([".js",".mjs",".ts",".tsx"]);
-export async function getAiContext(a,l={}){const{includeFiles:f=[],includeDocs:m=!0,includeSkeleton:d=!0}=l,p=e(a),u={};
-let g=0;if(d&&(u.skeleton=await s(p),g+=estimateTokens(u.skeleton)),m){const e=await o(p);u.docs=n(e,p),g+=estimateTokens(u.docs)}const allJS=r(p);const wantAll=f.includes("*");if(wantAll||f.length>0){u.files={};
+export async function getAiContext(a,l={}){const{includeFiles:f=[],includeDocs:m=!0,includeSkeleton:d=!0}=l,p=e(a),u={};const allJS=r(p);const wantAll=f.includes("*");
+let g=0;if(!wantAll&&d&&(u.skeleton=await s(p),g+=estimateTokens(u.skeleton)),!wantAll&&m){const e=await o(p);u.docs=n(e,p),g+=estimateTokens(u.docs)}if(wantAll||f.length>0){u.files={};
 const targets=wantAll?allJS.map(e=>_rel(p,e)):f;for(const s of targets){const o=allJS.find(e=>e.endsWith(s)||e.endsWith("/"+s));if(!o){u.files[s]={error:`File not found: ${s}`};continue}const n=t(o).toLowerCase();if(c.has(n))try{const e=await i(o,{beautify:!1,legend:!1});u.files[s]=e.code,g+=e.compressed}catch(e){u.files[s]={error:e.message}}else u.files[s]={error:`Unsupported file type: ${n}`}}}
 let k=0;for(const e of allJS)try{const{readFileSync:t}=await import("fs");k+=estimateTokens(t(e,"utf-8"))}catch{}const y=k>0?Math.round(100*(1-g/k)):0;return u.totalTokens=g,u.vsOriginal=k,u.savings=`${y}%`,u}
