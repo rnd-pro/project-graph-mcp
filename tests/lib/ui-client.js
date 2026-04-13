@@ -178,3 +178,20 @@ export function stopUIServer(proc) {
     proc.kill('SIGTERM');
   }
 }
+
+/**
+ * HTTP GET — returns status code and content-type header (no body parsing).
+ * @param {number} port
+ * @param {string} path
+ * @returns {Promise<{status: number, contentType: string}>}
+ */
+export function httpGetStatus(port, path) {
+  return new Promise((resolve, reject) => {
+    const req = http.get(`http://127.0.0.1:${port}${path}`, (res) => {
+      res.resume(); // drain
+      resolve({ status: res.statusCode, contentType: res.headers['content-type'] || '' });
+    });
+    req.on('error', reject);
+    req.setTimeout(5000, () => { req.destroy(); reject(new Error('HTTP timeout')); });
+  });
+}

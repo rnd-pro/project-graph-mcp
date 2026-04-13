@@ -30,7 +30,7 @@ import { fileURLToPath } from 'url';
 
 import { scaffold, cleanup, ALL_SYMBOLS, EXPORTED_FUNCTIONS, EXPORTED_CLASSES, SQL_TABLES } from './lib/fixture.js';
 import { MCPClient, resolveServerPath } from './lib/mcp-client.js';
-import { startUIServer, httpGet, wsConnect, wsCallTool, stopUIServer } from './lib/ui-client.js';
+import { startUIServer, httpGet, httpGetStatus, wsConnect, wsCallTool, stopUIServer } from './lib/ui-client.js';
 import { assertNum, assertStr, assertObj, assertArr, assertOneOf, assertScore } from './lib/asserts.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -630,6 +630,27 @@ describe('Integration: MCP + UI Consumer Simulation', { concurrency: false, time
       assertArr(data, 'instances should be array');
       assert.ok(data.length >= 1, 'should have at least 1 instance');
       assertStr(data[0].name, 'instance.name');
+    });
+
+    it('vendor static files — symbiote-node, symbiote resolve correctly', async () => {
+      // This test catches the bug where npm/npx users got 404s for vendor/* because
+      // the server couldn't find symbiote-node/symbiote in the node_modules tree.
+      const vendorPaths = [
+        '/vendor/symbiote-node/index.js',
+        '/vendor/symbiote/core/index.js',
+        '/vendor/symbiote-node/themes/carbon.js',
+      ];
+      for (const p of vendorPaths) {
+        const { status, contentType } = await httpGetStatus(uiPort, p);
+        assert.strictEqual(status, 200, `${p} returned ${status} — vendor not resolved`);
+        assert.ok(contentType.includes('javascript'), `${p} should be JS, got ${contentType}`);
+      }
+    });
+
+    it('static HTML — index.html served at root', async () => {
+      const { status, contentType } = await httpGetStatus(uiPort, '/');
+      assert.strictEqual(status, 200);
+      assert.ok(contentType.includes('html'), `/ should be HTML, got ${contentType}`);
     });
 
     it('HTTP edge cases — missing path, unknown endpoint, static 404', async () => {
