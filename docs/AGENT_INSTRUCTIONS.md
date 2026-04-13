@@ -17,13 +17,25 @@
 
 ## 3. MCP Tools — Recommended Workflow
 
+### Three Modes of `get_ai_context`
+
+| Mode | Call | Returns | Tokens |
+|------|------|---------|--------|
+| **Code only** | `includeFiles: ["*"]` | All compressed source files | ~40-50k |
+| **Code + context** | `includeFiles: ["*"], includeSkeleton: true, includeDocs: true` | Source + skeleton + docs | ~50-55k |
+| **Overview** | _(default, no includeFiles)_ | Skeleton + docs only | ~2-3k |
+
 ### Quick Start: Full Codebase Context
 For small/medium projects (under 100k tokens), load ALL code at once:
 ```
 get_ai_context({ path: ".", includeFiles: ["*"] })
 ```
-Returns compressed source of all JS files (no skeleton/docs noise).
-Vendored files are filtered via `.contextignore` (auto-created on first call).
+Returns compressed source of all JS files — pure code, no metadata noise.
+
+To also get structural overview and documentation:
+```
+get_ai_context({ path: ".", includeFiles: ["*"], includeSkeleton: true, includeDocs: true })
+```
 
 ### Step-by-Step: Large Projects
 1. **Overview**: `get_ai_context({ path: "." })` → skeleton + docs (~2-3k tokens)
