@@ -50,28 +50,36 @@ if(lang==='md'){
 e.$.lang=lang;
 if("transformed"===this.$.viewMode){
   // Show cached transform if available
-  if(this._transformCache){e.$.code=this._transformCache;return}
+  if(this._transformCache){
+    e.$.code=this._transformCache;
+    if(this._transformStatsText) this.$.statsText=this._transformStatsText;
+    return;
+  }
   if(this._loadingTransform)return;
   this._loadingTransform=!0;
   e.$.code=this._isReadable?"// Compressing...":"// Expanding...";
   try{
-    if(this._isReadable){
-      // MODE A: readable source → compress
-      const t=await n("/api/compact-file",{path:this._currentPath});
-      this._transformCache=t?.code||"// Compression unavailable";
-    }else{
-      // MODE B: compact source → expand (beautify + inject JSDoc from .ctx)
-      const t=await n("/api/expand-file",{path:this._currentPath});
-      this._transformCache=t?.code||"// Expand unavailable";
-    }
+      if(this._isReadable){
+        // MODE A: readable source → compress
+        const t=await n("/api/compact-file",{path:this._currentPath});
+        this._transformCache=t?.code||"// Compression unavailable";
+        this._transformStatsText=t?`Compressed: ${(t.compressed/1000).toFixed(1)}K chars (${t.savings})`:"";
+      }else{
+        // MODE B: compact source → expand (beautify + inject JSDoc from .ctx)
+        const t=await n("/api/expand-file",{path:this._currentPath});
+        this._transformCache=t?.code||"// Expand unavailable";
+        this._transformStatsText=t?`Expanded: ${(t.decompiled/1000).toFixed(1)}K chars | JSDocs injected: ${t.injected||0}`:"";
+      }
+      if(this._transformStatsText)this.$.statsText=this._transformStatsText;
     e.$.code=this._transformCache;
   }catch{e.$.code=this._isReadable?"// Compression failed":"// Expand failed"}
   finally{this._loadingTransform=!1}
   return;
 }
 // Source mode — raw file as-is
+this.$.statsText=this._baseStatsText;
 e.$.code=this._fileData.raw;
-}async _loadFile(e){this.$.filename=e,this.$.hasFile=!1,this._fileData=null,this.$.statsText="",this._transformCache=null,this._currentPath=e;
+}async _loadFile(e){this.$.filename=e,this.$.hasFile=!1,this._fileData=null,this.$.statsText="",this._baseStatsText="",this._transformStatsText="",this._transformCache=null,this._currentPath=e;
 const lang=_getLang(e);
 if(lang==='image'){
   const i=this._getCodeBlock();
@@ -97,7 +105,10 @@ let s=_raw?.content||o;
 // If no .ctx, source is readable → COMPACT available
 const hasCtx=!!(t.ctxTok&&t.ctxTok>0);
 this._isReadable=!hasCtx;
-this._fileData={compact:o,raw:s,codeTok:t.codeTok||0,ctxTok:t.ctxTok||0,totalTok:t.totalTok||0,expanded:t.expanded||0,savings:t.savings||"0%"},t.codeTok&&t.expanded&&(this.$.statsText=formatStats(t));const i=this._getCodeBlock();
+this._fileData={compact:o,raw:s,codeTok:t.codeTok||0,ctxTok:t.ctxTok||0,totalTok:t.totalTok||0,expanded:t.expanded||0,savings:t.savings||"0%"};
+this._baseStatsText=t.codeTok&&t.expanded?formatStats(t):"";
+this.$.statsText=this._baseStatsText;
+const i=this._getCodeBlock();
 if(lang==='md'){
   this.$.viewMode="rendered";
   this.$.modeLabel="rendered";
