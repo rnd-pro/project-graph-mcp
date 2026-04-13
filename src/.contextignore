@@ -1,0 +1,22 @@
+# Files and directories excluded from AI context (get_ai_context includeFiles: ["*"])
+# Glob patterns — one per line
+
+# Vendored / bundled libs
+vendor/
+*.min.js
+*.bundle.js
+chart.js
+d3.js
+three.js
+lodash.js
+jquery*.js
+
+# Generated
+dist/
+build/
+coverage/
+*.d.ts
+
+# Tests
+*.test.js
+*.spec.js
