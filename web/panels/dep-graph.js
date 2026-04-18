@@ -1188,17 +1188,9 @@ export class DepGraph extends Symbiote {
       // File inside this directory — drill into dir, then focus file
       if (targetPath.startsWith(nodePath)) {
         this._canvas.drillDown(node.id);
-        // Now try to find and focus the file node inside
+        // After transition, specifically focus the exact nested file node
         requestAnimationFrame(() => {
-          const innerEditor = node.getInnerEditor();
-          for (const fileNode of innerEditor.getNodes()) {
-            if (fileNode.params?.path === targetPath) {
-              // Found — select and center it
-              this._canvas.selectNode?.(fileNode.id);
-              break;
-            }
-          }
-          this._fitView();
+          this._focusNode(targetPath);
         });
         return true;
       }
@@ -1210,24 +1202,58 @@ export class DepGraph extends Symbiote {
   /**
    * Focus viewport on a specific node by file path
    * @param {string} filePath - e.g. 'src/core/event-bus.js'
+   * @param {number} depth - Internal recursion depth limit
    * @returns {boolean} true if node found and focused
    */
-  _focusNode(filePath) {
-    if (!this._canvas || !this._fileMap) return false;
+  _focusNode(filePath, depth = 0) {
+    if (!this._canvas || !this._fileMap || depth > 5) return false;
 
     // Find node ID by file path string or directory path string
     let targetId = null;
+    let isFile = true;
     if (this._fileMap.has(filePath)) {
       targetId = this._fileMap.get(filePath);
     } else if (this._dirNodeMap && this._dirNodeMap.has(filePath)) {
       targetId = this._dirNodeMap.get(filePath);
+      isFile = false;
     }
 
     if (!targetId) return false;
 
     const positions = this._canvas.getPositions();
     const pos = positions[targetId];
-    if (!pos) return false;
+
+    // Auto-traversal engine: if target is not visible on current canvas layer
+    if (!pos) {
+      if (this._dirNodeMap) {
+        // Case 1: Target is a file, currently hidden inside a directory Subgraph from Root View
+        let dirPath = '';
+        if (isFile) {
+          const parts = filePath.split('/');
+          parts.pop();
+          dirPath = parts.join('/') + '/';
+          if (dirPath === '/') dirPath = './';
+        }
+
+        if (isFile && dirPath && this._dirNodeMap.has(dirPath)) {
+          const dirId = this._dirNodeMap.get(dirPath);
+          // If parent directory is visible, drill into it!
+          if (positions[dirId]) {
+            this._canvas.drillDown(dirId);
+            requestAnimationFrame(() => this._focusNode(filePath, depth + 1));
+            return true;
+          }
+        }
+
+        // Case 2: Target is completely off-scope (we are inside wrong group). Drill UP loop to Root.
+        if (this._canvas._currentEditor !== this._editor) {
+          this._canvas.drillUp();
+          requestAnimationFrame(() => this._focusNode(filePath, depth + 1));
+          return true;
+        }
+      }
+      return false; // Unable to locate on any layer
+    }
 
     const canvasRect = this._canvas.getBoundingClientRect();
     let visibleWidth = canvasRect.width;
