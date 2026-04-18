@@ -914,22 +914,44 @@ export class DepGraph extends Symbiote {
     this._canvas.setBatchMode(true);
     for (const [nodeId, pos] of Object.entries(positions)) {
       this._canvas.setNodePosition(nodeId, pos.x, pos.y);
-    }
-    this._canvas.setBatchMode(false);
+    // Dedicated node ResizeObserver ensures that late inflation of inner ports
+    // triggers not only a line refresh, but initially schedules a full Pass 2 layout
+    // so things don't overlap vertically in a messy stack.
+    if (!this._nodeObserver) {
+      this._nodeObserver = new ResizeObserver((entries) => {
+        if (!this._canvas) return;
+        let needsRefresh = false;
+        for (const entry of entries) {
+           if (entry.target.tagName.toLowerCase() === 'graph-node') {
+             needsRefresh = true;
+             break;
+           }
+        }
+        if (needsRefresh) {
+          // Immediately secure connections
+          if (this._refreshRaf) cancelAnimationFrame(this._refreshRaf);
+          this._refreshRaf = requestAnimationFrame(() => this._canvas.refreshConnections());
 
-    // Attach ResizeObserver to all graph-nodes so that if their dimensions expand
-    // (e.g. late render of PortItems), we correctly refresh the connection curves.
+          // Trigger full layout recalculation debounced
+          if (this._layoutPassTimer) clearTimeout(this._layoutPassTimer);
+          this._layoutPassTimer = setTimeout(() => {
+            this._runRelayoutPass(isStructured, dirFiles, dirNodeMap, editor, groups);
+          }, 150);
+        }
+      });
+    }
+
+    // Attach ResizeObserver to all graph-nodes
     requestAnimationFrame(() => {
-      if (!this._resizeObserver || !this._canvas) return;
+      if (!this._canvas) return;
       const nodes = this._canvas.querySelectorAll('graph-node');
       for (const el of nodes) {
-        this._resizeObserver.observe(el);
+        this._nodeObserver.observe(el);
       }
     });
 
-    // --- Pass 2: Measure actual DOM sizes → re-layout with real dimensions ---
-    // Wait for Symbiote.js custom elements to inflate and render inner ports
-    setTimeout(() => {
+    // Provide the dynamic layout function which replaces the old static setTimeout
+    this._runRelayoutPass = (isStructured, dirFiles, dirNodeMap, editor, groups) => {
       if (!this._canvas) return;
       const nodeSizes = this._canvas.measureNodeSizes();
       if (Object.keys(nodeSizes).length === 0) return;
@@ -948,7 +970,7 @@ export class DepGraph extends Symbiote {
         });
       } else {
         correctedPositions = computeAutoLayout(editor, {
-          groups, nodeSizes,
+          groups, nodeSizes, existingPositions: this._canvas.getPositions()
         });
       }
 
@@ -957,36 +979,50 @@ export class DepGraph extends Symbiote {
         this._canvas.setNodePosition(nodeId, pos.x, pos.y);
       }
       this._canvas.setBatchMode(false);
-      console.log('[DepGraph] Pass 2 relayout with measured sizes:', Object.keys(nodeSizes).length, 'nodes');
-
-      // Compute initial view — restore drill-down from hash
-      const hash = location.hash.replace('#', '');
       
-      let cleanHash = hash;
-      let isInside = false;
-      const qIdx = hash.indexOf('?');
-      if (qIdx >= 0) {
-        cleanHash = hash.substring(0, qIdx);
-        const params = new URLSearchParams(hash.substring(qIdx + 1));
-        if (params.get('in') === '1') isInside = true;
-      }
-      
-      const slashIdx = cleanHash.indexOf('/');
-      const focusPath = slashIdx >= 0 ? cleanHash.substring(slashIdx + 1) : '';
+      requestAnimationFrame(() => this._canvas.refreshConnections());
 
-      let restored = false;
-      if (focusPath && isStructured && isInside) {
-        // Try to restore drill-down state ONLY if query param ?in=1 is provided
-        restored = this._restoreDrillDown(focusPath, editor);
-      }
-      if (!restored && focusPath) {
-        restored = this._focusNode(focusPath);
-      }
-      if (!restored) {
-        this._fitView();
-      }
+      // Only restore view focus/drill-down once after first layout stabilizes
+      if (!this._initialViewRestored) {
+        this._initialViewRestored = true;
 
-      this._canvas.updateLOD?.();
+        const hash = location.hash.replace('#', '');
+        let cleanHash = hash;
+        let isInside = false;
+        const qIdx = hash.indexOf('?');
+        if (qIdx >= 0) {
+          cleanHash = hash.substring(0, qIdx);
+          const params = new URLSearchParams(hash.substring(qIdx + 1));
+          if (params.get('in') === '1') isInside = true;
+        }
+        
+        const slashIdx = cleanHash.indexOf('/');
+        const focusPath = slashIdx >= 0 ? cleanHash.substring(slashIdx + 1) : '';
+
+        let restored = false;
+        if (focusPath && isStructured && isInside) {
+          restored = this._restoreDrillDown(focusPath, editor);
+        }
+        if (!restored && focusPath) {
+          restored = this._focusNode(focusPath);
+        }
+        if (!restored) {
+          this._fitView();
+        }
+
+        this._canvas.updateLOD?.();
+      }
+    };
+
+    // Failsafe: if the node dimensions were completely cached/synchronous and 
+    // ResizeObserver didn't have anything new to report, we trigger it once manually.
+    if (!this._failsafeTimer) {
+       this._failsafeTimer = setTimeout(() => {
+          if (!this._initialViewRestored && this._runRelayoutPass) {
+             this._runRelayoutPass(isStructured, dirFiles, dirNodeMap, editor, groups);
+          }
+       }, 300);
+    }
 
       // Refresh connections one final time after DOM layout and camera moves
       this._canvas.refreshConnections();
