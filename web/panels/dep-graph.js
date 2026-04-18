@@ -185,7 +185,11 @@ function buildFileGraph(skeleton) {
     }
   }
 
-  return { editor, fileMap, dirMap, dirFiles };
+  // ── Build Reverse ID Lookup ──
+  const idToPath = new Map();
+  for (const [path, id] of fileMap.entries()) idToPath.set(id, path);
+
+  return { editor, fileMap, dirMap, dirFiles, idToPath };
 }
 
 /**
@@ -447,7 +451,12 @@ function buildStructuredGraph(skeleton) {
     }
   }
 
-  return { editor, fileMap, dirFiles, dirNodeMap };
+  // ── Build Reverse ID Lookup ──
+  const idToPath = new Map();
+  for (const [path, id] of fileMap.entries()) idToPath.set(id, path);
+  for (const [path, id] of dirNodeMap.entries()) idToPath.set(id, path);
+
+  return { editor, fileMap, dirFiles, dirNodeMap, idToPath };
 }
 
 // ── Consumer-specific CSS (toolbar, stats, pin overlay) ──
@@ -798,11 +807,10 @@ export class DepGraph extends Symbiote {
     this._canvas?.addEventListener('click', (e) => {
       const nodeEl = e.target.closest('graph-node');
       if (!nodeEl) return;
+      
       const nodeId = nodeEl.getAttribute('node-id');
-      // Find node data from whichever editor layer is currently active
-      const activeEditor = this._canvas._currentEditor || this._editor;
-      const node = activeEditor?.getNode(nodeId);
-      const path = node?.params?.path;
+      const path = this._idToPath?.get(nodeId);
+      
       if (path) {
         // If we are drilled down into a subgraph, preserve the ?in=1 flag in the URL
         const isDrilled = this._canvas._currentEditor && this._canvas._currentEditor !== this._editor;
@@ -850,15 +858,16 @@ export class DepGraph extends Symbiote {
 
     const isStructured = this._viewMode === 'structured';
 
-    let editor, fileMap, dirFiles, dirNodeMap;
+    let editor, fileMap, dirFiles, dirNodeMap, idToPath;
     if (isStructured) {
-      ({ editor, fileMap, dirFiles, dirNodeMap } = buildStructuredGraph(skeleton));
+      ({ editor, fileMap, dirFiles, dirNodeMap, idToPath } = buildStructuredGraph(skeleton));
     } else {
-      ({ editor, fileMap, dirFiles } = buildFileGraph(skeleton));
+      ({ editor, fileMap, dirFiles, idToPath } = buildFileGraph(skeleton));
     }
     this._editor = editor;
     this._fileMap = fileMap;
     this._dirNodeMap = dirNodeMap;
+    this._idToPath = idToPath;
 
     // Set editor on canvas
     this._canvas.setEditor(editor);
