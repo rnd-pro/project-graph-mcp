@@ -821,7 +821,7 @@ export class DepGraph extends Symbiote {
       
       if (path) {
         // If we are drilled down into a subgraph, preserve the ?in=1 flag in the URL
-        const isDrilled = this._canvas._currentEditor && this._canvas._currentEditor !== this._editor;
+        const isDrilled = this._canvas.getSubgraphDepth?.() > 0;
         history.replaceState(null, '', `#graph/${path}${isDrilled ? '?in=1' : ''}`);
       }
     });
@@ -1301,7 +1301,7 @@ export class DepGraph extends Symbiote {
         }
 
         // Case 2: Target is completely off-scope (we are inside wrong group). Drill UP loop to Root.
-        if (this._canvas._currentEditor !== this._editor) {
+        if (this._canvas.getSubgraphDepth?.() > 0) {
           this._isAutoRouting = true;
           this._canvas.drillUp();
           this._isAutoRouting = false;
