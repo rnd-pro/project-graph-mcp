@@ -1080,7 +1080,7 @@ export class DepGraph extends Symbiote {
     
     // Deduct inspector width from available canvas width if panel is open
     let visibleWidth = canvasRect.width;
-    const inspector = this._canvas.querySelector('inspector-panel');
+    const inspector = this._canvas.ref?.inspector || this._canvas.querySelector('inspector-panel');
     if (inspector && !inspector.hasAttribute('hidden')) {
       visibleWidth -= inspector.offsetWidth || 280;
     }
@@ -1231,10 +1231,12 @@ export class DepGraph extends Symbiote {
 
     const canvasRect = this._canvas.getBoundingClientRect();
     let visibleWidth = canvasRect.width;
-    const inspector = this._canvas.querySelector('inspector-panel');
-    if (inspector && !inspector.hasAttribute('hidden')) {
-      visibleWidth -= inspector.offsetWidth || 280;
-    }
+    
+    // When focusing a node, symbiote-node will always open the inspector panel.
+    // We must confidently deduct its width unconditionally (it defaults to 280px).
+    const inspector = this._canvas.ref?.inspector || this._canvas.querySelector('inspector-panel');
+    const inspW = (inspector && inspector.offsetWidth > 20) ? inspector.offsetWidth : 280;
+    visibleWidth -= inspW;
 
     const scale = 0.8;
     const nodeX = pos[0] + 75; // center of node (~150px wide)
