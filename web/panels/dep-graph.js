@@ -832,7 +832,31 @@ export class DepGraph extends Symbiote {
     this._canvas?.addEventListener('subgraph-exit', () => {
       if (this._isAutoRouting) return; // Prevent erasing URL when popping out to find hidden nested paths
       
-      history.replaceState(null, '', '#graph');
+      // Before wiping the URL, extract the directory we are currently drilled into
+      const hashPath = window.location.hash.replace('#graph/', '').replace(/\?in=1$/, '');
+      let focusedGroupPath = null;
+
+      if (hashPath && this._dirNodeMap) {
+        if (this._dirNodeMap.has(hashPath)) {
+          focusedGroupPath = hashPath;
+        } else if (this._fileMap && this._fileMap.has(hashPath)) {
+          const parts = hashPath.split('/');
+          parts.pop();
+          let dir = parts.join('/') + '/';
+          if (dir === '/') dir = './';
+          if (this._dirNodeMap.has(dir)) {
+            focusedGroupPath = dir;
+          }
+        }
+      }
+
+      if (focusedGroupPath) {
+        history.replaceState(null, '', `#graph/${focusedGroupPath}`);
+        // Wait for canvas to finish switching layers, then center the camera on the exited group node
+        requestAnimationFrame(() => this._focusNode(focusedGroupPath));
+      } else {
+        history.replaceState(null, '', '#graph');
+      }
     });
 
     events.addEventListener('file-selected', this._onFileSelected);
