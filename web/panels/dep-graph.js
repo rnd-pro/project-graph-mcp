@@ -794,7 +794,7 @@ export class DepGraph extends Symbiote {
     events.addEventListener('tool-event', this._onToolEvent);
 
     // Update route within graph section
-    // On node click → save file path (not nodeId, which changes each mount)
+    // On node click → save file path (just focusing)
     this._canvas?.addEventListener('click', (e) => {
       const nodeEl = e.target.closest('graph-node');
       if (!nodeEl) return;
@@ -807,12 +807,12 @@ export class DepGraph extends Symbiote {
       }
     });
 
-    // Track drill-down navigation → update hash with directory path
+    // Track drill-down navigation → update hash with directory path + ?in=1
     this._canvas?.addEventListener('subgraph-enter', (e) => {
       const node = e.detail?.node;
       const path = node?.params?.path;
       if (path) {
-        history.replaceState(null, '', `#graph/${path}`);
+        history.replaceState(null, '', `#graph/${path}?in=1`);
       }
     });
     this._canvas?.addEventListener('subgraph-exit', () => {
@@ -917,6 +917,16 @@ export class DepGraph extends Symbiote {
     }
     this._canvas.setBatchMode(false);
 
+    // Attach ResizeObserver to all graph-nodes so that if their dimensions expand
+    // (e.g. late render of PortItems), we correctly refresh the connection curves.
+    requestAnimationFrame(() => {
+      if (!this._resizeObserver || !this._canvas) return;
+      const nodes = this._canvas.querySelectorAll('graph-node');
+      for (const el of nodes) {
+        this._resizeObserver.observe(el);
+      }
+    });
+
     // --- Pass 2: Measure actual DOM sizes → re-layout with real dimensions ---
     // Wait for Symbiote.js custom elements to inflate and render inner ports
     setTimeout(() => {
@@ -951,12 +961,22 @@ export class DepGraph extends Symbiote {
 
       // Compute initial view — restore drill-down from hash
       const hash = location.hash.replace('#', '');
-      const slashIdx = hash.indexOf('/');
-      const focusPath = slashIdx >= 0 ? hash.substring(slashIdx + 1) : '';
+      
+      let cleanHash = hash;
+      let isInside = false;
+      const qIdx = hash.indexOf('?');
+      if (qIdx >= 0) {
+        cleanHash = hash.substring(0, qIdx);
+        const params = new URLSearchParams(hash.substring(qIdx + 1));
+        if (params.get('in') === '1') isInside = true;
+      }
+      
+      const slashIdx = cleanHash.indexOf('/');
+      const focusPath = slashIdx >= 0 ? cleanHash.substring(slashIdx + 1) : '';
 
       let restored = false;
-      if (focusPath && isStructured) {
-        // Try to restore drill-down state
+      if (focusPath && isStructured && isInside) {
+        // Try to restore drill-down state ONLY if query param ?in=1 is provided
         restored = this._restoreDrillDown(focusPath, editor);
       }
       if (!restored && focusPath) {
