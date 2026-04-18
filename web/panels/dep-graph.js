@@ -820,13 +820,18 @@ export class DepGraph extends Symbiote {
 
     // Track drill-down navigation → update hash with directory path + ?in=1
     this._canvas?.addEventListener('subgraph-enter', (e) => {
+      if (this._isAutoRouting) return; // Preserve target file path during auto skips
+      
       const node = e.detail?.node;
       const path = node?.params?.path;
       if (path) {
         history.replaceState(null, '', `#graph/${path}?in=1`);
       }
     });
+
     this._canvas?.addEventListener('subgraph-exit', () => {
+      if (this._isAutoRouting) return; // Prevent erasing URL when popping out to find hidden nested paths
+      
       history.replaceState(null, '', '#graph');
     });
 
@@ -1251,7 +1256,9 @@ export class DepGraph extends Symbiote {
           const dirId = this._dirNodeMap.get(dirPath);
           // If parent directory is visible, drill into it!
           if (positions[dirId]) {
+            this._isAutoRouting = true;
             this._canvas.drillDown(dirId);
+            this._isAutoRouting = false;
             requestAnimationFrame(() => this._focusNode(filePath, depth + 1));
             return true;
           }
@@ -1259,7 +1266,9 @@ export class DepGraph extends Symbiote {
 
         // Case 2: Target is completely off-scope (we are inside wrong group). Drill UP loop to Root.
         if (this._canvas._currentEditor !== this._editor) {
+          this._isAutoRouting = true;
           this._canvas.drillUp();
+          this._isAutoRouting = false;
           requestAnimationFrame(() => this._focusNode(filePath, depth + 1));
           return true;
         }
