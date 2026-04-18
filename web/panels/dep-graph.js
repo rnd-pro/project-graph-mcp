@@ -1101,18 +1101,29 @@ export class DepGraph extends Symbiote {
    * Fit all nodes in view
    */
   _fitView() {
-    if (!this._canvas || !this._editor) return;
-    // Use ViewportActions fitView if available, otherwise manual center
-    const nodes = this._editor.getNodes();
-    if (nodes.length === 0) return;
+    if (!this._canvas) return;
+    
+    // Resolve whatever editor layer is actively on screen
+    const activeEditor = this._canvas._currentEditor || this._editor;
+    if (!activeEditor || activeEditor.getNodes().length === 0) return;
 
     const positions = this._canvas.getPositions();
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const pos of Object.values(positions)) {
+    
+    for (const [nodeId, pos] of Object.entries(positions)) {
+      let elWidth = 150;
+      let elHeight = 40;
+      
+      const nodeView = this._canvas.getNodeView?.(nodeId) || this._canvas.querySelector(`graph-node[node-id="${nodeId}"]`);
+      if (nodeView && nodeView.offsetWidth > 0) {
+        elWidth = nodeView.offsetWidth;
+        elHeight = nodeView.offsetHeight;
+      }
+
       if (pos[0] < minX) minX = pos[0];
       if (pos[1] < minY) minY = pos[1];
-      if (pos[0] + 150 > maxX) maxX = pos[0] + 150;
-      if (pos[1] + 40 > maxY) maxY = pos[1] + 40;
+      if (pos[0] + elWidth > maxX) maxX = pos[0] + elWidth;
+      if (pos[1] + elHeight > maxY) maxY = pos[1] + elHeight;
     }
 
     const graphW = maxX - minX;
