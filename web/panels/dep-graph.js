@@ -799,11 +799,14 @@ export class DepGraph extends Symbiote {
       const nodeEl = e.target.closest('graph-node');
       if (!nodeEl) return;
       const nodeId = nodeEl.getAttribute('node-id');
-      // Find node data to get stable file path
-      const node = this._editor?.getNode(nodeId);
+      // Find node data from whichever editor layer is currently active
+      const activeEditor = this._canvas._currentEditor || this._editor;
+      const node = activeEditor?.getNode(nodeId);
       const path = node?.params?.path;
       if (path) {
-        history.replaceState(null, '', `#graph/${path}`);
+        // If we are drilled down into a subgraph, preserve the ?in=1 flag in the URL
+        const isDrilled = this._canvas._currentEditor && this._canvas._currentEditor !== this._editor;
+        history.replaceState(null, '', `#graph/${path}${isDrilled ? '?in=1' : ''}`);
       }
     });
 
