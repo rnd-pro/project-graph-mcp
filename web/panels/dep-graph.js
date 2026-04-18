@@ -437,6 +437,8 @@ function buildStructuredGraph(skeleton) {
   }
 
   // ── Pre-compute inner positions for drill-down ──
+  const symbolNodes = []; // Track internal symbol nodes for idToPath linking
+
   for (const dirSubgraph of editor.getNodes()) {
     if (!dirSubgraph._isSubgraph) continue;
     const inner = dirSubgraph.getInnerEditor();
@@ -448,6 +450,11 @@ function buildStructuredGraph(skeleton) {
       const fileInner = fileNode.getInnerEditor();
       const filePos = computeAutoLayout(fileInner, { nodeHeight: 50, gapY: 40, gapX: 60 });
       fileNode.setInnerPositions(filePos);
+
+      // Collect internal symbols
+      for (const fnNode of fileInner.getNodes()) {
+        symbolNodes.push({ id: fnNode.id, file: fileNode.params.path });
+      }
     }
   }
 
@@ -455,6 +462,7 @@ function buildStructuredGraph(skeleton) {
   const idToPath = new Map();
   for (const [path, id] of fileMap.entries()) idToPath.set(id, path);
   for (const [path, id] of dirNodeMap.entries()) idToPath.set(id, path);
+  for (const node of symbolNodes) idToPath.set(node.id, node.file);
 
   return { editor, fileMap, dirFiles, dirNodeMap, idToPath };
 }
@@ -1345,6 +1353,17 @@ export class DepGraph extends Symbiote {
 
     // Select the node visually
     this._canvas.selectNode?.(targetId);
+
+    // If we wanted to formally enter this specific node (URL ended in ?in=1), drill into it!
+    if (window.location.hash.endsWith(`${filePath}?in=1`)) {
+      const activeEditor = this._canvas._currentEditor || this._editor;
+      const nodeObj = activeEditor.getNode(targetId);
+      if (nodeObj && nodeObj._isSubgraph) {
+        this._isAutoRouting = true;
+        this._canvas.drillDown(targetId);
+        this._isAutoRouting = false;
+      }
+    }
 
     return true;
   }
