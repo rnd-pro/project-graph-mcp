@@ -26,7 +26,7 @@ export class CodeViewer extends e{init$={filename:"Select a file",hasFile:!1,vie
   // Toggle between source and the transformation
   this.$.viewMode=this.$.viewMode==="source"?"transformed":"source";
   this._showCurrentMode();
-}};_fileData=null;_isReadable=!1;_transformCache=null;_loadingTransform=!1;_currentPath=null;initCallback(){t.addEventListener("file-selected",e=>this._loadFile(e.detail.path))}renderCallback(){this.sub("hasFile",e=>{this.toggleAttribute("has-file",e)}),this.sub("viewMode",e=>{
+}};_fileData=null;_isReadable=!1;_transformCache=null;_loadingTransform=!1;_currentPath=null;initCallback(){t.addEventListener("file-selected",e=>this._loadFile(e.detail.path));if(o.activeFile)requestAnimationFrame(()=>this._loadFile(o.activeFile))}renderCallback(){this.sub("hasFile",e=>{this.toggleAttribute("has-file",e)}),this.sub("viewMode",e=>{
   const lang=_getLang(this._currentPath);
   this.toggleAttribute("mode-raw","source"!==e);
   if(lang==='md'){

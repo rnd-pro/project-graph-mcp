@@ -641,6 +641,9 @@ const PCB_CSS = `
 export class DepGraph extends Symbiote {
   init$ = {};
 
+  _isAutoRouting = false;
+  _canvasDepth = 0;
+
   /** @type {NodeEditor|null} */
   _editor = null;
   /** @type {Map<string, string>} */
@@ -786,6 +789,7 @@ export class DepGraph extends Symbiote {
     
     this._onFileSelected = (e) => {
       if (this.style.display === 'none' || this.offsetWidth === 0) return;
+      if (e.detail.source === 'canvas') return; // Prevent echo from our own clicks
       const file = e.detail.path;
       if (file) {
         history.replaceState(null, '', `#graph/${file}`);
@@ -821,13 +825,14 @@ export class DepGraph extends Symbiote {
       
       if (path) {
         // If we are drilled down into a subgraph, preserve the ?in=1 flag in the URL
-        const isDrilled = this._canvas.getSubgraphDepth?.() > 0;
+        const isDrilled = this._canvasDepth > 0;
         history.replaceState(null, '', `#graph/${path}${isDrilled ? '?in=1' : ''}`);
       }
     });
 
     // Track drill-down navigation → update hash with directory path + ?in=1
     this._canvas?.addEventListener('subgraph-enter', (e) => {
+      this._canvasDepth++;
       if (this._isAutoRouting) return; // Preserve target file path during auto skips
       
       const node = e.detail?.node;
@@ -838,6 +843,7 @@ export class DepGraph extends Symbiote {
     });
 
     this._canvas?.addEventListener('subgraph-exit', () => {
+      this._canvasDepth = Math.max(0, this._canvasDepth - 1);
       if (this._isAutoRouting) return; // Prevent erasing URL when popping out to find hidden nested paths
       
       // Before wiping the URL, extract the directory we are currently drilled into
@@ -897,6 +903,7 @@ export class DepGraph extends Symbiote {
     this._fileMap = fileMap;
     this._dirNodeMap = dirNodeMap;
     this._idToPath = idToPath;
+    this._canvasDepth = 0; // reset local tracker
 
     // Set editor on canvas
     this._canvas.setEditor(editor);
@@ -1301,7 +1308,7 @@ export class DepGraph extends Symbiote {
         }
 
         // Case 2: Target is completely off-scope (we are inside wrong group). Drill UP loop to Root.
-        if (this._canvas.getSubgraphDepth?.() > 0) {
+        if (this._canvasDepth > 0) {
           this._isAutoRouting = true;
           this._canvas.drillUp();
           this._isAutoRouting = false;
