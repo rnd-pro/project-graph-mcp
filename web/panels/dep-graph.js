@@ -1238,9 +1238,18 @@ export class DepGraph extends Symbiote {
     const inspW = (inspector && inspector.offsetWidth > 20) ? inspector.offsetWidth : 280;
     visibleWidth -= inspW;
 
+    // Retrieve actual dynamic node dimensions if it has inflated in the DOM
+    let elWidth = 150;
+    let elHeight = 40;
+    const nodeView = this._canvas.getNodeView?.(targetId) || this._canvas.querySelector(`graph-node[node-id="${targetId}"]`);
+    if (nodeView && nodeView.offsetHeight > 0) {
+      elWidth = nodeView.offsetWidth;
+      elHeight = nodeView.offsetHeight;
+    }
+
     const scale = 0.8;
-    const nodeX = pos[0] + 75; // center of node (~150px wide)
-    const nodeY = pos[1] + 20; // center of node (~40px tall)
+    const nodeX = pos[0] + (elWidth / 2);
+    const nodeY = pos[1] + (elHeight / 2);
 
     const newPanX = (visibleWidth / 2) - nodeX * scale;
     const newPanY = canvasRect.height / 2 - nodeY * scale;
