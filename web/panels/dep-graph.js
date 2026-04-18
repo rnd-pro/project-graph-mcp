@@ -855,6 +855,7 @@ export class DepGraph extends Symbiote {
     }
     this._editor = editor;
     this._fileMap = fileMap;
+    this._dirNodeMap = dirNodeMap;
 
     // Set editor on canvas
     this._canvas.setEditor(editor);
@@ -1206,14 +1207,14 @@ export class DepGraph extends Symbiote {
   _focusNode(filePath) {
     if (!this._canvas || !this._fileMap) return false;
 
-    // Find node ID by file path
+    // Find node ID by file path string or directory path string
     let targetId = null;
-    for (const [path, nodeId] of this._fileMap) {
-      if (path === filePath) {
-        targetId = nodeId;
-        break;
-      }
+    if (this._fileMap.has(filePath)) {
+      targetId = this._fileMap.get(filePath);
+    } else if (this._dirNodeMap && this._dirNodeMap.has(filePath)) {
+      targetId = this._dirNodeMap.get(filePath);
     }
+
     if (!targetId) return false;
 
     const positions = this._canvas.getPositions();
