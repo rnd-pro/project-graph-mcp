@@ -1023,11 +1023,6 @@ export class DepGraph extends Symbiote {
           }
        }, 300);
     }
-
-      // Refresh connections one final time after DOM layout and camera moves
-      this._canvas.refreshConnections();
-    }, 150);
-
     // Phase 3: Directory frames (flat mode only)
     // DISABLED: Zone group frames temporarily turned off
     // if (!isStructured) this._addDirectoryFrames(editor, fileMap, dirFiles, positions);
