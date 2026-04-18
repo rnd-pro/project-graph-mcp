@@ -343,7 +343,8 @@ function buildStructuredGraph(skeleton) {
         // ── Level 2: Symbol nodes inside file ──
         const fileInnerEditor = fileNode.getInnerEditor();
         for (const abbr of exports) {
-          const fullName = resolveName(abbr);
+          const abbrId = typeof abbr === 'object' ? abbr.id : abbr;
+          const fullName = resolveName(abbrId);
           // Classify: is this abbreviation a known class?
           const isClass = classes && classes.has(fullName);
           const fnNode = new Node(fullName, {
