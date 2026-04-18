@@ -1077,7 +1077,15 @@ export class DepGraph extends Symbiote {
     const graphW = maxX - minX;
     const graphH = maxY - minY;
     const canvasRect = this._canvas.getBoundingClientRect();
-    const scaleX = (canvasRect.width - 80) / graphW;
+    
+    // Deduct inspector width from available canvas width if panel is open
+    let visibleWidth = canvasRect.width;
+    const inspector = this._canvas.querySelector('inspector-panel');
+    if (inspector && !inspector.hasAttribute('hidden')) {
+      visibleWidth -= inspector.offsetWidth || 280;
+    }
+
+    const scaleX = (visibleWidth - 80) / graphW;
     const scaleY = (canvasRect.height - 80) / graphH;
     const scale = Math.max(0.2, Math.min(scaleX, scaleY, 1.5));
 
@@ -1085,7 +1093,7 @@ export class DepGraph extends Symbiote {
     const centerY = (minY + maxY) / 2;
 
     this._canvas.$.zoom = scale;
-    this._canvas.$.panX = canvasRect.width / 2 - centerX * scale;
+    this._canvas.$.panX = (visibleWidth / 2) - centerX * scale;
     this._canvas.$.panY = canvasRect.height / 2 - centerY * scale;
   }
 
@@ -1222,11 +1230,17 @@ export class DepGraph extends Symbiote {
     if (!pos) return false;
 
     const canvasRect = this._canvas.getBoundingClientRect();
+    let visibleWidth = canvasRect.width;
+    const inspector = this._canvas.querySelector('inspector-panel');
+    if (inspector && !inspector.hasAttribute('hidden')) {
+      visibleWidth -= inspector.offsetWidth || 280;
+    }
+
     const scale = 0.8;
     const nodeX = pos[0] + 75; // center of node (~150px wide)
     const nodeY = pos[1] + 20; // center of node (~40px tall)
 
-    const newPanX = canvasRect.width / 2 - nodeX * scale;
+    const newPanX = (visibleWidth / 2) - nodeX * scale;
     const newPanY = canvasRect.height / 2 - nodeY * scale;
 
     // Skip zoom/pan if already focused on this node (avoids full recalc cascade)
