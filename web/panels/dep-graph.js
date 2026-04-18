@@ -935,11 +935,13 @@ export class DepGraph extends Symbiote {
           if (this._refreshRaf) cancelAnimationFrame(this._refreshRaf);
           this._refreshRaf = requestAnimationFrame(() => this._canvas.refreshConnections());
 
-          // Trigger full layout recalculation debounced
-          if (this._layoutPassTimer) clearTimeout(this._layoutPassTimer);
-          this._layoutPassTimer = setTimeout(() => {
-            this._runRelayoutPass(isStructured, dirFiles, dirNodeMap, editor, groups);
-          }, 150);
+          // Trigger full layout recalculation debounced ONLY during initial load
+          if (!this._initialViewRestored) {
+            if (this._layoutPassTimer) clearTimeout(this._layoutPassTimer);
+            this._layoutPassTimer = setTimeout(() => {
+              this._runRelayoutPass(isStructured, dirFiles, dirNodeMap, editor, groups);
+            }, 150);
+          }
         }
       });
     }
