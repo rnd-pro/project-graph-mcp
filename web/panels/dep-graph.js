@@ -914,6 +914,9 @@ export class DepGraph extends Symbiote {
     this._canvas.setBatchMode(true);
     for (const [nodeId, pos] of Object.entries(positions)) {
       this._canvas.setNodePosition(nodeId, pos.x, pos.y);
+    }
+    this._canvas.setBatchMode(false);
+
     // Dedicated node ResizeObserver ensures that late inflation of inner ports
     // triggers not only a line refresh, but initially schedules a full Pass 2 layout
     // so things don't overlap vertically in a messy stack.
