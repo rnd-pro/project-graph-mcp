@@ -248,6 +248,7 @@ function resolveImport(importPath, fromFile, knownFiles) {
 function buildStructuredGraph(skeleton) {
   const editor = new NodeEditor();
   const fileMap = new Map();
+  const symbolMap = new Map();
   const L = skeleton.L || {}; // legend: abbreviation → full name
   const N = skeleton.n || {}; // classes: className → { f, m, ... }
 
@@ -352,6 +353,7 @@ function buildStructuredGraph(skeleton) {
             category: isClass ? 'class' : 'function',
           });
           fnNode.params = { name: fullName, file };
+          symbolMap.set(fnNode.id, fnNode.params);
           fileInnerEditor.addNode(fnNode);
         }
       } else {
@@ -465,7 +467,7 @@ function buildStructuredGraph(skeleton) {
   for (const [path, id] of dirNodeMap.entries()) idToPath.set(id, path);
   for (const node of symbolNodes) idToPath.set(node.id, node.file);
 
-  return { editor, fileMap, dirFiles, dirNodeMap, idToPath };
+  return { editor, fileMap, dirFiles, dirNodeMap, idToPath, symbolMap };
 }
 
 // ── Consumer-specific CSS (toolbar, stats, pin overlay) ──
@@ -823,9 +825,18 @@ export class DepGraph extends Symbiote {
       
       const nodeId = nodeEl.getAttribute('node-id');
       const path = this._idToPath?.get(nodeId);
-      
-      if (path) {
-        // If we are drilled down into a subgraph, preserve the ?in=1 flag in the URL
+      const rawHash = window.location.hash.replace('#graph/', '');
+      const hashPath = rawHash.split('?')[0].split('&')[0];
+      const isSymbol = this._symbolMap?.has(nodeId);
+
+      if (isSymbol) {
+        const sym = this._symbolMap.get(nodeId);
+        const fnName = sym.name;
+        // Symbol routing: maintain drill-down flag but append exact symbol name
+        const isDrilled = this._canvasDepth > 0;
+        history.replaceState(null, '', `#graph/${path}${isDrilled ? '?in=1' : ''}&symbol=${encodeURIComponent(fnName)}`);
+      } else if (path) {
+        // Normal file/dir selection — only update URL, canvas handles visual focus natively
         const isDrilled = this._canvasDepth > 0;
         history.replaceState(null, '', `#graph/${path}${isDrilled ? '?in=1' : ''}`);
       }
@@ -848,7 +859,7 @@ export class DepGraph extends Symbiote {
       if (this._isAutoRouting) return; // Prevent erasing URL when popping out to find hidden nested paths
       
       // Before wiping the URL, extract the directory we are currently drilled into
-      const hashPath = window.location.hash.replace('#graph/', '').replace(/\?in=1$/, '');
+      const hashPath = window.location.hash.replace('#graph/', '').split('?')[0].split('&')[0];
       let focusedGroupPath = null;
 
       if (hashPath) {
@@ -894,16 +905,18 @@ export class DepGraph extends Symbiote {
 
     const isStructured = this._viewMode === 'structured';
 
-    let editor, fileMap, dirFiles, dirNodeMap, idToPath;
+    let editor, fileMap, dirFiles, dirNodeMap, idToPath, symbolMap;
     if (isStructured) {
-      ({ editor, fileMap, dirFiles, dirNodeMap, idToPath } = buildStructuredGraph(skeleton));
+      ({ editor, fileMap, dirFiles, dirNodeMap, idToPath, symbolMap } = buildStructuredGraph(skeleton));
     } else {
-      ({ editor, fileMap, dirFiles, idToPath } = buildFileGraph(skeleton));
+      ({ editor, fileMap, dirFiles, idToPath, symbolMap: symbolMap = new Map() } = buildFileGraph(skeleton));
     }
     this._editor = editor;
     this._fileMap = fileMap;
     this._dirNodeMap = dirNodeMap;
     this._idToPath = idToPath;
+    this._symbolMap = symbolMap;
+    this._drillableFiles = new Set([...symbolMap.values()].map(s => s.file));
     this._canvasDepth = 0; // reset local tracker
 
     // Set editor on canvas
@@ -1051,15 +1064,13 @@ export class DepGraph extends Symbiote {
           if (params.get('in') === '1') isInside = true;
         }
         
-        const slashIdx = cleanHash.indexOf('/');
-        const focusPath = slashIdx >= 0 ? cleanHash.substring(slashIdx + 1) : '';
-
+        let focusPath = window.location.hash.split('?')[0].replace('#graph/', '');
         let restored = false;
         if (focusPath && isStructured && isInside) {
-          restored = this._restoreDrillDown(focusPath, editor);
+          restored = this._restoreDrillDown(focusPath, editor, true);
         }
         if (!restored && focusPath) {
-          restored = this._focusNode(focusPath);
+          restored = this._focusNode(focusPath, 0, isInside);
         }
         if (!restored) {
           this._fitView();
@@ -1230,7 +1241,7 @@ export class DepGraph extends Symbiote {
    * @param {NodeEditor} editor
    * @returns {boolean}
    */
-  _restoreDrillDown(targetPath, editor) {
+  _restoreDrillDown(targetPath, editor, autoDrill = false) {
     if (!this._canvas) return false;
 
     // Try to find a directory SubgraphNode matching the path
@@ -1241,17 +1252,21 @@ export class DepGraph extends Symbiote {
 
       // Exact directory match (e.g. 'src/core/')
       if (nodePath === targetPath) {
+        this._isAutoRouting = true;
         this._canvas.drillDown(node.id);
+        this._isAutoRouting = false;
         requestAnimationFrame(() => this._fitView());
         return true;
       }
 
       // File inside this directory — drill into dir, then focus file
       if (targetPath.startsWith(nodePath)) {
+        this._isAutoRouting = true;
         this._canvas.drillDown(node.id);
+        this._isAutoRouting = false;
         // After transition, specifically focus the exact nested file node
         requestAnimationFrame(() => {
-          this._focusNode(targetPath);
+          this._focusNode(targetPath, 0, autoDrill);
         });
         return true;
       }
@@ -1261,12 +1276,33 @@ export class DepGraph extends Symbiote {
   }
 
   /**
+   * Restore visual symbol focus from &symbol= URL parameter.
+   * Called after autoDrill into a file subgraph to select the target function/class node.
+   * @param {string} filePath - the file we drilled into
+   */
+  _restoreSymbolFocus(filePath) {
+    const hashParts = window.location.hash.split('&symbol=');
+    if (hashParts.length < 2) return;
+    const symbolName = decodeURIComponent(hashParts[1].split('&')[0]);
+    if (!symbolName || !this._symbolMap) return;
+
+    // Find the symbol node ID by name + file
+    for (const [nodeId, params] of this._symbolMap) {
+      if (params.name === symbolName && params.file === filePath) {
+        this._canvas?.selectNode(nodeId);
+        return;
+      }
+    }
+  }
+
+  /**
    * Focus viewport on a specific node by file path
    * @param {string} filePath - e.g. 'src/core/event-bus.js'
    * @param {number} depth - Internal recursion depth limit
+   * @param {boolean} autoDrill - Attempt to drill into target if it is a Subgraph
    * @returns {boolean} true if node found and focused
    */
-  _focusNode(filePath, depth = 0) {
+  _focusNode(filePath, depth = 0, autoDrill = false) {
     if (!this._canvas || !this._fileMap || depth > 5) return false;
 
     // Find node ID by file path string or directory path string
@@ -1303,7 +1339,7 @@ export class DepGraph extends Symbiote {
             this._isAutoRouting = true;
             this._canvas.drillDown(dirId);
             this._isAutoRouting = false;
-            requestAnimationFrame(() => this._focusNode(filePath, depth + 1));
+            requestAnimationFrame(() => this._focusNode(filePath, depth + 1, autoDrill));
             return true;
           }
         }
@@ -1313,11 +1349,24 @@ export class DepGraph extends Symbiote {
           this._isAutoRouting = true;
           this._canvas.drillUp();
           this._isAutoRouting = false;
-          requestAnimationFrame(() => this._focusNode(filePath, depth + 1));
+          requestAnimationFrame(() => this._focusNode(filePath, depth + 1, autoDrill));
           return true;
         }
       }
       return false; // Unable to locate on any layer
+    }
+    
+    // We found the node on the current layer. If target is a subgraph file and we are commanded to drill into it, do it.
+    if (autoDrill && isFile && this._drillableFiles?.has(filePath)) {
+      this._isAutoRouting = true;
+      this._canvas.drillDown(targetId);
+      this._isAutoRouting = false;
+      requestAnimationFrame(() => {
+        this._fitView();
+        // Restore &symbol= focus from deep-link URL
+        this._restoreSymbolFocus(filePath);
+      });
+      return true;
     }
 
     const canvasRect = this._canvas.getBoundingClientRect();
