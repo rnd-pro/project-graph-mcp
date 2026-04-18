@@ -836,17 +836,9 @@ export class DepGraph extends Symbiote {
       const hashPath = window.location.hash.replace('#graph/', '').replace(/\?in=1$/, '');
       let focusedGroupPath = null;
 
-      if (hashPath && this._dirNodeMap) {
-        if (this._dirNodeMap.has(hashPath)) {
+      if (hashPath) {
+        if (this._dirNodeMap?.has(hashPath) || this._fileMap?.has(hashPath)) {
           focusedGroupPath = hashPath;
-        } else if (this._fileMap && this._fileMap.has(hashPath)) {
-          const parts = hashPath.split('/');
-          parts.pop();
-          let dir = parts.join('/') + '/';
-          if (dir === '/') dir = './';
-          if (this._dirNodeMap.has(dir)) {
-            focusedGroupPath = dir;
-          }
         }
       }
 
@@ -1139,7 +1131,8 @@ export class DepGraph extends Symbiote {
 
     const scaleX = (visibleWidth - 80) / graphW;
     const scaleY = (canvasRect.height - 80) / graphH;
-    const scale = Math.max(0.2, Math.min(scaleX, scaleY, 1.5));
+    // Allow much smaller minimum scale (0.02) to fit massive project graphs entirely
+    const scale = Math.max(0.02, Math.min(scaleX, scaleY, 1.5));
 
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
