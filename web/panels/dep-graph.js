@@ -854,26 +854,32 @@ export class DepGraph extends Symbiote {
       }
     });
 
-    this._canvas?.addEventListener('subgraph-exit', () => {
-      this._canvasDepth = Math.max(0, this._canvasDepth - 1);
+    this._canvas?.addEventListener('subgraph-exit', (e) => {
+      const level = e.detail?.level;
+      this._canvasDepth = (typeof level === 'number') ? level : Math.max(0, this._canvasDepth - 1);
       if (this._isAutoRouting) return; // Prevent erasing URL when popping out to find hidden nested paths
       
-      // Before wiping the URL, extract the directory we are currently drilled into
+      // Extract the path we were drilled into from the current URL
       const hashPath = window.location.hash.replace('#graph/', '').split('?')[0].split('&')[0];
-      let focusedGroupPath = null;
 
-      if (hashPath) {
-        if (this._dirNodeMap?.has(hashPath) || this._fileMap?.has(hashPath)) {
-          focusedGroupPath = hashPath;
+      if (hashPath && this._canvasDepth > 0) {
+        // Still inside a subgraph — find the parent directory to focus on
+        let focusPath = hashPath;
+        // If hashPath is a file, go up to its directory
+        if (this._fileMap?.has(hashPath)) {
+          const parts = hashPath.split('/');
+          parts.pop();
+          focusPath = parts.join('/') + '/';
         }
-      }
-
-      if (focusedGroupPath) {
-        history.replaceState(null, '', `#graph/${focusedGroupPath}`);
-        // Wait for canvas to finish switching layers, then center the camera on the exited group node
-        requestAnimationFrame(() => this._focusNode(focusedGroupPath));
+        if (this._dirNodeMap?.has(focusPath)) {
+          history.replaceState(null, '', `#graph/${focusPath}?in=1`);
+        } else {
+          history.replaceState(null, '', `#graph/${focusPath}`);
+        }
       } else {
+        // Back at root (or no path) — clean URL and show all
         history.replaceState(null, '', '#graph');
+        requestAnimationFrame(() => this._fitView());
       }
     });
 
