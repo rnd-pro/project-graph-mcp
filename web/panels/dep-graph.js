@@ -658,6 +658,8 @@ export class DepGraph extends Symbiote {
   _canvas = null;
   /** @type {object|null} Skeleton data for resolving pin names */
   _skeleton = null;
+  /** @type {import('../vendor/symbiote-node/canvas/SubgraphRouter.js').SubgraphRouter} */
+  _router = null;
   /** @type {import('../vendor/symbiote-node/canvas/PinExpansion.js').PinExpansion} */
   _pinExpansion = null;
   /** @type {import('../vendor/symbiote-node/canvas/LODManager.js').LODManager} */
