@@ -24,6 +24,8 @@ import {
   applyTheme,
 } from 'symbiote-node';
 import { SubgraphRouter } from '../vendor/symbiote-node/canvas/SubgraphRouter.js';
+import { LODManager } from '../vendor/symbiote-node/canvas/LODManager.js';
+import { PinExpansion } from '../vendor/symbiote-node/canvas/PinExpansion.js';
 import { PCB_DARK } from '../vendor/symbiote-node/themes/pcb.js';
 import { api, state, events, emit } from '../app.js';
 
@@ -656,10 +658,10 @@ export class DepGraph extends Symbiote {
   _canvas = null;
   /** @type {object|null} Skeleton data for resolving pin names */
   _skeleton = null;
-  /** @type {string} Current LOD level */
-  _currentLod = 'collapsed';
-  /** @type {Map<string, string[]>} nodeId → resolved export names */
-  _pinCache = new Map();
+  /** @type {import('../vendor/symbiote-node/canvas/PinExpansion.js').PinExpansion} */
+  _pinExpansion = null;
+  /** @type {import('../vendor/symbiote-node/canvas/LODManager.js').LODManager} */
+  _lodManager = null;
   /** @type {boolean} Guard against duplicate graph builds */
   _graphBuilt = false;
 
@@ -1076,10 +1078,27 @@ export class DepGraph extends Symbiote {
 
     // Store skeleton for Phase 2 pin resolution (flat mode only)
     this._skeleton = skeleton;
-    this._pinCache.clear();
+    this._pinExpansion?.clearPins();
     if (!isStructured) {
+      if (!this._pinExpansion) {
+        this._pinExpansion = new PinExpansion(this._canvas, {
+          onPinClick: (pin, nodeId) => {
+            if (pin.file) {
+              state.activeFile = pin.file;
+              emit('file-selected', { path: pin.file, line: pin.line || 1 });
+            }
+          }
+        });
+      }
+      if (!this._lodManager) {
+        this._lodManager = new LODManager(this._canvas, { threshold: 0.7 });
+        this._lodManager.onLodChange((lod) => {
+          this._pinExpansion?.applyLOD(lod);
+        });
+        this._lodManager.attach();
+      }
       this._buildPinCache(skeleton, fileMap);
-      this._attachZoomLOD();
+      this._lodManager.update();
     }
 
     // Update stats
@@ -1219,126 +1238,12 @@ export class DepGraph extends Symbiote {
       }
 
       if (pins.length > 0) {
-        this._pinCache.set(nodeId, pins);
+        this._pinExpansion?.setPins(nodeId, pins);
       }
     }
   }
 
-  /**
-   * Attach zoom change listener for LOD-based pin expansion.
-   * When zoom > 0.7, pins appear. When zoom < 0.5, pins hide.
-   */
-  _attachZoomLOD() {
-    if (!this._canvas || this._canvas._depGraphLodAttached) return;
-    this._canvas._depGraphLodAttached = true;
 
-    const canvas = this._canvas;
-    
-    // Determine initial LOD state and apply immediately
-    const initialZoom = canvas.$.zoom || 1;
-    let lastLod = initialZoom >= 0.7 ? 'expanded' : 'collapsed';
-    this._currentLod = lastLod;
-    this._applyLOD(lastLod);
-
-    // Poll zoom for future changes
-    canvas.sub('zoom', (zoom) => {
-      const newLod = zoom >= 0.7 ? 'expanded' : 'collapsed';
-      if (newLod === lastLod) return;
-      lastLod = newLod;
-      this._currentLod = newLod;
-
-      // Toggle pin overlays on all nodes
-      requestAnimationFrame(() => this._applyLOD(newLod));
-    });
-  }
-
-  /**
-   * Apply LOD state to all file nodes
-   * @param {'collapsed'|'expanded'} lod
-   */
-  _applyLOD(lod) {
-    if (!this._canvas) return;
-    const nodeViews = this._canvas._getNodeView
-      ? null // can't iterate private map from outside
-      : null;
-
-    // Iterate all nodes in pinCache
-    for (const [nodeId, pins] of this._pinCache) {
-      const el = this._canvas._getNodeView?.(nodeId);
-      if (!el) continue;
-
-      if (lod === 'expanded') {
-        this._renderPinsForNode(el, pins);
-      } else {
-        // Hide pin overlay
-        const overlay = el.querySelector('.pcb-pin-overlay');
-        if (overlay) overlay.removeAttribute('data-visible');
-      }
-    }
-  }
-
-  /**
-   * Render pin labels around a node element's border
-   * @param {HTMLElement} el - graph-node element
-   * @param {Array<{name: string, kind: string, line?: number, file?: string}>} pins
-   */
-  _renderPinsForNode(el, pins) {
-    if (!pins || pins.length === 0) return;
-
-    // Create or reuse pin overlay
-    let overlay = el.querySelector('.pcb-pin-overlay');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.className = 'pcb-pin-overlay';
-      el.appendChild(overlay);
-    }
-
-    // Only rebuild pin DOM if not already populated
-    if (overlay.children.length === 0) {
-      const maxPins = Math.min(pins.length, 12); // cap at 12 visible pins
-      const half = Math.ceil(maxPins / 2);
-
-      const createPinEl = (pin, side, yPct) => {
-        const pinEl = document.createElement('span');
-        pinEl.className = 'pcb-pin';
-        pinEl.setAttribute('data-side', side);
-        pinEl.setAttribute('data-kind', pin.kind);
-
-        // Phase 4: show line number suffix if available
-        const label = pin.line ? `${pin.name} :${pin.line}` : pin.name;
-        pinEl.textContent = label;
-        pinEl.style.top = `${yPct}%`;
-
-        // Phase 4: click → navigate to file:line
-        if (pin.file) {
-          pinEl.style.cursor = 'pointer';
-          pinEl.title = pin.line ? `${pin.file}:${pin.line}` : pin.file;
-          pinEl.addEventListener('click', (e) => {
-            e.stopPropagation();
-            state.activeFile = pin.file;
-            emit('file-selected', { path: pin.file, line: pin.line || 1 });
-          });
-        }
-
-        return pinEl;
-      };
-
-      // Right side: first half of pins (exports)
-      for (let i = 0; i < half; i++) {
-        const yPct = ((i + 1) / (half + 1)) * 100;
-        overlay.appendChild(createPinEl(pins[i], 'right', yPct));
-      }
-
-      // Left side: remaining pins
-      for (let i = half; i < maxPins; i++) {
-        const yPct = ((i - half + 1) / (maxPins - half + 1)) * 100;
-        overlay.appendChild(createPinEl(pins[i], 'left', yPct));
-      }
-    }
-
-    // Animate in
-    requestAnimationFrame(() => overlay.setAttribute('data-visible', ''));
-  }
 
   // ── Phase 3: Directory Frames & Via Markers ──
 
