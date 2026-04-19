@@ -23,6 +23,7 @@ import {
   computeTreeLayout,
   applyTheme,
 } from 'symbiote-node';
+import { SubgraphRouter } from '../vendor/symbiote-node/canvas/SubgraphRouter.js';
 import { PCB_DARK } from '../vendor/symbiote-node/themes/pcb.js';
 import { api, state, events, emit } from '../app.js';
 
@@ -644,8 +645,6 @@ const PCB_CSS = `
 export class DepGraph extends Symbiote {
   init$ = {};
 
-  _isAutoRouting = false;
-  _canvasDepth = 0;
 
   /** @type {NodeEditor|null} */
   _editor = null;
@@ -796,7 +795,7 @@ export class DepGraph extends Symbiote {
       const file = e.detail.path;
       if (file) {
         history.replaceState(null, '', `#graph/${file}`);
-        this._focusNode(file);
+        this._router?.navigateTo(file);
       }
     };
 
@@ -833,55 +832,16 @@ export class DepGraph extends Symbiote {
         const sym = this._symbolMap.get(nodeId);
         const fnName = sym.name;
         // Symbol routing: maintain drill-down flag but append exact symbol name
-        const isDrilled = this._canvasDepth > 0;
+        const isDrilled = (this._router?.depth || 0) > 0;
         history.replaceState(null, '', `#graph/${path}${isDrilled ? '?in=1' : ''}&symbol=${encodeURIComponent(fnName)}`);
       } else if (path) {
         // Normal file/dir selection — only update URL, canvas handles visual focus natively
-        const isDrilled = this._canvasDepth > 0;
+        const isDrilled = (this._router?.depth || 0) > 0;
         history.replaceState(null, '', `#graph/${path}${isDrilled ? '?in=1' : ''}`);
       }
     });
 
-    // Track drill-down navigation → update hash with directory path + ?in=1
-    this._canvas?.addEventListener('subgraph-enter', (e) => {
-      this._canvasDepth++;
-      if (this._isAutoRouting) return; // Preserve target file path during auto skips
-      
-      const node = e.detail?.node;
-      const path = node?.params?.path;
-      if (path) {
-        history.replaceState(null, '', `#graph/${path}?in=1`);
-      }
-    });
 
-    this._canvas?.addEventListener('subgraph-exit', (e) => {
-      const level = e.detail?.level;
-      this._canvasDepth = (typeof level === 'number') ? level : Math.max(0, this._canvasDepth - 1);
-      if (this._isAutoRouting) return; // Prevent erasing URL when popping out to find hidden nested paths
-      
-      // Extract the path we were drilled into from the current URL
-      const hashPath = window.location.hash.replace('#graph/', '').split('?')[0].split('&')[0];
-
-      if (hashPath && this._canvasDepth > 0) {
-        // Still inside a subgraph — find the parent directory to focus on
-        let focusPath = hashPath;
-        // If hashPath is a file, go up to its directory
-        if (this._fileMap?.has(hashPath)) {
-          const parts = hashPath.split('/');
-          parts.pop();
-          focusPath = parts.join('/') + '/';
-        }
-        if (this._dirNodeMap?.has(focusPath)) {
-          history.replaceState(null, '', `#graph/${focusPath}?in=1`);
-        } else {
-          history.replaceState(null, '', `#graph/${focusPath}`);
-        }
-      } else {
-        // Back at root (or no path) — clean URL and show all
-        history.replaceState(null, '', '#graph');
-        requestAnimationFrame(() => this._fitView());
-      }
-    });
 
     events.addEventListener('file-selected', this._onFileSelected);
   }
@@ -923,7 +883,18 @@ export class DepGraph extends Symbiote {
     this._idToPath = idToPath;
     this._symbolMap = symbolMap;
     this._drillableFiles = new Set([...symbolMap.values()].map(s => s.file));
-    this._canvasDepth = 0; // reset local tracker
+
+    if (this._router) this._router.destroy();
+    this._router = new SubgraphRouter(this._canvas, {
+      hashPrefix: 'graph',
+      fileMap,
+      dirNodeMap,
+      symbolMap,
+      drillableFiles: this._drillableFiles,
+      onNavigate: (path) => {
+        // Optional hook: focus/pulse upon non-visual navigation
+      }
+    });
 
     // Set editor on canvas
     this._canvas.setEditor(editor);
@@ -985,6 +956,8 @@ export class DepGraph extends Symbiote {
       this._canvas.setNodePosition(nodeId, pos.x, pos.y);
     }
     this._canvas.setBatchMode(false);
+
+    this._router?.restoreFromHash(editor);
 
     // Dedicated node ResizeObserver ensures that late inflation of inner ports
     // triggers not only a line refresh, but initially schedules a full Pass 2 layout
@@ -1053,6 +1026,8 @@ export class DepGraph extends Symbiote {
         this._canvas.setNodePosition(nodeId, pos.x, pos.y);
       }
       this._canvas.setBatchMode(false);
+
+    this._router?.restoreFromHash(editor);
       
       requestAnimationFrame(() => this._canvas.refreshConnections());
 
@@ -1076,7 +1051,7 @@ export class DepGraph extends Symbiote {
           restored = this._restoreDrillDown(focusPath, editor, true);
         }
         if (!restored && focusPath) {
-          restored = this._focusNode(focusPath, 0, isInside);
+          restored = this._router?.navigateTo(focusPath, 0, isInside);
         }
         if (!restored) {
           this._fitView();
@@ -1236,6 +1211,8 @@ export class DepGraph extends Symbiote {
       }
     }
     this._canvas.setBatchMode(false);
+
+    this._router?.restoreFromHash(editor);
     this._canvas.refreshConnections();
     this._fitView();
   }
@@ -1247,189 +1224,6 @@ export class DepGraph extends Symbiote {
    * @param {NodeEditor} editor
    * @returns {boolean}
    */
-  _restoreDrillDown(targetPath, editor, autoDrill = false) {
-    if (!this._canvas) return false;
-
-    // Try to find a directory SubgraphNode matching the path
-    for (const node of editor.getNodes()) {
-      if (!node._isSubgraph) continue;
-      const nodePath = node.params?.path;
-      if (!nodePath) continue;
-
-      // Exact directory match (e.g. 'src/core/')
-      if (nodePath === targetPath) {
-        this._isAutoRouting = true;
-        this._canvas.drillDown(node.id);
-        this._isAutoRouting = false;
-        requestAnimationFrame(() => this._fitView());
-        return true;
-      }
-
-      // File inside this directory — drill into dir, then focus file
-      if (targetPath.startsWith(nodePath)) {
-        this._isAutoRouting = true;
-        this._canvas.drillDown(node.id);
-        this._isAutoRouting = false;
-        // After transition, specifically focus the exact nested file node
-        requestAnimationFrame(() => {
-          this._focusNode(targetPath, 0, autoDrill);
-        });
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /**
-   * Restore visual symbol focus from &symbol= URL parameter.
-   * Called after autoDrill into a file subgraph to select the target function/class node.
-   * @param {string} filePath - the file we drilled into
-   */
-  _restoreSymbolFocus(filePath) {
-    const hashParts = window.location.hash.split('&symbol=');
-    if (hashParts.length < 2) return;
-    const symbolName = decodeURIComponent(hashParts[1].split('&')[0]);
-    if (!symbolName || !this._symbolMap) return;
-
-    // Find the symbol node ID by name + file
-    for (const [nodeId, params] of this._symbolMap) {
-      if (params.name === symbolName && params.file === filePath) {
-        this._canvas?.selectNode(nodeId);
-        return;
-      }
-    }
-  }
-
-  /**
-   * Focus viewport on a specific node by file path
-   * @param {string} filePath - e.g. 'src/core/event-bus.js'
-   * @param {number} depth - Internal recursion depth limit
-   * @param {boolean} autoDrill - Attempt to drill into target if it is a Subgraph
-   * @returns {boolean} true if node found and focused
-   */
-  _focusNode(filePath, depth = 0, autoDrill = false) {
-    if (!this._canvas || !this._fileMap || depth > 5) return false;
-
-    // Find node ID by file path string or directory path string
-    let targetId = null;
-    let isFile = true;
-    if (this._fileMap.has(filePath)) {
-      targetId = this._fileMap.get(filePath);
-    } else if (this._dirNodeMap && this._dirNodeMap.has(filePath)) {
-      targetId = this._dirNodeMap.get(filePath);
-      isFile = false;
-    }
-
-    if (!targetId) return false;
-
-    const positions = this._canvas.getPositions();
-    const pos = positions[targetId];
-
-    // Auto-traversal engine: if target is not visible on current canvas layer
-    if (!pos) {
-      if (this._dirNodeMap) {
-        // Case 1: Target is a file, currently hidden inside a directory Subgraph from Root View
-        let dirPath = '';
-        if (isFile) {
-          const parts = filePath.split('/');
-          parts.pop();
-          dirPath = parts.join('/') + '/';
-          if (dirPath === '/') dirPath = './';
-        }
-
-        if (isFile && dirPath && this._dirNodeMap.has(dirPath)) {
-          const dirId = this._dirNodeMap.get(dirPath);
-          // If parent directory is visible, drill into it!
-          if (positions[dirId]) {
-            this._isAutoRouting = true;
-            this._canvas.drillDown(dirId);
-            this._isAutoRouting = false;
-            requestAnimationFrame(() => this._focusNode(filePath, depth + 1, autoDrill));
-            return true;
-          }
-        }
-
-        // Case 2: Target is completely off-scope (we are inside wrong group). Drill UP loop to Root.
-        if (this._canvasDepth > 0) {
-          this._isAutoRouting = true;
-          this._canvas.drillUp();
-          this._isAutoRouting = false;
-          requestAnimationFrame(() => this._focusNode(filePath, depth + 1, autoDrill));
-          return true;
-        }
-      }
-      return false; // Unable to locate on any layer
-    }
-    
-    // We found the node on the current layer. If target is a subgraph file and we are commanded to drill into it, do it.
-    if (autoDrill && isFile && this._drillableFiles?.has(filePath)) {
-      this._isAutoRouting = true;
-      this._canvas.drillDown(targetId);
-      this._isAutoRouting = false;
-      requestAnimationFrame(() => {
-        this._fitView();
-        // Restore &symbol= focus from deep-link URL
-        this._restoreSymbolFocus(filePath);
-      });
-      return true;
-    }
-
-    const canvasRect = this._canvas.getBoundingClientRect();
-    let visibleWidth = canvasRect.width;
-    
-    // When focusing a node, symbiote-node will always open the inspector panel.
-    // We must confidently deduct its width unconditionally (it defaults to 280px).
-    const inspector = this._canvas.ref?.inspector || this._canvas.querySelector('inspector-panel');
-    const inspW = (inspector && inspector.offsetWidth > 20) ? inspector.offsetWidth : 280;
-    visibleWidth -= inspW;
-
-    // Retrieve actual dynamic node dimensions if it has inflated in the DOM
-    let elWidth = 150;
-    let elHeight = 40;
-    const nodeView = this._canvas.getNodeView?.(targetId) || this._canvas.querySelector(`graph-node[node-id="${targetId}"]`);
-    if (nodeView && nodeView.offsetHeight > 0) {
-      elWidth = nodeView.offsetWidth;
-      elHeight = nodeView.offsetHeight;
-    }
-
-    const scale = 0.8;
-    const nodeX = pos[0] + (elWidth / 2);
-    const nodeY = pos[1] + (elHeight / 2);
-
-    const newPanX = (visibleWidth / 2) - nodeX * scale;
-    const newPanY = canvasRect.height / 2 - nodeY * scale;
-
-    // Skip zoom/pan if already focused on this node (avoids full recalc cascade)
-    const dz = Math.abs(this._canvas.$.zoom - scale);
-    const dx = Math.abs(this._canvas.$.panX - newPanX);
-    const dy = Math.abs(this._canvas.$.panY - newPanY);
-    if (dz < 0.01 && dx < 2 && dy < 2) {
-      // Already focused — just ensure selection is correct
-      this._canvas.selectNode?.(targetId);
-      return true;
-    }
-
-    this._canvas.$.zoom = scale;
-    this._canvas.$.panX = newPanX;
-    this._canvas.$.panY = newPanY;
-
-    // Select the node visually
-    this._canvas.selectNode?.(targetId);
-
-    // If we wanted to formally enter this specific node (URL ended in ?in=1), drill into it!
-    if (window.location.hash.endsWith(`${filePath}?in=1`)) {
-      const activeEditor = this._canvas._currentEditor || this._editor;
-      const nodeObj = activeEditor.getNode(targetId);
-      if (nodeObj && nodeObj._isSubgraph) {
-        this._isAutoRouting = true;
-        this._canvas.drillDown(targetId);
-        this._isAutoRouting = false;
-      }
-    }
-
-    return true;
-  }
 
   // ── Phase 2: IC Chip Expansion ──
 
