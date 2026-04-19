@@ -988,10 +988,9 @@ export class DepGraph extends Symbiote {
     }
     this._canvas.setBatchMode(false);
 
-    this._router?.restoreFromHash(editor);
-
     // Post-drill-in layout: recalculate inner node positions using real DOM sizes
     // Pre-computed innerPositions use hardcoded nodeHeight which may not match actual rendered heights
+    // IMPORTANT: Must be registered BEFORE restoreFromHash, which may trigger drillDown on page refresh
     if (!this._drillLayoutListener) {
       this._drillLayoutListener = (e) => {
         if (!this._canvas) return;
@@ -1028,6 +1027,8 @@ export class DepGraph extends Symbiote {
       };
       this._canvas.addEventListener('subgraph-enter', this._drillLayoutListener);
     }
+
+    this._router?.restoreFromHash(editor);
 
     // Dedicated node ResizeObserver ensures that late inflation of inner ports
     // triggers not only a line refresh, but initially schedules a full Pass 2 layout
