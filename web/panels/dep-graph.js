@@ -448,13 +448,13 @@ function buildStructuredGraph(skeleton) {
   for (const dirSubgraph of editor.getNodes()) {
     if (!dirSubgraph._isSubgraph) continue;
     const inner = dirSubgraph.getInnerEditor();
-    const innerPos = computeAutoLayout(inner, { nodeHeight: 80, gapY: 60 });
+    const innerPos = computeAutoLayout(inner, { nodeHeight: 80, gapY: 100 });
     dirSubgraph.setInnerPositions(innerPos);
 
     for (const fileNode of inner.getNodes()) {
       if (!fileNode._isSubgraph) continue;
       const fileInner = fileNode.getInnerEditor();
-      const filePos = computeAutoLayout(fileInner, { nodeHeight: 50, gapY: 40, gapX: 60 });
+      const filePos = computeAutoLayout(fileInner, { nodeHeight: 50, gapY: 80, gapX: 80 });
       fileNode.setInnerPositions(filePos);
 
       // Collect internal symbols
@@ -972,7 +972,7 @@ export class DepGraph extends Symbiote {
         nodeWidth: 250,
         nodeHeight: 100,
         gapX: 40,
-        gapY: 20,
+        gapY: 60,
         startX: 60,
         startY: 60,
       });
@@ -989,6 +989,45 @@ export class DepGraph extends Symbiote {
     this._canvas.setBatchMode(false);
 
     this._router?.restoreFromHash(editor);
+
+    // Post-drill-in layout: recalculate inner node positions using real DOM sizes
+    // Pre-computed innerPositions use hardcoded nodeHeight which may not match actual rendered heights
+    if (!this._drillLayoutListener) {
+      this._drillLayoutListener = (e) => {
+        if (!this._canvas) return;
+        const enteredNode = e.detail?.node;
+        if (!enteredNode?._isSubgraph) return;
+        const innerEditor = enteredNode.getInnerEditor();
+        if (!innerEditor) return;
+
+        // Wait for inner nodes to render, then re-layout with measured sizes
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            const nodeSizes = this._canvas.measureNodeSizes();
+            if (!nodeSizes || Object.keys(nodeSizes).length === 0) return;
+
+            const corrected = computeAutoLayout(innerEditor, {
+              nodeSizes,
+              nodeHeight: 80,
+              gapY: 100,
+              gapX: 120,
+            });
+
+            this._canvas.setBatchMode(true);
+            for (const [nodeId, pos] of Object.entries(corrected)) {
+              this._canvas.setNodePosition(nodeId, pos.x, pos.y);
+            }
+            this._canvas.setBatchMode(false);
+            this._canvas.refreshConnections();
+
+            if (this._canvas.fitView) {
+              requestAnimationFrame(() => this._canvas.fitView());
+            }
+          });
+        });
+      };
+      this._canvas.addEventListener('subgraph-enter', this._drillLayoutListener);
+    }
 
     // Dedicated node ResizeObserver ensures that late inflation of inner ports
     // triggers not only a line refresh, but initially schedules a full Pass 2 layout
@@ -1043,7 +1082,7 @@ export class DepGraph extends Symbiote {
         correctedPositions = computeTreeLayout(editor, {
           dirPaths, nodeSizes,
           nodeWidth: 250, nodeHeight: 100,
-          gapX: 40, gapY: 20,
+          gapX: 40, gapY: 60,
           startX: 60, startY: 60,
         });
       } else {
