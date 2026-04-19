@@ -843,6 +843,10 @@ export class DepGraph extends Symbiote {
         const sym = this._symbolMap.get(nodeId);
         const base = window.location.hash.split('&symbol=')[0]; // strip old symbol
         history.replaceState(null, '', `${base}&symbol=${encodeURIComponent(sym.name)}`);
+        // Highlight the parent file in the tree sidebar
+        if (sym.file) {
+          emit('file-selected', { path: sym.file, source: 'canvas' });
+        }
       } else if (path) {
         if (depth === 0) {
           // Root level: path goes into ?focus= parameter
@@ -855,6 +859,8 @@ export class DepGraph extends Symbiote {
           const relativeName = path.startsWith(drillPath) ? path.slice(drillPath.length) : path;
           history.replaceState(null, '', `${drillBase}?in=1&focus=${encodeURIComponent(relativeName)}`);
         }
+        // Sync: highlight file in the tree sidebar
+        emit('file-selected', { path, source: 'canvas' });
       }
     });
 
