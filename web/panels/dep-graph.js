@@ -805,7 +805,7 @@ export class DepGraph extends Symbiote {
       if (e.detail.source === 'canvas') return; // Prevent echo from our own clicks
       const file = e.detail.path;
       if (file) {
-        history.replaceState(null, '', `#graph/${file}`);
+        history.replaceState(null, '', `#graph?focus=${encodeURIComponent(file)}`);
         this._router?.navigateTo(file);
       }
     };
@@ -835,20 +835,26 @@ export class DepGraph extends Symbiote {
       
       const nodeId = nodeEl.getAttribute('node-id');
       const path = this._idToPath?.get(nodeId);
-      const rawHash = window.location.hash.replace('#graph/', '');
-      const hashPath = rawHash.split('?')[0].split('&')[0];
       const isSymbol = this._symbolMap?.has(nodeId);
+      const depth = this._router?.depth || 0;
 
       if (isSymbol) {
+        // Symbol click: keep current drill URL, append &symbol=
         const sym = this._symbolMap.get(nodeId);
-        const fnName = sym.name;
-        // Symbol routing: maintain drill-down flag but append exact symbol name
-        const isDrilled = (this._router?.depth || 0) > 0;
-        history.replaceState(null, '', `#graph/${path}${isDrilled ? '?in=1' : ''}&symbol=${encodeURIComponent(fnName)}`);
+        const base = window.location.hash.split('&symbol=')[0]; // strip old symbol
+        history.replaceState(null, '', `${base}&symbol=${encodeURIComponent(sym.name)}`);
       } else if (path) {
-        // Normal file/dir selection — only update URL, canvas handles visual focus natively
-        const isDrilled = (this._router?.depth || 0) > 0;
-        history.replaceState(null, '', `#graph/${path}${isDrilled ? '?in=1' : ''}`);
+        if (depth === 0) {
+          // Root level: path goes into ?focus= parameter
+          history.replaceState(null, '', `#graph?focus=${encodeURIComponent(path)}`);
+        } else {
+          // Inside a group: preserve drill context URL, set &focus= with relative name
+          const drillBase = window.location.hash.split('?')[0]; // e.g. #graph/src/analysis/
+          const drillPath = drillBase.replace('#graph/', '');
+          // Get relative name inside the drilled group
+          const relativeName = path.startsWith(drillPath) ? path.slice(drillPath.length) : path;
+          history.replaceState(null, '', `${drillBase}?in=1&focus=${encodeURIComponent(relativeName)}`);
+        }
       }
     });
 
@@ -1052,33 +1058,17 @@ export class DepGraph extends Symbiote {
       }
       this._canvas.setBatchMode(false);
 
-    this._router?.restoreFromHash(editor);
-      
       requestAnimationFrame(() => this._canvas.refreshConnections());
 
       // Only restore view focus/drill-down once after first layout stabilizes
       if (!this._initialViewRestored) {
         this._initialViewRestored = true;
 
-        const hash = location.hash.replace('#', '');
-        let cleanHash = hash;
-        let isInside = false;
-        const qIdx = hash.indexOf('?');
-        if (qIdx >= 0) {
-          cleanHash = hash.substring(0, qIdx);
-          const params = new URLSearchParams(hash.substring(qIdx + 1));
-          if (params.get('in') === '1') isInside = true;
-        }
-        
-        let focusPath = window.location.hash.split('?')[0].replace('#graph/', '');
-        let restored = false;
-        if (focusPath && isStructured && isInside) {
-          restored = this._restoreDrillDown(focusPath, editor, true);
-        }
-        if (!restored && focusPath) {
-          restored = this._router?.navigateTo(focusPath, 0, isInside);
-        }
-        if (!restored) {
+        // restoreFromHash handles both focus (no ?in=1) and drill-in (?in=1)
+        const hashPath = window.location.hash.split('?')[0].replace('#graph/', '');
+        if (hashPath) {
+          this._router?.restoreFromHash(editor);
+        } else {
           this._canvas.fitView();
         }
 
