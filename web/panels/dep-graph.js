@@ -696,7 +696,7 @@ export class DepGraph extends Symbiote {
 
     // Toolbar handlers
     this.querySelector('[data-action="fit"]').addEventListener('click', () => {
-      this._fitView();
+      this._canvas.fitView();
     });
     this.querySelector('[data-action="autopilot"]').addEventListener('click', (e) => {
       this._autopilot = !this._autopilot;
@@ -1054,7 +1054,7 @@ export class DepGraph extends Symbiote {
           restored = this._router?.navigateTo(focusPath, 0, isInside);
         }
         if (!restored) {
-          this._fitView();
+          this._canvas.fitView();
         }
 
         this._canvas.updateLOD?.();
@@ -1097,58 +1097,6 @@ export class DepGraph extends Symbiote {
     }
   }
 
-  /**
-   * Fit all nodes in view
-   */
-  _fitView() {
-    if (!this._canvas) return;
-    
-    // Resolve whatever editor layer is actively on screen
-    const activeEditor = this._canvas._currentEditor || this._editor;
-    if (!activeEditor || activeEditor.getNodes().length === 0) return;
-
-    const positions = this._canvas.getPositions();
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    
-    for (const [nodeId, pos] of Object.entries(positions)) {
-      let elWidth = 150;
-      let elHeight = 40;
-      
-      const nodeView = this._canvas.getNodeView?.(nodeId) || this._canvas.querySelector(`graph-node[node-id="${nodeId}"]`);
-      if (nodeView && nodeView.offsetWidth > 0) {
-        elWidth = nodeView.offsetWidth;
-        elHeight = nodeView.offsetHeight;
-      }
-
-      if (pos[0] < minX) minX = pos[0];
-      if (pos[1] < minY) minY = pos[1];
-      if (pos[0] + elWidth > maxX) maxX = pos[0] + elWidth;
-      if (pos[1] + elHeight > maxY) maxY = pos[1] + elHeight;
-    }
-
-    const graphW = maxX - minX;
-    const graphH = maxY - minY;
-    const canvasRect = this._canvas.getBoundingClientRect();
-    
-    // Deduct inspector width from available canvas width if panel is open
-    let visibleWidth = canvasRect.width;
-    const inspector = this._canvas.ref?.inspector || this._canvas.querySelector('inspector-panel');
-    if (inspector && !inspector.hasAttribute('hidden')) {
-      visibleWidth -= inspector.offsetWidth || 280;
-    }
-
-    const scaleX = (visibleWidth - 80) / graphW;
-    const scaleY = (canvasRect.height - 80) / graphH;
-    // Allow much smaller minimum scale (0.02) to fit massive project graphs entirely
-    const scale = Math.max(0.02, Math.min(scaleX, scaleY, 1.5));
-
-    const centerX = (minX + maxX) / 2;
-    const centerY = (minY + maxY) / 2;
-
-    this._canvas.$.zoom = scale;
-    this._canvas.$.panX = (visibleWidth / 2) - centerX * scale;
-    this._canvas.$.panY = canvasRect.height / 2 - centerY * scale;
-  }
 
   /**
    * Post-render reflow: measure actual DOM SubgraphNode sizes and re-position
@@ -1214,7 +1162,7 @@ export class DepGraph extends Symbiote {
 
     this._router?.restoreFromHash(editor);
     this._canvas.refreshConnections();
-    this._fitView();
+    this._canvas.fitView();
   }
 
   /**
@@ -1512,7 +1460,7 @@ export class DepGraph extends Symbiote {
       } else if (toolName === 'navigate' && args.action === 'usages' && args.symbol) {
         this._highlightDeps(args.symbol);
       } else if (toolName === 'get_skeleton') {
-        this._fitView();
+        this._canvas.fitView();
       } else if (toolName === 'compact' && args.path) {
         this._pulseFile(args.path);
       } else if (toolName === 'view_file' && args.path) {
