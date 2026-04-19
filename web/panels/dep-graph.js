@@ -1028,7 +1028,40 @@ export class DepGraph extends Symbiote {
       this._canvas.addEventListener('subgraph-enter', this._drillLayoutListener);
     }
 
-    this._router?.restoreFromHash(editor);
+    // Safety net: update URL on subgraph exit (back to root)
+    // SubgraphRouter's handleExit should handle this, but as defense-in-depth
+    if (!this._exitUrlListener) {
+      this._exitUrlListener = (e) => {
+        const level = e.detail?.level;
+        if (level === 0) {
+          // Exiting to root — extract parent directory from current URL to use as focus
+          const hash = window.location.hash;
+          const pathMatch = hash.match(/#graph\/([^?&]+)/);
+          if (pathMatch) {
+            let focusDir = pathMatch[1];
+            // Walk up to find known directory
+            if (this._dirNodeMap) {
+              const segments = focusDir.replace(/\/$/, '').split('/');
+              while (segments.length > 0) {
+                const candidate = segments.join('/') + '/';
+                if (this._dirNodeMap.has(candidate)) {
+                  focusDir = candidate;
+                  break;
+                }
+                segments.pop();
+              }
+            }
+            history.replaceState(null, '', `#graph?focus=${encodeURIComponent(focusDir)}`);
+          } else {
+            history.replaceState(null, '', '#graph');
+          }
+        }
+      };
+      this._canvas.addEventListener('subgraph-exit', this._exitUrlListener);
+    }
+
+    // NOTE: restoreFromHash is NOT called here (pass 1) because positions aren't stable yet.
+    // It will be called from _runRelayoutPass (pass 2) after node sizes are measured.
 
     // Dedicated node ResizeObserver ensures that late inflation of inner ports
     // triggers not only a line refresh, but initially schedules a full Pass 2 layout
