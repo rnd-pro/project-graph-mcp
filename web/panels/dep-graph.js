@@ -334,42 +334,58 @@ function buildStructuredGraph(skeleton) {
     return L[abbr] || abbr;
   }
 
-  // ── Level 0: Directory SubgraphNodes ──
-  const dirNodeMap = new Map();
+  // ── Phase 1: Create all Directory SubgraphNodes (without nesting yet) ──
+  const dirNodeMap = new Map();    // dirPath → nodeId
+  const dirSubgraphs = new Map();  // dirPath → SubgraphNode instance
 
-  for (const [dir, dirFileList] of dirFiles) {
-    const dirLabel = dir.replace(/\/$/, '').split('/').pop() || 'root';
+  // Sort directories by depth (shortest first) so parents are created before children
+  const sortedDirs = [...dirFiles.keys()].sort((a, b) => {
+    const dA = a.split('/').filter(Boolean).length;
+    const dB = b.split('/').filter(Boolean).length;
+    return dA - dB || a.localeCompare(b);
+  });
 
-    const dirSubgraph = new SubgraphNode(dirLabel, {
-      category: 'directory',
-    });
-    dirSubgraph.params = { path: dir, isDirectory: true };
-    dirSubgraph.addOutput('out', new Output(S_EXPORT, ''));
-    dirSubgraph.addInput('in', new Input(S_IMPORT, ''));
+  for (const dir of sortedDirs) {
+    const dirFileList = dirFiles.get(dir);
 
-    // ── Level 1: File nodes inside directory ──
-    const innerEditor = dirSubgraph.getInnerEditor();
+    // Root directory './' is NOT a node — its contents go directly into the root editor
+    const isRoot = (dir === './');
+    const targetEditor = isRoot ? editor : null;
 
+    let dirSubgraph = null;
+    let innerEditor;
+
+    if (isRoot) {
+      innerEditor = editor;
+    } else {
+      const dirLabel = dir.replace(/\/$/, '').split('/').pop() || 'root';
+      dirSubgraph = new SubgraphNode(dirLabel, {
+        category: 'directory',
+      });
+      dirSubgraph.params = { path: dir, isDirectory: true };
+      dirSubgraph.addOutput('out', new Output(S_EXPORT, ''));
+      dirSubgraph.addInput('in', new Input(S_IMPORT, ''));
+      innerEditor = dirSubgraph.getInnerEditor();
+    }
+
+    // ── File nodes inside this directory ──
     for (const file of dirFileList) {
       const fileLabel = baseName(file);
-      const exports = skeleton.X?.[file] || []; // array of abbreviated strings
+      const exports = skeleton.X?.[file] || [];
       const fileCategory = classifyFile(file);
       const classes = fileClasses.get(file);
 
       let fileNode;
       if (exports.length > 0) {
-        // File with exports → SubgraphNode (drill-down into symbols)
         fileNode = new SubgraphNode(fileLabel, {
           category: fileCategory,
         });
         fileNode.params = { path: file, dir };
 
-        // ── Level 2: Symbol nodes inside file ──
         const fileInnerEditor = fileNode.getInnerEditor();
         for (const abbr of exports) {
           const abbrId = typeof abbr === 'object' ? abbr.id : abbr;
           const fullName = resolveName(abbrId);
-          // Classify: is this abbreviation a known class?
           const isClass = classes && classes.has(fullName);
           const fnNode = new Node(fullName, {
             type: isClass ? 'class' : 'function',
@@ -380,7 +396,6 @@ function buildStructuredGraph(skeleton) {
           fileInnerEditor.addNode(fnNode);
         }
       } else {
-        // No exports → leaf Node
         fileNode = new Node(fileLabel, {
           type: 'file',
           category: fileCategory,
@@ -395,7 +410,7 @@ function buildStructuredGraph(skeleton) {
       fileMap.set(file, fileNode.id);
     }
 
-    // ── File-level import edges within directory ──
+    // ── File-level import edges within this directory ──
     const edgesAdded = new Set();
     for (const [srcFile, sources] of Object.entries(skeleton.I || {})) {
       const srcId = fileMap.get(srcFile);
@@ -426,11 +441,46 @@ function buildStructuredGraph(skeleton) {
       }
     }
 
-    editor.addNode(dirSubgraph);
-    dirNodeMap.set(dir, dirSubgraph.id);
+    if (dirSubgraph) {
+      dirSubgraphs.set(dir, dirSubgraph);
+      dirNodeMap.set(dir, dirSubgraph.id);
+    }
   }
 
-  // ── Cross-directory edges (Level 0) ──
+  // ── Phase 2: Nest child directories inside parent directories ──
+  // Root './' is not a node, so its children go directly into root editor.
+  for (const dir of sortedDirs) {
+    if (dir === './') continue; // root dir contents already in root editor
+    const dirSubgraph = dirSubgraphs.get(dir);
+    if (!dirSubgraph) continue;
+    
+    // Find parent directory
+    const segments = dir.replace(/\/$/, '').split('/');
+    segments.pop();
+    
+    let parentDir = null;
+    while (segments.length > 0) {
+      const candidate = segments.join('/') + '/';
+      if (dirSubgraphs.has(candidate)) {
+        parentDir = candidate;
+        break;
+      }
+      segments.pop();
+    }
+    
+    if (parentDir) {
+      // Nest inside parent's inner editor
+      const parentSubgraph = dirSubgraphs.get(parentDir);
+      parentSubgraph.getInnerEditor().addNode(dirSubgraph);
+    } else {
+      // No parent (or parent is './') → add to root editor
+      editor.addNode(dirSubgraph);
+    }
+  }
+
+  // ── Cross-directory edges ──
+  // Edges between directories that share the same parent go into that parent's inner editor.
+  // Edges between top-level directories go into the root editor.
   const crossEdges = new Set();
   for (const [srcFile, sources] of Object.entries(skeleton.I || {})) {
     const srcDir = dirOf(srcFile);
@@ -452,36 +502,61 @@ function buildStructuredGraph(skeleton) {
       if (crossEdges.has(edgeKey)) continue;
       crossEdges.add(edgeKey);
 
-      const srcNode = editor.getNode(srcDirId);
-      const tgtNode = editor.getNode(tgtDirId);
+      // Find the common parent editor that contains BOTH directory nodes
+      // Walk up both paths to find shared ancestor
+      const srcSegments = srcDir.replace(/\/$/, '').split('/');
+      const tgtSegments = tgtDir.replace(/\/$/, '').split('/');
+      
+      // Find common prefix 
+      let commonLen = 0;
+      while (commonLen < srcSegments.length && commonLen < tgtSegments.length &&
+             srcSegments[commonLen] === tgtSegments[commonLen]) {
+        commonLen++;
+      }
+      const commonPath = commonLen > 0 ? srcSegments.slice(0, commonLen).join('/') + '/' : null;
+      
+      // The editor that holds both nodes is the common parent's inner editor,
+      // or the root editor if they share no parent.
+      let targetEditor = editor; // default: root editor
+      if (commonPath && dirSubgraphs.has(commonPath)) {
+        targetEditor = dirSubgraphs.get(commonPath).getInnerEditor();
+      }
+
+      const srcNode = targetEditor.getNode(srcDirId);
+      const tgtNode = targetEditor.getNode(tgtDirId);
       if (srcNode && tgtNode) {
         try {
-          editor.addConnection(new Connection(srcNode, 'out', tgtNode, 'in'));
+          targetEditor.addConnection(new Connection(srcNode, 'out', tgtNode, 'in'));
         } catch { /* skip */ }
       }
     }
   }
 
-  // ── Pre-compute inner positions for drill-down ──
+  // ── Pre-compute inner positions for drill-down (recursive) ──
   const symbolNodes = []; // Track internal symbol nodes for idToPath linking
 
-  for (const dirSubgraph of editor.getNodes()) {
-    if (!dirSubgraph._isSubgraph) continue;
-    const inner = dirSubgraph.getInnerEditor();
+  function computeInnerPositions(subgraph) {
+    if (!subgraph._isSubgraph) return;
+    const inner = subgraph.getInnerEditor();
     const innerPos = computeAutoLayout(inner, { nodeHeight: 80, gapY: 100 });
-    dirSubgraph.setInnerPositions(innerPos);
+    subgraph.setInnerPositions(innerPos);
 
-    for (const fileNode of inner.getNodes()) {
-      if (!fileNode._isSubgraph) continue;
-      const fileInner = fileNode.getInnerEditor();
-      const filePos = computeAutoLayout(fileInner, { nodeHeight: 50, gapY: 80, gapX: 80 });
-      fileNode.setInnerPositions(filePos);
-
-      // Collect internal symbols
-      for (const fnNode of fileInner.getNodes()) {
-        symbolNodes.push({ id: fnNode.id, file: fileNode.params.path });
+    for (const childNode of inner.getNodes()) {
+      if (childNode._isSubgraph) {
+        computeInnerPositions(childNode);
+        // If it's a file node (has params.path and no isDirectory), collect symbols
+        if (childNode.params?.path && !childNode.params?.isDirectory) {
+          const fileInner = childNode.getInnerEditor();
+          for (const fnNode of fileInner.getNodes()) {
+            symbolNodes.push({ id: fnNode.id, file: childNode.params.path });
+          }
+        }
       }
     }
+  }
+
+  for (const rootNode of editor.getNodes()) {
+    computeInnerPositions(rootNode);
   }
 
   // ── Build Reverse ID Lookup ──
@@ -884,6 +959,22 @@ export class DepGraph extends Symbiote {
       }
     });
 
+    // Deselect: when no nodes selected → clear focus from URL
+    this._canvas?.addEventListener('selection-changed', (e) => {
+      if (e.detail.nodes.length > 0) return; // Still has selection
+      if (!this._initialViewRestored) return; // Don't clear URL during initial load
+      const hash = window.location.hash;
+      if (hash.includes('focus=')) {
+        const depth = this._router?.depth || 0;
+        if (depth === 0) {
+          history.replaceState(null, '', '#graph');
+        } else {
+          const base = hash.split('?')[0];
+          history.replaceState(null, '', `${base}?in=1`);
+        }
+      }
+    });
+
 
 
     events.addEventListener('file-selected', this._onFileSelected);
@@ -987,10 +1078,13 @@ export class DepGraph extends Symbiote {
 
     if (isStructured && dirFiles) {
       // TREE mode: directory tree layout (like file explorer)
-      // Build dirPaths map: { nodeId: dirPath }
+      // Build dirPaths map ONLY for nodes that are in the root editor
       const dirPaths = {};
+      const rootNodeIds = new Set(editor.getNodes().map(n => n.id));
       for (const [dir, nodeId] of dirNodeMap.entries()) {
-        dirPaths[nodeId] = dir;
+        if (rootNodeIds.has(nodeId)) {
+          dirPaths[nodeId] = dir;
+        }
       }
 
       positions = computeTreeLayout(editor, {
@@ -1045,7 +1139,8 @@ export class DepGraph extends Symbiote {
             this._canvas.setBatchMode(false);
             this._canvas.refreshConnections();
 
-            if (this._canvas.fitView) {
+            // Only fitView if no focus param — router handles centering focused nodes
+            if (this._canvas.fitView && !window.location.hash.includes('focus=')) {
               requestAnimationFrame(() => this._canvas.fitView());
             }
           });
@@ -1136,8 +1231,11 @@ export class DepGraph extends Symbiote {
       let correctedPositions;
       if (isStructured && dirFiles) {
         const dirPaths = {};
+        const rootNodeIds = new Set(editor.getNodes().map(n => n.id));
         for (const [dir, nodeId] of dirNodeMap.entries()) {
-          dirPaths[nodeId] = dir;
+          if (rootNodeIds.has(nodeId)) {
+            dirPaths[nodeId] = dir;
+          }
         }
         correctedPositions = computeTreeLayout(editor, {
           dirPaths, nodeSizes,
@@ -1163,9 +1261,11 @@ export class DepGraph extends Symbiote {
       if (!this._initialViewRestored) {
         this._initialViewRestored = true;
 
-        // restoreFromHash handles both focus (no ?in=1) and drill-in (?in=1)
-        const hashPath = window.location.hash.split('?')[0].replace('#graph/', '');
-        if (hashPath) {
+        // restoreFromHash handles path, ?focus=, and ?in= params
+        const fullHash = window.location.hash;
+        const hasPath = /^#graph\//.test(fullHash);
+        const hasParams = fullHash.includes('?');
+        if (hasPath || hasParams) {
           this._router?.restoreFromHash(editor);
         } else {
           this._canvas.fitView();
