@@ -71,6 +71,7 @@ function buildFileGraph(skeleton) {
 
   // Collect all files that have symbols
   const files = new Set();
+  const assetFiles = new Set(); // non-source files (.css, .html, .json, .md, etc.)
   // From nodes (classes) — each has .f (file) property
   for (const data of Object.values(skeleton.n || {})) {
     if (data.f) files.add(data.f);
@@ -79,10 +80,18 @@ function buildFileGraph(skeleton) {
   for (const file of Object.keys(skeleton.X || {})) {
     files.add(file);
   }
-  // From asset files
+  // From source files without symbols
   for (const [dir, names] of Object.entries(skeleton.f || {})) {
     for (const name of names) {
       files.add(dir === './' ? name : dir + name);
+    }
+  }
+  // From non-source/asset files (.css, .html, .json, .md, etc.)
+  for (const [dir, names] of Object.entries(skeleton.a || {})) {
+    for (const name of names) {
+      const fullPath = dir === './' ? name : dir + name;
+      files.add(fullPath);
+      assetFiles.add(fullPath);
     }
   }
 
@@ -113,9 +122,10 @@ function buildFileGraph(skeleton) {
   for (const file of files) {
     const dir = dirOf(file);
     const label = baseName(file);
+    const isAsset = assetFiles.has(file);
     const node = new Node(label, {
-      type: 'file',
-      category: 'file',
+      type: isAsset ? 'asset' : 'file',
+      category: isAsset ? 'asset' : 'file',
     });
     node.params = { path: file, dir };
 
@@ -268,6 +278,7 @@ function buildStructuredGraph(skeleton) {
 
   // Collect all files
   const files = new Set();
+  const assetFiles = new Set();
   for (const data of Object.values(N)) {
     if (data.f) files.add(data.f);
   }
@@ -277,6 +288,14 @@ function buildStructuredGraph(skeleton) {
   for (const [dir, names] of Object.entries(skeleton.f || {})) {
     for (const name of names) {
       files.add(dir === './' ? name : dir + name);
+    }
+  }
+  // Non-source/asset files (.css, .html, .json, .md, etc.)
+  for (const [dir, names] of Object.entries(skeleton.a || {})) {
+    for (const name of names) {
+      const fullPath = dir === './' ? name : dir + name;
+      files.add(fullPath);
+      assetFiles.add(fullPath);
     }
   }
 
@@ -296,6 +315,7 @@ function buildStructuredGraph(skeleton) {
    * @returns {string} category
    */
   function classifyFile(file) {
+    if (assetFiles.has(file)) return 'asset';
     const name = baseName(file).toLowerCase();
     const classes = fileClasses.get(file);
     if (classes && classes.size > 0) return 'class';
