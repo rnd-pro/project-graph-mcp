@@ -1171,7 +1171,8 @@ export class DepGraph extends Symbiote {
           this._canvas.fitView();
         }
 
-        this._canvas.updateLOD?.();
+        // Disable LOD to prevent flicker loop
+        // this._canvas.updateLOD?.();
       }
     };
 
@@ -1202,6 +1203,7 @@ export class DepGraph extends Symbiote {
           }
         });
       }
+      /*
       if (!this._lodManager) {
         this._lodManager = new LODManager(this._canvas, { threshold: 0.7 });
         this._lodManager.onLodChange((lod) => {
@@ -1209,8 +1211,9 @@ export class DepGraph extends Symbiote {
         });
         this._lodManager.attach();
       }
-      this._buildPinCache(skeleton, fileMap);
       this._lodManager.update();
+      */
+      this._buildPinCache(skeleton, fileMap);
     }
 
     // Update stats
