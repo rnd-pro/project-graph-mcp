@@ -842,7 +842,24 @@ export class DepGraph extends Symbiote {
       viewModeBtn.lastChild.textContent = 'TREE';
     }
     viewModeBtn?.addEventListener('click', () => {
-      this._viewMode = this._viewMode === 'flat' ? 'structured' : 'flat';
+      const wantFlat = this._viewMode !== 'flat';
+
+      // Guard: flat mode renders ALL nodes at once — freeze risk on large projects
+      if (wantFlat && state.skeleton) {
+        const fileCount = this._countSkeletonFiles(state.skeleton);
+        const FLAT_LIMIT = 500;
+        if (fileCount > FLAT_LIMIT) {
+          const msg = `Flat mode disabled: ${fileCount} files exceed the ${FLAT_LIMIT}-node DOM limit.\nUse Tree mode with drill-down for large projects.`;
+          console.warn('[dep-graph]', msg);
+          // Flash warning on the button
+          viewModeBtn.style.outline = '2px solid #f80';
+          viewModeBtn.title = msg;
+          setTimeout(() => { viewModeBtn.style.outline = ''; }, 2000);
+          return;
+        }
+      }
+
+      this._viewMode = wantFlat ? 'flat' : 'structured';
       const label = this._viewMode === 'flat' ? 'FLAT' : 'TREE';
       const icon = this._viewMode === 'flat' ? 'account_tree' : 'grid_view';
       viewModeBtn.innerHTML = `<span class="material-symbols-outlined">${icon}</span>${label}`;
@@ -989,6 +1006,22 @@ export class DepGraph extends Symbiote {
       this._resizeObserver.disconnect();
       this._resizeObserver = null;
     }
+  }
+
+  /**
+   * Count total files in skeleton (quick, no graph construction)
+   * @param {object} skeleton
+   * @returns {number}
+   */
+  _countSkeletonFiles(skeleton) {
+    const files = new Set();
+    for (const data of Object.values(skeleton.n || {})) if (data.f) files.add(data.f);
+    for (const file of Object.keys(skeleton.X || {})) files.add(file);
+    for (const [dir, names] of Object.entries(skeleton.f || {}))
+      for (const name of names) files.add(dir === './' ? name : dir + name);
+    for (const [dir, names] of Object.entries(skeleton.a || {}))
+      for (const name of names) files.add(dir === './' ? name : dir + name);
+    return files.size;
   }
 
   /**
