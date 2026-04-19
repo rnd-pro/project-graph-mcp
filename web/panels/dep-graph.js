@@ -756,6 +756,13 @@ export class DepGraph extends Symbiote {
       } else {
         viewModeBtn.removeAttribute('data-active');
       }
+
+      // Drill up to root before rebuilding to prevent rendering
+      // the full graph on top of a stale subgraph canvas state
+      if (this._router?.depth > 0) {
+        this._canvas.drillUp?.(0);
+      }
+
       // Rebuild graph in new mode
       this._graphBuilt = false;
       if (state.skeleton) {
@@ -872,6 +879,20 @@ export class DepGraph extends Symbiote {
     // frame, _buildGraph runs twice → double nodes. Guard here too.
     if (this._graphBuilt) return;
     this._graphBuilt = true;
+
+    // ── Tear down previous build state ──
+    // Disconnect stale ResizeObserver to prevent old callbacks firing on new nodes
+    if (this._nodeObserver) {
+      this._nodeObserver.disconnect();
+      this._nodeObserver = null;
+    }
+    // Cancel pending layout timers/rAFs from previous build
+    if (this._layoutPassTimer) { clearTimeout(this._layoutPassTimer); this._layoutPassTimer = null; }
+    if (this._failsafeTimer) { clearTimeout(this._failsafeTimer); this._failsafeTimer = null; }
+    if (this._refreshRaf) { cancelAnimationFrame(this._refreshRaf); this._refreshRaf = null; }
+    // Reset the view-restored flag so the new build can do its own initial stabilization
+    this._initialViewRestored = false;
+    this._runRelayoutPass = null;
 
     const isStructured = this._viewMode === 'structured';
 
