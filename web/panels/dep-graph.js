@@ -1078,8 +1078,7 @@ export class DepGraph extends Symbiote {
     // Guard: both ResizeObserver and skeleton-loaded schedule rAF calls
     // that check _graphBuilt BEFORE the rAF. If both fire in the same
     // frame, _buildGraph runs twice → double nodes. Guard here too.
-    if (this._graphBuilt) { console.log('[dep-graph] _buildGraph SKIPPED (already built)'); return; }
-    console.log('[dep-graph] _buildGraph START, mode:', this._viewMode);
+    if (this._graphBuilt) return;
     this._graphBuilt = true;
 
     // ── Tear down previous build state ──
@@ -1203,7 +1202,6 @@ export class DepGraph extends Symbiote {
       const layoutOpts = { existingPositions, groups };
       const layoutResult = computeAutoLayout(editor, layoutOpts);
       positions = layoutResult.positions ? layoutResult.positions : layoutResult;
-      console.log('[dep-graph] FLAT layout:', Object.keys(positions).length, 'positions from', editor.getNodes().length, 'nodes', layoutResult);
     }
 
     this._canvas.setBatchMode(true);
@@ -1212,22 +1210,9 @@ export class DepGraph extends Symbiote {
     }
     this._canvas.setBatchMode(false);
 
-    // Force sync updated phantom positions to renderer BEFORE fitView
-    // Without this, fitView triggers redraw with stale (0,0) phantom data
+    // Force sync updated phantom positions to renderer immediately
+    // Without this, subsequent fitView/redraw uses stale (0,0) phantom data
     this._canvas.syncPhantom?.();
-
-    // After positioning: ensure fitView + reveal for mode toggle and large phantom graphs
-    // Pass 2 (ResizeObserver) handles initial load, but mode toggle needs explicit fitView
-    // because _initialViewRestored is already true from the first load.
-    if (!isStructured) {
-      requestAnimationFrame(() => {
-        if (!this._canvas) return;
-        this._canvas.fitView();
-        this._canvas.refreshConnections();
-        this._canvas.style.transition = 'opacity 0.15s ease-in';
-        this._canvas.style.opacity = '1';
-      });
-    }
 
     // Post-drill-in layout: recalculate inner node positions using real DOM sizes
     // Pre-computed innerPositions use hardcoded nodeHeight which may not match actual rendered heights
