@@ -1209,6 +1209,19 @@ export class DepGraph extends Symbiote {
     }
     this._canvas.setBatchMode(false);
 
+    // After positioning: ensure fitView + reveal for mode toggle and large phantom graphs
+    // Pass 2 (ResizeObserver) handles initial load, but mode toggle needs explicit fitView
+    // because _initialViewRestored is already true from the first load.
+    if (!isStructured) {
+      requestAnimationFrame(() => {
+        if (!this._canvas) return;
+        this._canvas.fitView();
+        this._canvas.refreshConnections();
+        this._canvas.style.transition = 'opacity 0.15s ease-in';
+        this._canvas.style.opacity = '1';
+      });
+    }
+
     // Post-drill-in layout: recalculate inner node positions using real DOM sizes
     // Pre-computed innerPositions use hardcoded nodeHeight which may not match actual rendered heights
     // IMPORTANT: Must be registered BEFORE restoreFromHash, which may trigger drillDown on page refresh
