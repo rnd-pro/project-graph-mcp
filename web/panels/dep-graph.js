@@ -1078,7 +1078,8 @@ export class DepGraph extends Symbiote {
     // Guard: both ResizeObserver and skeleton-loaded schedule rAF calls
     // that check _graphBuilt BEFORE the rAF. If both fire in the same
     // frame, _buildGraph runs twice → double nodes. Guard here too.
-    if (this._graphBuilt) return;
+    if (this._graphBuilt) { console.log('[dep-graph] _buildGraph SKIPPED (already built)'); return; }
+    console.log('[dep-graph] _buildGraph START, mode:', this._viewMode);
     this._graphBuilt = true;
 
     // ── Tear down previous build state ──
@@ -1200,7 +1201,9 @@ export class DepGraph extends Symbiote {
     } else {
       // FLAT mode: Sugiyama graph layout
       const layoutOpts = { existingPositions, groups };
-      positions = computeAutoLayout(editor, layoutOpts);
+      const layoutResult = computeAutoLayout(editor, layoutOpts);
+      positions = layoutResult.positions ? layoutResult.positions : layoutResult;
+      console.log('[dep-graph] FLAT layout:', Object.keys(positions).length, 'positions from', editor.getNodes().length, 'nodes', layoutResult);
     }
 
     this._canvas.setBatchMode(true);
@@ -1208,6 +1211,10 @@ export class DepGraph extends Symbiote {
       this._canvas.setNodePosition(nodeId, pos.x, pos.y);
     }
     this._canvas.setBatchMode(false);
+
+    // Force sync updated phantom positions to renderer BEFORE fitView
+    // Without this, fitView triggers redraw with stale (0,0) phantom data
+    this._canvas.syncPhantom?.();
 
     // After positioning: ensure fitView + reveal for mode toggle and large phantom graphs
     // Pass 2 (ResizeObserver) handles initial load, but mode toggle needs explicit fitView
