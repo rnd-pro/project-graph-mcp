@@ -1198,62 +1198,9 @@ export class DepGraph extends Symbiote {
         startY: 60,
       });
     } else {
-      // FLAT mode
-      const nodeCount = editor.getNodes().length;
-      if (nodeCount > 500 && groups) {
-        // Large graph: fast directory-grouped 2D grid layout (avoids O(V²E) Sugiyama)
-        positions = {};
-        const nodeW = 180, nodeH = 60, gapX = 30, gapY = 16, groupGapX = 100, groupGapY = 60;
-
-        // Sort groups by size (smallest first for compact row packing)
-        const sortedGroups = Object.entries(groups).sort((a, b) => a[1].length - b[1].length);
-
-        // Use width-budget row packing instead of fixed grid columns
-        const MAX_ROW_WIDTH = 4000; // max world-space pixels per row
-
-        // Pre-compute each group's internal layout and bounds
-        const groupLayouts = [];
-        for (const [groupName, nodeIds] of sortedGroups) {
-          const COLS = Math.min(6, Math.ceil(Math.sqrt(nodeIds.length)));
-          const rows = Math.ceil(nodeIds.length / COLS);
-          const localPositions = [];
-          for (let i = 0; i < nodeIds.length; i++) {
-            const col = i % COLS;
-            const row = Math.floor(i / COLS);
-            localPositions.push({
-              id: nodeIds[i],
-              lx: col * (nodeW + gapX),
-              ly: row * (nodeH + gapY),
-            });
-          }
-          groupLayouts.push({
-            name: groupName,
-            positions: localPositions,
-            w: Math.min(nodeIds.length, COLS) * (nodeW + gapX),
-            h: rows * (nodeH + gapY),
-          });
-        }
-
-        // Place groups with width-budget row packing
-        let metaX = 60, metaY = 60, rowH = 0;
-        for (const g of groupLayouts) {
-          // Wrap to next row if this group would exceed budget
-          if (metaX > 60 && metaX + g.w > MAX_ROW_WIDTH) {
-            metaX = 60;
-            metaY += rowH + groupGapY;
-            rowH = 0;
-          }
-          for (const p of g.positions) {
-            positions[p.id] = { x: metaX + p.lx, y: metaY + p.ly };
-          }
-          metaX += g.w + groupGapX;
-          if (g.h > rowH) rowH = g.h;
-        }
-      } else {
-        // Small graph: full Sugiyama layout
-        const layoutOpts = { existingPositions, groups };
-        positions = computeAutoLayout(editor, layoutOpts);
-      }
+      // FLAT mode: Sugiyama graph layout
+      const layoutOpts = { existingPositions, groups };
+      positions = computeAutoLayout(editor, layoutOpts);
     }
 
     this._canvas.setBatchMode(true);
@@ -1261,20 +1208,6 @@ export class DepGraph extends Symbiote {
       this._canvas.setNodePosition(nodeId, pos.x, pos.y);
     }
     this._canvas.setBatchMode(false);
-
-    // Large phantom-only graphs: skip pass 2 relayout (no DOM nodes for ResizeObserver)
-    // Immediately fitView and show canvas — no need for expensive Sugiyama re-run
-    const isLargePhantom = editor.getNodes().length > 500;
-    if (isLargePhantom) {
-      this._initialViewRestored = true;
-      requestAnimationFrame(() => {
-        if (!this._canvas) return;
-        this._canvas.fitView();
-        this._canvas.refreshConnections();
-        this._canvas.style.transition = 'opacity 0.15s ease-in';
-        this._canvas.style.opacity = '1';
-      });
-    }
 
     // Post-drill-in layout: recalculate inner node positions using real DOM sizes
     // Pre-computed innerPositions use hardcoded nodeHeight which may not match actual rendered heights
