@@ -9,3 +9,14 @@ node_modules/
 .expanded/
 dev-docs/
 tests/benchmark*
+trace.json
+canvas-debug.png
+canvas-render-test.png
+web/debug.js
+tests/check-dom.*
+tests/debug-*
+tests/flicker-*
+tests/perf-dom-*
+tests/screenshot-*
+tests/synthetic-*
+tests/validate-canvas.*

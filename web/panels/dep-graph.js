@@ -57,6 +57,7 @@ function baseName(filePath) {
   return idx >= 0 ? filePath.slice(idx + 1) : filePath;
 }
 
+
 /**
  * Build a file-level graph from skeleton data.
  * Each file becomes a Node, each import relationship becomes a Connection.
@@ -578,6 +579,9 @@ const PCB_CSS = `
     position: relative;
     overflow: hidden;
     background: var(--sn-bg, #1a1a1a);
+    /* Prevent scrollbar oscillation in parent .panel-content (overflow:auto)
+       Canvas manages its own viewport — no scrollbars needed */
+    contain: strict;
   }
 
   pg-dep-graph node-canvas {
@@ -786,8 +790,12 @@ export class DepGraph extends Symbiote {
           <span class="material-symbols-outlined">account_tree</span>
           FLAT
         </button>
+        <button class="pcb-btn" data-action="path-style" title="Toggle lines: PCB ↔ Bezier">
+          <span class="material-symbols-outlined">route</span>
+          PCB
+        </button>
       </div>
-      <node-canvas></node-canvas>
+      <node-canvas connection-engine="canvas"></node-canvas>
       <div class="pcb-stats"></div>
     `;
 
@@ -834,12 +842,18 @@ export class DepGraph extends Symbiote {
       });
     });
 
-    // View mode toggle
-    this._viewMode = 'structured';
+    const searchStr = window.location.search || (window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '');
+    const urlParams = new URLSearchParams(searchStr);
+    const useFlat = urlParams.get('flat') === 'true';
+    this._viewMode = useFlat ? 'flat' : 'structured';
     const viewModeBtn = this.querySelector('[data-action="view-mode"]');
     if (viewModeBtn) {
-      viewModeBtn.querySelector('.material-symbols-outlined').textContent = 'grid_view';
-      viewModeBtn.lastChild.textContent = 'TREE';
+      const icon = useFlat ? 'account_tree' : 'grid_view';
+      const text = useFlat ? 'FLAT' : 'TREE';
+      viewModeBtn.innerHTML = `<span class="material-symbols-outlined">${icon}</span>${text}`;
+      if (useFlat) {
+        viewModeBtn.removeAttribute('data-active');
+      }
     }
     viewModeBtn?.addEventListener('click', () => {
       const wantFlat = this._viewMode !== 'flat';
@@ -881,6 +895,40 @@ export class DepGraph extends Symbiote {
         this._buildGraph(state.skeleton);
       }
     });
+
+    // Connection Path Style toggling
+    const pathStyleBtn = this.querySelector('[data-action="path-style"]');
+    if (pathStyleBtn) {
+      let currentStyle = urlParams.get('style') || window.localStorage.getItem('connection-style') || 'pcb';
+      const styles = ['pcb', 'bezier', 'orthogonal', 'straight'];
+      
+      const updateStyleUI = () => {
+        let icon, text;
+        switch(currentStyle) {
+          case 'bezier': icon = 'timeline'; text = 'BEZIER'; break;
+          case 'orthogonal': icon = 'polyline'; text = 'ORTHO'; break;
+          case 'straight': icon = 'horizontal_rule'; text = 'STRAIGHT'; break;
+          case 'pcb':
+          default:
+            icon = 'route'; text = 'PCB'; break;
+        }
+        pathStyleBtn.innerHTML = `<span class="material-symbols-outlined">${icon}</span>${text}`;
+        if (currentStyle === 'pcb') {
+          pathStyleBtn.setAttribute('data-active', '');
+        } else {
+          pathStyleBtn.removeAttribute('data-active');
+        }
+      };
+      updateStyleUI();
+      
+      pathStyleBtn.addEventListener('click', () => {
+        const idx = styles.indexOf(currentStyle);
+        currentStyle = styles[(idx + 1) % styles.length] || 'pcb';
+        window.localStorage.setItem('connection-style', currentStyle);
+        this._canvas.setPathStyle(currentStyle);
+        updateStyleUI();
+      });
+    }
 
     // Apply PCB theme
     applyTheme(this._canvas, PCB_DARK);
@@ -1050,6 +1098,12 @@ export class DepGraph extends Symbiote {
     this._initialViewRestored = false;
     this._runRelayoutPass = null;
 
+    // Hide canvas during build to prevent visible flicker (pass 1 → pass 2 jump)
+    if (this._canvas) {
+      this._canvas.style.opacity = '0';
+      this._canvas.style.transition = 'none';
+    }
+
     const isStructured = this._viewMode === 'structured';
 
     let editor, fileMap, dirFiles, dirNodeMap, idToPath, symbolMap;
@@ -1082,7 +1136,9 @@ export class DepGraph extends Symbiote {
 
     // Apply settings
     this._canvas.setReadonly(true);
-    this._canvas.setPathStyle('pcb');
+    const searchStr = window.location.search || (window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '');
+    const urlParams = new URLSearchParams(searchStr);
+    this._canvas.setPathStyle(urlParams.get('style') || window.localStorage.getItem('connection-style') || 'pcb');
 
     // Auto-layout
     const rawPos = this._canvas.getPositions() || {};
@@ -1172,8 +1228,15 @@ export class DepGraph extends Symbiote {
             this._canvas.setBatchMode(false);
             this._canvas.refreshConnections();
 
-            // Only fitView if no focus param — router handles centering focused nodes
-            if (this._canvas.fitView && !window.location.hash.includes('focus=')) {
+            if (window.location.hash.includes('focus=')) {
+              const searchStr = window.location.search || (window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '');
+              const params = new URLSearchParams(searchStr);
+              const focusParam = params.get('focus');
+              if (focusParam && this._router) {
+                // Defer to allow DOM to settle, then fly to the correct newly measured position
+                requestAnimationFrame(() => this._router.navigateTo(decodeURIComponent(focusParam)));
+              }
+            } else if (this._canvas.fitView) {
               requestAnimationFrame(() => this._canvas.fitView());
             }
           });
@@ -1222,15 +1285,30 @@ export class DepGraph extends Symbiote {
     // so things don't overlap vertically in a messy stack.
     if (!this._nodeObserver) {
       this._nodeObserver = new ResizeObserver((entries) => {
-        if (!this._canvas) return;
-        let needsRefresh = false;
-        for (const entry of entries) {
-           if (entry.target.tagName.toLowerCase() === 'graph-node') {
-             needsRefresh = true;
-             break;
-           }
-        }
-        if (needsRefresh) {
+          if (!this._canvas) return;
+          let needsRefresh = false;
+          for (const entry of entries) {
+            if (entry.target.tagName.toLowerCase() === 'graph-node') {
+              const el = entry.target;
+              const newW = entry.contentRect.width;
+              const newH = entry.contentRect.height;
+              
+              // Ignore culling-induced resizes (when contentVisibility: hidden makes dimensions 0)
+              if (newW === 0 || newH === 0) continue;
+              
+              // Ignore if the dimensions are practically identical to cached (allow up to 3px jitter for transform/zoom text rendering rounding)
+              if (el._cachedW && Math.abs(el._cachedW - newW) <= 3 && Math.abs(el._cachedH - newH) <= 3) {
+                continue;
+              }
+              
+              // Real resize detected! Update cache and flag refresh
+              el._cachedW = newW;
+              el._cachedH = newH;
+              needsRefresh = true;
+            }
+          }
+
+          if (needsRefresh) {
           // Immediately secure connections
           if (this._refreshRaf) cancelAnimationFrame(this._refreshRaf);
           this._refreshRaf = requestAnimationFrame(() => this._canvas.refreshConnections());
@@ -1259,8 +1337,7 @@ export class DepGraph extends Symbiote {
     this._runRelayoutPass = (isStructured, dirFiles, dirNodeMap, editor, groups) => {
       if (!this._canvas) return;
       const nodeSizes = this._canvas.measureNodeSizes();
-      if (Object.keys(nodeSizes).length === 0) return;
-
+      
       let correctedPositions;
       if (isStructured && dirFiles) {
         const dirPaths = {};
@@ -1277,13 +1354,16 @@ export class DepGraph extends Symbiote {
           startX: 60, startY: 60,
         });
       } else {
-        correctedPositions = computeAutoLayout(editor, {
+        const layoutResult = computeAutoLayout(editor, {
           groups, nodeSizes, existingPositions: this._canvas.getPositions()
         });
+        correctedPositions = layoutResult.positions ? layoutResult.positions : layoutResult;
       }
+
 
       this._canvas.setBatchMode(true);
       for (const [nodeId, pos] of Object.entries(correctedPositions)) {
+
         this._canvas.setNodePosition(nodeId, pos.x, pos.y);
       }
       this._canvas.setBatchMode(false);
@@ -1304,9 +1384,17 @@ export class DepGraph extends Symbiote {
           this._canvas.fitView();
         }
 
-        // Disable LOD to prevent flicker loop
-        // this._canvas.updateLOD?.();
+
+
+        // Reveal canvas after layout is stable
+        requestAnimationFrame(() => {
+          if (this._canvas) {
+            this._canvas.style.transition = 'opacity 0.15s ease-in';
+            this._canvas.style.opacity = '1';
+          }
+        });
       }
+
     };
 
     // Failsafe: if the node dimensions were completely cached/synchronous and 
@@ -1315,6 +1403,19 @@ export class DepGraph extends Symbiote {
        this._failsafeTimer = setTimeout(() => {
           if (!this._initialViewRestored && this._runRelayoutPass) {
              this._runRelayoutPass(isStructured, dirFiles, dirNodeMap, editor, groups);
+          } else {
+             // Handle late layout updates for drilled views
+             if (window.location.hash.includes('focus=')) {
+               const searchStr = window.location.search || (window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '');
+               const params = new URLSearchParams(searchStr);
+               const focusParam = params.get('focus');
+               if (focusParam && this._router) {
+                 this._router.navigateTo(decodeURIComponent(focusParam));
+               }
+             } else if (this._canvas.fitView) {
+               this._canvas.fitView();
+             }
+             this._canvas.refreshConnections();
           }
        }, 300);
     }
