@@ -26,6 +26,7 @@ import {
 import { SubgraphRouter } from '../vendor/symbiote-node/canvas/SubgraphRouter.js';
 import { LODManager } from '../vendor/symbiote-node/canvas/LODManager.js';
 import { PinExpansion } from '../vendor/symbiote-node/canvas/PinExpansion.js';
+import { ForceLayout } from '../vendor/symbiote-node/canvas/ForceLayout.js';
 import { PCB_DARK } from '../vendor/symbiote-node/themes/pcb.js';
 import { api, state, events, emit } from '../app.js';
 
@@ -1618,10 +1619,66 @@ export class DepGraph extends Symbiote {
           startX: 60, startY: 60,
         });
       } else {
-        const layoutResult = computeAutoLayout(editor, {
-          groups, nodeSizes, existingPositions: this._canvas.getPositions()
-        });
-        correctedPositions = layoutResult.positions ? layoutResult.positions : layoutResult;
+        // FLAT mode: use force-directed layout with live animation
+        const editorNodes = [...editor.getNodes()];
+        const editorConns = [...editor.getConnections()];
+
+        // For small graphs, use static AutoLayout (faster)
+        if (editorNodes.length < 50) {
+          const layoutResult = computeAutoLayout(editor, {
+            groups, nodeSizes, existingPositions: this._canvas.getPositions()
+          });
+          correctedPositions = layoutResult.positions ? layoutResult.positions : layoutResult;
+        } else {
+          // Initial positions from AutoLayout
+          const initialLayout = computeAutoLayout(editor, {
+            groups, nodeSizes, existingPositions: this._canvas.getPositions()
+          });
+          correctedPositions = initialLayout.positions ? initialLayout.positions : initialLayout;
+
+          // Start force simulation to refine positions
+          if (!this._forceLayout) {
+            const workerUrl = new URL('../vendor/symbiote-node/canvas/ForceWorker.js', import.meta.url).href;
+            this._forceLayout = new ForceLayout(workerUrl);
+          }
+
+          const forceNodes = editorNodes.map(n => ({
+            id: n.id,
+            x: correctedPositions[n.id]?.x ?? 0,
+            y: correctedPositions[n.id]?.y ?? 0,
+            group: groups ? Object.entries(groups).find(([, ids]) => ids.includes(n.id))?.[0] : null,
+          }));
+
+          const forceEdges = editorConns.map(c => ({
+            from: c.from,
+            to: c.to,
+          }));
+
+          this._forceLayout.onTick = (positions) => {
+            if (!this._canvas) return;
+            this._canvas.setBatchMode(true);
+            for (const [nodeId, pos] of Object.entries(positions)) {
+              this._canvas.setNodePosition(nodeId, pos.x, pos.y);
+            }
+            this._canvas.setBatchMode(false);
+            this._canvas.refreshConnections();
+          };
+
+          this._forceLayout.onDone = (positions) => {
+            console.log('[dep-graph] Force layout converged');
+          };
+
+          this._forceLayout.start({
+            nodes: forceNodes,
+            edges: forceEdges,
+            groups: groups || {},
+            options: {
+              repulsion: editorNodes.length > 500 ? 400 : 800,
+              springLength: editorNodes.length > 500 ? 80 : 120,
+              maxIterations: editorNodes.length > 1000 ? 150 : 300,
+            },
+          });
+        }
       }
 
 
