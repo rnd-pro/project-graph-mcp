@@ -1037,7 +1037,13 @@ export class DepGraph extends Symbiote {
       }
     });
 
-
+    // Toolbar custom actions (e.g. explore)
+    this._canvas?.addEventListener('toolbar-action', (e) => {
+      const { action, nodeId } = e.detail;
+      if (action === 'explore') {
+        this._exploreFromNode(nodeId);
+      }
+    });
 
     events.addEventListener('file-selected', this._onFileSelected);
   }
@@ -1070,8 +1076,229 @@ export class DepGraph extends Symbiote {
   }
 
   /**
-   * Build visual graph from skeleton data
-   * @param {object} skeleton
+   * Detect disconnected components in the graph and stack smaller ones
+   * compactly below the main cluster. Without this, outlier chains
+   * (e.g. android.py) stretch BBox 10x+ beyond the main cluster.
+   * @param {NodeEditor} editor
+   * @param {Object} positions - {nodeId: {x, y}}
+   * @returns {Object} compacted positions
+   */
+  _compactDisconnectedComponents(editor, positions) {
+    const nodes = editor.getNodes();
+    const conns = editor.getConnections();
+    if (nodes.length < 2) return positions;
+
+    // Build adjacency list (undirected)
+    const adj = new Map();
+    for (const n of nodes) adj.set(n.id, []);
+    for (const c of conns) {
+      if (adj.has(c.from)) adj.get(c.from).push(c.to);
+      if (adj.has(c.to)) adj.get(c.to).push(c.from);
+    }
+
+    // BFS to find connected components
+    const visited = new Set();
+    const components = [];
+    for (const n of nodes) {
+      if (visited.has(n.id)) continue;
+      const component = [];
+      const queue = [n.id];
+      visited.add(n.id);
+      while (queue.length > 0) {
+        const id = queue.shift();
+        component.push(id);
+        for (const neighbor of (adj.get(id) || [])) {
+          if (!visited.has(neighbor)) {
+            visited.add(neighbor);
+            queue.push(neighbor);
+          }
+        }
+      }
+      components.push(component);
+    }
+
+    // Only one component — nothing to compact
+    if (components.length <= 1) return positions;
+
+    // Sort by size desc — largest is the main cluster
+    components.sort((a, b) => b.length - a.length);
+
+    // Compute bounding box for each component
+    const GAP = 200; // gap between stacked components
+    const bboxes = components.map(comp => {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const id of comp) {
+        const p = positions[id];
+        if (!p) continue;
+        if (p.x < minX) minX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.x + 180 > maxX) maxX = p.x + 180; // approx node width
+        if (p.y + 60 > maxY) maxY = p.y + 60;   // approx node height
+      }
+      return { minX, minY, maxX, maxY, w: maxX - minX, h: maxY - minY };
+    });
+
+    // Main cluster stays in place. Stack others below it.
+    const mainBBox = bboxes[0];
+    let cursorY = mainBBox.maxY + GAP;
+
+    for (let i = 1; i < components.length; i++) {
+      const comp = components[i];
+      const bbox = bboxes[i];
+      if (bbox.minX === Infinity) continue; // no positions
+
+      // Offset: shift to align left with main cluster, below current cursor
+      const dx = mainBBox.minX - bbox.minX;
+      const dy = cursorY - bbox.minY;
+
+      for (const id of comp) {
+        if (positions[id]) {
+          positions[id] = {
+            x: positions[id].x + dx,
+            y: positions[id].y + dy,
+          };
+        }
+      }
+      cursorY += bbox.h + GAP;
+    }
+
+    return positions;
+  }
+
+  /**
+   * Start radial exploration from a focus node.
+   * Shows the node at center with imports (left) and dependents (right).
+   * @param {string} nodeId
+   */
+  _exploreFromNode(nodeId) {
+    const editor = this._editor;
+    if (!editor || !this._canvas) return;
+
+    const conns = editor.getConnections();
+    const nodePath = this._idToPath?.get(nodeId) || nodeId;
+
+    // Find imports (outgoing from this node) and dependents (incoming to this node)
+    const imports = [];     // files this node imports
+    const dependents = [];  // files that import this node
+
+    for (const c of conns) {
+      if (c.from === nodeId && c.to !== nodeId) imports.push(c.to);
+      if (c.to === nodeId && c.from !== nodeId) dependents.push(c.from);
+    }
+
+    // Dedup
+    const importSet = [...new Set(imports)];
+    const dependentSet = [...new Set(dependents)];
+    const allExplore = new Set([nodeId, ...importSet, ...dependentSet]);
+
+    // Save pre-explore state for back navigation
+    if (!this._exploreStack) this._exploreStack = [];
+    this._exploreStack.push({
+      positions: this._canvas.getPositions(),
+      zoom: this._canvas.$.zoom,
+      panX: this._canvas.$.panX,
+      panY: this._canvas.$.panY,
+    });
+
+    // Radial layout: focus at center
+    // Imports on LEFT hemisphere, dependents on RIGHT
+    const RADIUS_INNER = 500;
+    const positions = {};
+    positions[nodeId] = { x: 0, y: 0 };
+
+    // Place imports (left hemisphere: angles from 90° to 270°)
+    importSet.forEach((id, i) => {
+      const t = (i + 1) / (importSet.length + 1); // 0..1 evenly spaced
+      const angle = Math.PI / 2 + Math.PI * t;     // 90° → 270° (left)
+      positions[id] = {
+        x: RADIUS_INNER * Math.cos(angle),
+        y: RADIUS_INNER * Math.sin(angle),
+      };
+    });
+
+    // Place dependents (right hemisphere: angles from -90° to 90°)
+    dependentSet.forEach((id, i) => {
+      const t = (i + 1) / (dependentSet.length + 1);
+      const angle = -Math.PI / 2 + Math.PI * t;     // -90° → 90° (right)
+      positions[id] = {
+        x: RADIUS_INNER * Math.cos(angle),
+        y: RADIUS_INNER * Math.sin(angle),
+      };
+    });
+
+    // Move explore nodes to radial positions, push others far below
+    this._canvas.setBatchMode(true);
+    const allNodes = editor.getNodes();
+    for (const n of allNodes) {
+      if (positions[n.id]) {
+        this._canvas.setNodePosition(n.id, positions[n.id].x, positions[n.id].y);
+      } else {
+        // Move non-explore nodes far offscreen (below)
+        this._canvas.setNodePosition(n.id, 0, 50000 + Math.random() * 1000);
+      }
+    }
+    this._canvas.setBatchMode(false);
+    this._canvas.syncPhantom?.();
+
+    // Highlight explore connections
+    const exploreConnIds = conns
+      .filter(c => c.from === nodeId || c.to === nodeId)
+      .map(c => c.id);
+    this._canvas.setActiveConnections?.(exploreConnIds);
+
+    // Fly to focus node
+    this._canvas.flyToNode(nodeId, { zoom: 0.5 });
+
+    // Update URL to reflect explore mode
+    history.replaceState(null, '', `#graph?explore=${encodeURIComponent(nodePath)}`);
+
+    // Mark explore mode active
+    this._exploreMode = true;
+    this._exploreNodeId = nodeId;
+
+    // Dispatch event for status bar / UI feedback
+    this.dispatchEvent(new CustomEvent('explore-started', {
+      detail: {
+        nodeId,
+        path: nodePath,
+        imports: importSet.length,
+        dependents: dependentSet.length,
+      },
+      bubbles: true,
+    }));
+  }
+
+  /**
+   * Exit explore mode — restore graph to pre-explore state.
+   */
+  _exitExploreMode() {
+    if (!this._exploreStack?.length || !this._canvas) return;
+
+    const state = this._exploreStack.pop();
+
+    this._canvas.setBatchMode(true);
+    for (const [nodeId, pos] of Object.entries(state.positions)) {
+      this._canvas.setNodePosition(nodeId, pos.x, pos.y);
+    }
+    this._canvas.setBatchMode(false);
+    this._canvas.syncPhantom?.();
+
+    // Restore zoom/pan
+    this._canvas.$.zoom = state.zoom;
+    this._canvas.$.panX = state.panX;
+    this._canvas.$.panY = state.panY;
+    this._canvas.refreshConnections();
+
+    // Clear highlight
+    this._canvas.setActiveConnections?.(null);
+
+    this._exploreMode = false;
+    this._exploreNodeId = null;
+    history.replaceState(null, '', '#graph');
+  }
+
+  /**
+   * Build and render a complete dependency graph from skeleton data.
    */
   _buildGraph(skeleton) {
     if (!skeleton || !this._canvas) return;
@@ -1202,6 +1429,12 @@ export class DepGraph extends Symbiote {
       const layoutOpts = { existingPositions, groups };
       const layoutResult = computeAutoLayout(editor, layoutOpts);
       positions = layoutResult.positions ? layoutResult.positions : layoutResult;
+
+      // Compact disconnected components: outlier chains can stretch BBox 10x+
+      // beyond the main cluster, making zoom unusably low.
+      // Strategy: find connected components, keep the largest in-place,
+      // stack smaller ones below/beside with a small gap.
+      positions = this._compactDisconnectedComponents(editor, positions);
     }
 
     this._canvas.setBatchMode(true);
@@ -1213,6 +1446,20 @@ export class DepGraph extends Symbiote {
     // Force sync updated phantom positions to renderer immediately
     // Without this, subsequent fitView/redraw uses stale (0,0) phantom data
     this._canvas.syncPhantom?.();
+
+    // Large phantom-only graphs: skip pass 2 relayout (no DOM nodes for ResizeObserver)
+    // Immediately fitView and show canvas — no need for expensive re-run
+    const isLargePhantom = editor.getNodes().length > 200;
+    if (isLargePhantom) {
+      this._initialViewRestored = true;
+      requestAnimationFrame(() => {
+        if (!this._canvas) return;
+        this._canvas.fitView();
+        this._canvas.refreshConnections();
+        this._canvas.style.transition = 'opacity 0.15s ease-in';
+        this._canvas.style.opacity = '1';
+      });
+    }
 
     // Post-drill-in layout: recalculate inner node positions using real DOM sizes
     // Pre-computed innerPositions use hardcoded nodeHeight which may not match actual rendered heights
