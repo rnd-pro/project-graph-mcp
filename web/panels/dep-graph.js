@@ -856,14 +856,15 @@ export class DepGraph extends Symbiote {
 
     const searchStr = window.location.search || (window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '');
     const urlParams = new URLSearchParams(searchStr);
-    const useFlat = urlParams.get('flat') === 'true';
-    this._viewMode = useFlat ? 'flat' : 'structured';
+    // Support both ?mode=flat and legacy ?flat=true
+    const modeParam = urlParams.get('mode') || (urlParams.get('flat') === 'true' ? 'flat' : null);
+    this._viewMode = modeParam === 'flat' ? 'flat' : 'structured';
     const viewModeBtn = this.querySelector('[data-action="view-mode"]');
     if (viewModeBtn) {
-      const icon = useFlat ? 'account_tree' : 'grid_view';
-      const text = useFlat ? 'FLAT' : 'TREE';
+      const icon = modeParam === 'flat' ? 'account_tree' : 'grid_view';
+      const text = modeParam === 'flat' ? 'FLAT' : 'TREE';
       viewModeBtn.innerHTML = `<span class="material-symbols-outlined">${icon}</span>${text}`;
-      if (useFlat) {
+      if (modeParam === 'flat') {
         viewModeBtn.removeAttribute('data-active');
       }
     }
@@ -878,6 +879,9 @@ export class DepGraph extends Symbiote {
       } else {
         viewModeBtn.removeAttribute('data-active');
       }
+
+      // Persist mode in URL hash
+      this._updateHashParam('mode', this._viewMode === 'flat' ? 'flat' : 'tree');
 
       // Drill up to root before rebuilding to prevent rendering
       // the full graph on top of a stale subgraph canvas state
@@ -1074,6 +1078,26 @@ export class DepGraph extends Symbiote {
     for (const [dir, names] of Object.entries(skeleton.a || {}))
       for (const name of names) files.add(dir === './' ? name : dir + name);
     return files.size;
+  }
+
+  /**
+   * Update a single URL hash parameter without page reload.
+   * Preserves existing hash path and other params.
+   * @param {string} key - Parameter name (e.g. 'mode', 'focus')
+   * @param {string|null} value - Parameter value, null to remove
+   */
+  _updateHashParam(key, value) {
+    const hash = window.location.hash;
+    const [basePath, queryStr] = hash.split('?');
+    const params = new URLSearchParams(queryStr || '');
+    if (value === null || value === undefined) {
+      params.delete(key);
+    } else {
+      params.set(key, value);
+    }
+    const newQuery = params.toString();
+    const newHash = newQuery ? `${basePath}?${newQuery}` : basePath;
+    history.replaceState(null, '', newHash);
   }
 
   /**
