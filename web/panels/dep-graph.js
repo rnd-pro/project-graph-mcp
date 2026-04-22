@@ -1504,18 +1504,19 @@ export class DepGraph extends Symbiote {
       }));
       const forceEdges = editorConns.map(c => ({ from: c.from, to: c.to }));
 
-      this._forceLayout.onTick = (pos) => {
+      // No per-tick animation — apply only final converged positions
+      this._forceLayout.onTick = null;
+      this._forceLayout.onDone = (finalPositions) => {
         if (!this._canvas) return;
+        console.log('[dep-graph] Force layout converged');
         this._canvas.setBatchMode(true);
-        for (const [nodeId, p] of Object.entries(pos)) {
+        for (const [nodeId, p] of Object.entries(finalPositions)) {
           this._canvas.setNodePosition(nodeId, p.x, p.y);
         }
         this._canvas.setBatchMode(false);
+        this._canvas.syncPhantom?.();
         this._canvas.refreshConnections();
-      };
-      this._forceLayout.onDone = () => {
-        console.log('[dep-graph] Force layout converged');
-        if (this._canvas?.fitView) this._canvas.fitView();
+        this._canvas.fitView();
       };
 
       this._forceLayout.start({
