@@ -393,7 +393,7 @@ function buildStructuredGraph(skeleton) {
         fileNode = new SubgraphNode(fileLabel, {
           category: fileCategory,
         });
-        fileNode.params = { path: file, dir };
+        fileNode.params = { path: file, dir, calculatedHeight: 60 + exports.length * 50 };
 
         const fileInnerEditor = fileNode.getInnerEditor();
         for (const abbr of exports) {
@@ -553,6 +553,20 @@ function buildStructuredGraph(skeleton) {
     const inner = subgraph.getInnerEditor();
     const innerPos = computeAutoLayout(inner, { nodeHeight: 80, gapY: 100 });
     subgraph.setInnerPositions(innerPos);
+
+    let minX = 0, maxX = 260;
+    let minY = 0, maxY = 60;
+    
+    for (const pos of Object.values(innerPos)) {
+      if (pos.x < minX) minX = pos.x;
+      if (pos.x + 260 > maxX) maxX = pos.x + 260;
+      if (pos.y < minY) minY = pos.y;
+      if (pos.y + 60 > maxY) maxY = pos.y + 60;
+    }
+
+    subgraph.params = subgraph.params || {};
+    subgraph.params.calculatedWidth = maxX - minX + 60;
+    subgraph.params.calculatedHeight = maxY - minY + 100;
 
     for (const childNode of inner.getNodes()) {
       if (childNode._isSubgraph) {
@@ -1667,6 +1681,8 @@ export class DepGraph extends Symbiote {
         x: positions[n.id]?.x ?? 0,
         y: positions[n.id]?.y ?? 0,
         group: groups ? Object.entries(groups).find(([, ids]) => ids.includes(n.id))?.[0] : null,
+        w: n.params?.calculatedWidth || 260,
+        h: n.params?.calculatedHeight || 60,
       }));
       const forceEdges = editorConns.map(c => ({ from: c.from, to: c.to }));
 
@@ -1975,6 +1991,8 @@ export class DepGraph extends Symbiote {
             x: correctedPositions[n.id]?.x ?? 0,
             y: correctedPositions[n.id]?.y ?? 0,
             group: groups ? Object.entries(groups).find(([, ids]) => ids.includes(n.id))?.[0] : null,
+            w: nodeSizes[n.id]?.w || n.params?.calculatedWidth || 260,
+            h: nodeSizes[n.id]?.h || n.params?.calculatedHeight || 60,
           }));
 
           const forceEdges = editorConns.map(c => ({
@@ -1984,6 +2002,7 @@ export class DepGraph extends Symbiote {
 
           // BUG-FIX: provide real DOM node dimensions so collision solver works correctly.
           // Default in ForceWorker is 160×32, but graph-node renders at ~260×40.
+          // Now sizes are passed per-node in forceNodes.
           const nodeSizeEntries = Object.entries(nodeSizes);
           const measuredW = nodeSizeEntries.length > 0 ? nodeSizeEntries[0][1].w : 260;
           const measuredH = nodeSizeEntries.length > 0 ? nodeSizeEntries[0][1].h : 40;
