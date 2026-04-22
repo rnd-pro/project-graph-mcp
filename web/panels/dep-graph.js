@@ -1462,6 +1462,50 @@ export class DepGraph extends Symbiote {
       });
     }
 
+    // Force-directed refinement for FLAT mode with 50+ nodes
+    const nodeCount = editor.getNodes().length;
+    if (!isStructured && nodeCount >= 50) {
+      if (!this._forceLayout) {
+        const workerUrl = new URL('../vendor/symbiote-node/canvas/ForceWorker.js', import.meta.url).href;
+        this._forceLayout = new ForceLayout(workerUrl);
+      }
+
+      const editorNodes = [...editor.getNodes()];
+      const editorConns = [...editor.getConnections()];
+      const forceNodes = editorNodes.map(n => ({
+        id: n.id,
+        x: positions[n.id]?.x ?? 0,
+        y: positions[n.id]?.y ?? 0,
+        group: groups ? Object.entries(groups).find(([, ids]) => ids.includes(n.id))?.[0] : null,
+      }));
+      const forceEdges = editorConns.map(c => ({ from: c.from, to: c.to }));
+
+      this._forceLayout.onTick = (pos) => {
+        if (!this._canvas) return;
+        this._canvas.setBatchMode(true);
+        for (const [nodeId, p] of Object.entries(pos)) {
+          this._canvas.setNodePosition(nodeId, p.x, p.y);
+        }
+        this._canvas.setBatchMode(false);
+        this._canvas.refreshConnections();
+      };
+      this._forceLayout.onDone = () => {
+        console.log('[dep-graph] Force layout converged');
+        if (this._canvas?.fitView) this._canvas.fitView();
+      };
+
+      this._forceLayout.start({
+        nodes: forceNodes,
+        edges: forceEdges,
+        groups: groups || {},
+        options: {
+          repulsion: nodeCount > 500 ? 400 : 800,
+          springLength: nodeCount > 500 ? 80 : 120,
+          maxIterations: nodeCount > 1000 ? 150 : 300,
+        },
+      });
+    }
+
     // Post-drill-in layout: recalculate inner node positions using real DOM sizes
     // Pre-computed innerPositions use hardcoded nodeHeight which may not match actual rendered heights
     // IMPORTANT: Must be registered BEFORE restoreFromHash, which may trigger drillDown on page refresh
