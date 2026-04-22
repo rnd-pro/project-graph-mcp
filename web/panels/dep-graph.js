@@ -639,7 +639,61 @@ const PCB_CSS = `
     font-size: 14px;
   }
 
-  /* Stats overlay */
+  /* ── PCB Preloader Overlay ── */
+  .pcb-loader {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    background: var(--sn-bg, #1a1a1a);
+    z-index: 500;
+    transition: opacity 0.3s ease-out;
+    pointer-events: none;
+  }
+  .pcb-loader[data-hidden] {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .pcb-loader-logo {
+    font-family: var(--sn-font, 'SF Mono', monospace);
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    color: var(--sn-text-dim, #888);
+    text-transform: uppercase;
+  }
+  .pcb-loader-phase {
+    font-family: var(--sn-font, 'SF Mono', monospace);
+    font-size: 10px;
+    color: var(--sn-node-selected, #d4a04a);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    min-height: 14px;
+  }
+  .pcb-loader-track {
+    width: 200px;
+    height: 2px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+  .pcb-loader-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #c87533, #d4a04a);
+    border-radius: 1px;
+    transition: width 0.35s ease-out;
+    box-shadow: 0 0 8px rgba(212,160,74,0.5);
+  }
+  .pcb-loader-sub {
+    font-family: var(--sn-font, 'SF Mono', monospace);
+    font-size: 9px;
+    color: var(--sn-text-dim, #666);
+    letter-spacing: 0.08em;
+  }
+
   .pcb-stats {
     position: absolute;
     bottom: 8px;
@@ -778,6 +832,56 @@ export class DepGraph extends Symbiote {
   /** @type {boolean} Guard against duplicate graph builds */
   _graphBuilt = false;
 
+  /**
+   * Update the PCB preloader overlay
+   * @param {number} pct - 0-100 progress percent
+   * @param {string} phase - phase label
+   * @param {string} [sub] - optional subtitle
+   */
+  _setProgress(pct, phase, sub = '') {
+    const loader = this.querySelector('#pcb-loader');
+    if (!loader) return;
+    const bar = loader.querySelector('#pcb-loader-bar');
+    const phaseEl = loader.querySelector('#pcb-loader-phase');
+    const subEl = loader.querySelector('#pcb-loader-sub');
+    if (bar) bar.style.width = `${pct}%`;
+    if (phaseEl) phaseEl.textContent = phase;
+    if (subEl) subEl.textContent = sub;
+  }
+
+  /** Hide the PCB preloader overlay */
+  _hideLoader() {
+    const loader = this.querySelector('#pcb-loader');
+    if (!loader) return;
+    loader.setAttribute('data-hidden', '');
+    // Remove from DOM after fade to avoid blocking pointer events
+    setTimeout(() => loader.remove(), 350);
+  }
+
+  /** Show (or re-show) the PCB preloader overlay — safe to call multiple times */
+  _showLoader() {
+    // Remove any stale loader first
+    this.querySelector('#pcb-loader')?.remove();
+    const loader = document.createElement('div');
+    loader.className = 'pcb-loader';
+    loader.id = 'pcb-loader';
+    loader.innerHTML = `
+      <div class="pcb-loader-logo">Project Graph</div>
+      <div class="pcb-loader-phase" id="pcb-loader-phase">Initializing…</div>
+      <div class="pcb-loader-track">
+        <div class="pcb-loader-bar" id="pcb-loader-bar"></div>
+      </div>
+      <div class="pcb-loader-sub" id="pcb-loader-sub"></div>
+    `;
+    // Insert before node-canvas so it renders on top
+    const canvas = this.querySelector('node-canvas');
+    if (canvas) {
+      this.insertBefore(loader, canvas);
+    } else {
+      this.appendChild(loader);
+    }
+  }
+
   initCallback() {
     // Build DOM
     this.innerHTML = `
@@ -893,6 +997,7 @@ export class DepGraph extends Symbiote {
       this._graphBuilt = false;
       this._initialViewRestored = false;
       if (this._failsafeTimer) { clearTimeout(this._failsafeTimer); this._failsafeTimer = null; }
+      this._showLoader();
       if (state.skeleton) {
         this._buildGraph(state.skeleton);
       }
@@ -967,7 +1072,7 @@ export class DepGraph extends Symbiote {
       if (e.detail.source === 'canvas') return; // Prevent echo from our own clicks
       const file = e.detail.path;
       if (file) {
-        history.replaceState(null, '', `#graph?focus=${encodeURIComponent(file)}`);
+        this._updateHashParam('focus', file);
         this._router?.navigateTo(file);
       }
     };
@@ -1003,8 +1108,7 @@ export class DepGraph extends Symbiote {
       if (isSymbol) {
         // Symbol click: keep current drill URL, append &symbol=
         const sym = this._symbolMap.get(nodeId);
-        const base = window.location.hash.split('&symbol=')[0]; // strip old symbol
-        history.replaceState(null, '', `${base}&symbol=${encodeURIComponent(sym.name)}`);
+        this._updateHashParam('symbol', sym.name);
         // Highlight the parent file in the tree sidebar
         if (sym.file) {
           emit('file-selected', { path: sym.file, source: 'canvas' });
@@ -1012,18 +1116,31 @@ export class DepGraph extends Symbiote {
       } else if (path) {
         if (depth === 0) {
           // Root level: path goes into ?focus= parameter
-          history.replaceState(null, '', `#graph?focus=${encodeURIComponent(path)}`);
+          this._updateHashParam('focus', path);
+          this._updateHashParam('in', null);
+          // Pan/zoom to the clicked node — it's already visible, no need to drill
+          if (nodeId && this._canvas?.flyToNode) {
+            this._canvas.flyToNode(nodeId, { zoom: 0.9 });
+          }
         } else {
           // Inside a group: preserve drill context URL, set &focus= with relative name
           const drillBase = window.location.hash.split('?')[0]; // e.g. #graph/src/analysis/
           const drillPath = drillBase.replace('#graph/', '');
           // Get relative name inside the drilled group
           const relativeName = path.startsWith(drillPath) ? path.slice(drillPath.length) : path;
-          history.replaceState(null, '', `${drillBase}?in=1&focus=${encodeURIComponent(relativeName)}`);
+          // Keep existing parameters except we update focus and ensure in=1 is set
+          this._updateHashParam('focus', relativeName);
+          this._updateHashParam('in', '1');
+          
+          // Pan/zoom to the clicked node within current subgraph
+          if (nodeId && this._canvas?.flyToNode) {
+            this._canvas.flyToNode(nodeId, { zoom: 0.9 });
+          }
         }
         // Sync: highlight file in the tree sidebar
         emit('file-selected', { path, source: 'canvas' });
       }
+
     });
 
     // Deselect: when no nodes selected → clear focus from URL
@@ -1032,13 +1149,7 @@ export class DepGraph extends Symbiote {
       if (!this._initialViewRestored) return; // Don't clear URL during initial load
       const hash = window.location.hash;
       if (hash.includes('focus=')) {
-        const depth = this._router?.depth || 0;
-        if (depth === 0) {
-          history.replaceState(null, '', '#graph');
-        } else {
-          const base = hash.split('?')[0];
-          history.replaceState(null, '', `${base}?in=1`);
-        }
+        this._updateHashParam('focus', null);
       }
     });
 
@@ -1047,10 +1158,36 @@ export class DepGraph extends Symbiote {
       const { action, nodeId } = e.detail;
       if (action === 'explore') {
         this._exploreFromNode(nodeId);
+      } else if (action === 'view-code') {
+        const path = this._idToPath?.get(nodeId);
+        const isSymbol = this._symbolMap?.has(nodeId);
+        const file = isSymbol ? this._symbolMap.get(nodeId).file : path;
+        if (file) {
+          window.location.hash = `#explorer/${file}`;
+        }
       }
     });
 
     events.addEventListener('file-selected', this._onFileSelected);
+
+    // React to hash changes from file-tree, back/forward, or external URL paste
+    this._onHashChange = () => {
+      if (!this._router || !this._editor || !this._initialViewRestored) return;
+      const hash = window.location.hash;
+      if (!hash.startsWith('#graph')) return;
+      
+      let attempts = 0;
+      const doRestore = () => {
+        if (this.offsetWidth > 0 && this.offsetHeight > 0) {
+          this._router.restoreFromHash(this._editor);
+        } else if (attempts < 20) {
+          attempts++;
+          requestAnimationFrame(doRestore);
+        }
+      };
+      doRestore();
+    };
+    window.addEventListener('hashchange', this._onHashChange);
   }
 
   disconnectedCallback() {
@@ -1058,6 +1195,7 @@ export class DepGraph extends Symbiote {
     if (this._onSkeletonLoaded) events.removeEventListener('skeleton-loaded', this._onSkeletonLoaded);
     if (this._onToolEvent) events.removeEventListener('tool-event', this._onToolEvent);
     if (this._onFileSelected) events.removeEventListener('file-selected', this._onFileSelected);
+    if (this._onHashChange) window.removeEventListener('hashchange', this._onHashChange);
     if (this._resizeObserver) {
       this._resizeObserver.disconnect();
       this._resizeObserver = null;
@@ -1275,7 +1413,7 @@ export class DepGraph extends Symbiote {
     this._canvas.flyToNode(nodeId, { zoom: 0.5 });
 
     // Update URL to reflect explore mode
-    history.replaceState(null, '', `#graph?explore=${encodeURIComponent(nodePath)}`);
+    this._updateHashParam('explore', nodePath);
 
     // Mark explore mode active
     this._exploreMode = true;
@@ -1319,7 +1457,7 @@ export class DepGraph extends Symbiote {
 
     this._exploreMode = false;
     this._exploreNodeId = null;
-    history.replaceState(null, '', '#graph');
+    this._updateHashParam('explore', null);
   }
 
   /**
@@ -1353,6 +1491,13 @@ export class DepGraph extends Symbiote {
       this._canvas.style.transition = 'none';
     }
 
+    // Show (or re-show) the preloader overlay — safe to call multiple times
+    this._showLoader();
+
+    // Phase 0: Parsing
+    this._setProgress(10, 'Parsing graph…', '');
+
+
     const isStructured = this._viewMode === 'structured';
 
     // Cache key: reuse previously built graph for same skeleton+mode
@@ -1364,14 +1509,17 @@ export class DepGraph extends Symbiote {
     if (this._graphCache[cacheKey] && this._graphCache[cacheKey].skeleton === skeleton) {
       // Reuse cached build result — avoids 5+ second rebuild on mode toggle
       ({ editor, fileMap, dirFiles, dirNodeMap, idToPath, symbolMap } = this._graphCache[cacheKey]);
+      this._setProgress(40, 'Building nodes…', `${editor.getNodes().length} nodes (cached)`);
     } else {
       console.time('[graph] build');
+      this._setProgress(15, 'Parsing graph…', isStructured ? 'structured mode' : 'flat mode');
       if (isStructured) {
         ({ editor, fileMap, dirFiles, dirNodeMap, idToPath, symbolMap } = buildStructuredGraph(skeleton));
       } else {
         ({ editor, fileMap, dirFiles, idToPath, symbolMap: symbolMap = new Map() } = buildFileGraph(skeleton));
       }
       console.timeEnd('[graph] build');
+      this._setProgress(40, 'Building nodes…', `${editor.getNodes().length} nodes`);
       this._graphCache[cacheKey] = { skeleton, editor, fileMap, dirFiles, dirNodeMap, idToPath, symbolMap };
     }
     this._editor = editor;
@@ -1395,8 +1543,10 @@ export class DepGraph extends Symbiote {
 
     // Set editor on canvas
     console.time('[graph] setEditor');
+    this._setProgress(55, 'Building nodes…', 'rendering DOM');
     this._canvas.setEditor(editor);
     console.timeEnd('[graph] setEditor');
+    this._setProgress(70, 'Placing nodes…', '');
 
     // Apply settings
     this._canvas.setReadonly(true);
@@ -1450,16 +1600,43 @@ export class DepGraph extends Symbiote {
         startY: 60,
       });
     } else {
-      // FLAT mode: Sugiyama graph layout
-      const layoutOpts = { existingPositions, groups };
-      const layoutResult = computeAutoLayout(editor, layoutOpts);
-      positions = layoutResult.positions ? layoutResult.positions : layoutResult;
+      // FLAT mode: group-aware circular initial positions for force simulation.
+      // AutoLayout (Sugiyama) creates a vertical line that ForceWorker cannot fix,
+      // so we start with a balanced 2D circular layout.
+      const allNodes = [...editor.getNodes()];
+      const totalNodes = allNodes.length;
+      const groupEntries = Object.entries(groups);
+      positions = {};
 
-      // Compact disconnected components: outlier chains can stretch BBox 10x+
-      // beyond the main cluster, making zoom unusably low.
-      // Strategy: find connected components, keep the largest in-place,
-      // stack smaller ones below/beside with a small gap.
-      positions = this._compactDisconnectedComponents(editor, positions);
+      if (groupEntries.length > 1) {
+        // Place each group's centroid on a spiral, fan members around it
+        const globalRadius = Math.sqrt(totalNodes) * 80;
+        let groupIdx = 0;
+        for (const [, memberIds] of groupEntries) {
+          const angle = (2 * Math.PI * groupIdx) / groupEntries.length;
+          const r = globalRadius * (0.3 + 0.7 * (groupIdx / groupEntries.length));
+          const cx = Math.cos(angle) * r;
+          const cy = Math.sin(angle) * r;
+          const memberRadius = Math.sqrt(memberIds.length) * 60;
+          for (let mi = 0; mi < memberIds.length; mi++) {
+            const mAngle = (2 * Math.PI * mi) / memberIds.length;
+            positions[memberIds[mi]] = {
+              x: cx + Math.cos(mAngle) * memberRadius + (Math.random() - 0.5) * 20,
+              y: cy + Math.sin(mAngle) * memberRadius + (Math.random() - 0.5) * 20,
+            };
+          }
+          groupIdx++;
+        }
+      }
+
+      // Fill ungrouped nodes in a ring
+      for (const n of allNodes) {
+        if (!positions[n.id]) {
+          const angle = Math.random() * 2 * Math.PI;
+          const r = Math.sqrt(totalNodes) * 50 + Math.random() * 200;
+          positions[n.id] = { x: Math.cos(angle) * r, y: Math.sin(angle) * r };
+        }
+      }
     }
 
     this._canvas.setBatchMode(true);
@@ -1472,23 +1649,12 @@ export class DepGraph extends Symbiote {
     // Without this, subsequent fitView/redraw uses stale (0,0) phantom data
     this._canvas.syncPhantom?.();
 
-    // Large phantom-only graphs: skip pass 2 relayout (no DOM nodes for ResizeObserver)
-    // Immediately fitView and show canvas — no need for expensive re-run
-    const isLargePhantom = editor.getNodes().length > 200;
-    if (isLargePhantom) {
-      this._initialViewRestored = true;
-      requestAnimationFrame(() => {
-        if (!this._canvas) return;
-        this._canvas.fitView();
-        this._canvas.refreshConnections();
-        this._canvas.style.transition = 'opacity 0.15s ease-in';
-        this._canvas.style.opacity = '1';
-      });
-    }
-
-    // Force-directed refinement for FLAT mode with 50+ nodes
+    // For large graphs (>200 nodes) the ResizeObserver in Pass 2 will never fire
+    // because phantom-mode nodes have no real DOM elements to observe.
+    // We must start ForceLayout HERE (Pass 1) with the circular seed positions.
+    // The canvas stays hidden; onDone reveals it.
     const nodeCount = editor.getNodes().length;
-    if (!isStructured && nodeCount >= 50) {
+    if (!isStructured && nodeCount > 50) {
       if (!this._forceLayout) {
         const workerUrl = new URL('../vendor/symbiote-node/canvas/ForceWorker.js', import.meta.url).href;
         this._forceLayout = new ForceLayout(workerUrl);
@@ -1504,32 +1670,85 @@ export class DepGraph extends Symbiote {
       }));
       const forceEdges = editorConns.map(c => ({ from: c.from, to: c.to }));
 
-      // No per-tick animation — apply only final converged positions
-      this._forceLayout.onTick = null;
+      // Live tick updates so user sees nodes moving rather than a freeze
+      this._forceLayout.onTick = (tickPositions) => {
+        if (!this._canvas) return;
+        this._canvas.setBatchMode(true);
+        for (const [nodeId, pos] of Object.entries(tickPositions)) {
+          this._canvas.setNodePosition(nodeId, pos.x, pos.y);
+        }
+        this._canvas.setBatchMode(false);
+        // Throttle refreshConnections — expensive for 2000+ nodes
+        if (!this._forceTickRaf) {
+          this._forceTickRaf = requestAnimationFrame(() => {
+            this._forceTickRaf = null;
+            this._canvas?.refreshConnections();
+          });
+        }
+        // Show canvas and hide loader on first tick so user gets live feedback
+        if (!this._initialViewRestored) {
+          this._initialViewRestored = true;
+          this._hideLoader();
+          this._canvas.style.transition = 'opacity 0.2s ease-in';
+          this._canvas.style.opacity = '1';
+          // Only fitView on first tick if there's no focus= param to preserve
+          const _hashHasFocus = window.location.hash.includes('?') || window.location.hash.includes('focus=');
+          if (!_hashHasFocus) {
+            this._canvas.fitView();
+          }
+        }
+      };
+
       this._forceLayout.onDone = (finalPositions) => {
         if (!this._canvas) return;
-        console.log('[dep-graph] Force layout converged');
+        this._forceTickRaf = null;
+        console.log('[dep-graph] Force layout converged, nodes:', editorNodes.length);
         this._canvas.setBatchMode(true);
-        for (const [nodeId, p] of Object.entries(finalPositions)) {
-          this._canvas.setNodePosition(nodeId, p.x, p.y);
+        for (const [nodeId, pos] of Object.entries(finalPositions)) {
+          this._canvas.setNodePosition(nodeId, pos.x, pos.y);
         }
         this._canvas.setBatchMode(false);
         this._canvas.syncPhantom?.();
         this._canvas.refreshConnections();
-        this._canvas.fitView();
+        // Ensure canvas is visible and loader is gone
+        if (!this._initialViewRestored) {
+          this._initialViewRestored = true;
+          this._hideLoader();
+          this._canvas.style.transition = 'opacity 0.2s ease-in';
+          this._canvas.style.opacity = '1';
+        } else {
+          this._hideLoader();
+        }
+        // Restore focus/hash navigation now that all node positions are final
+        const fullHash = window.location.hash;
+        const hasPath = /^#graph\//.test(fullHash);
+        const hasParams = fullHash.includes('?');
+        if (hasPath || hasParams) {
+          this._router?.restoreFromHash(editor);
+        } else {
+          this._canvas.fitView();
+        }
       };
 
+      this._setProgress(85, 'Simulating layout…', `${editorNodes.length} nodes · ${editorConns.length} edges`);
       this._forceLayout.start({
         nodes: forceNodes,
         edges: forceEdges,
         groups: groups || {},
         options: {
-          repulsion: nodeCount > 500 ? 400 : 800,
-          springLength: nodeCount > 500 ? 80 : 120,
-          maxIterations: nodeCount > 1000 ? 150 : 300,
+          chargeStrength: nodeCount > 500 ? -300 : -150,
+          linkDistance: nodeCount > 500 ? 100 : 150,
+          nodeWidth: 260,
+          nodeHeight: 40,
         },
       });
+
+      // Don't wait for ResizeObserver — we already started the worker above.
+      // Skip the rest of the Pass 1 initialization (pass 2 will be a no-op since
+      // _initialViewRestored will be true by the time ResizeObserver fires).
     }
+
+
 
     // Post-drill-in layout: recalculate inner node positions using real DOM sizes
     // Pre-computed innerPositions use hardcoded nodeHeight which may not match actual rendered heights
@@ -1602,9 +1821,13 @@ export class DepGraph extends Symbiote {
                 segments.pop();
               }
             }
-            history.replaceState(null, '', `#graph?focus=${encodeURIComponent(focusDir)}`);
+            if (focusDir) {
+              this._updateHashParam('focus', focusDir);
+            } else {
+              this._updateHashParam('focus', null);
+            }
           } else {
-            history.replaceState(null, '', '#graph');
+            this._updateHashParam('focus', null);
           }
         }
       };
@@ -1688,24 +1911,60 @@ export class DepGraph extends Symbiote {
           startX: 60, startY: 60,
         });
       } else {
-        // FLAT mode: use force-directed layout with live animation
+        // FLAT mode: force-directed layout with group-aware circular initial positions
         const editorNodes = [...editor.getNodes()];
         const editorConns = [...editor.getConnections()];
 
-        // For small graphs, use static AutoLayout (faster)
+        // For small graphs, static AutoLayout is fast enough
         if (editorNodes.length < 50) {
           const layoutResult = computeAutoLayout(editor, {
             groups, nodeSizes, existingPositions: this._canvas.getPositions()
           });
           correctedPositions = layoutResult.positions ? layoutResult.positions : layoutResult;
         } else {
-          // Initial positions from AutoLayout
-          const initialLayout = computeAutoLayout(editor, {
-            groups, nodeSizes, existingPositions: this._canvas.getPositions()
-          });
-          correctedPositions = initialLayout.positions ? initialLayout.positions : initialLayout;
+          // ── Group-aware circular initial positions ──
+          // Instead of Sugiyama (vertical line), place groups in concentric rings.
+          // This gives the force simulation a balanced 2D starting point.
+          correctedPositions = {};
+          const groupEntries = groups ? Object.entries(groups) : [];
+          const totalNodes = editorNodes.length;
 
-          // Start force simulation to refine positions
+          if (groupEntries.length > 1) {
+            // Place each group's centroid on a spiral, then fan members around it
+            const globalRadius = Math.sqrt(totalNodes) * 80;
+            let groupIdx = 0;
+            for (const [, memberIds] of groupEntries) {
+              const angle = (2 * Math.PI * groupIdx) / groupEntries.length;
+              const r = globalRadius * (0.3 + 0.7 * (groupIdx / groupEntries.length));
+              const cx = Math.cos(angle) * r;
+              const cy = Math.sin(angle) * r;
+
+              const memberRadius = Math.sqrt(memberIds.length) * 60;
+              for (let mi = 0; mi < memberIds.length; mi++) {
+                const mAngle = (2 * Math.PI * mi) / memberIds.length;
+                correctedPositions[memberIds[mi]] = {
+                  x: cx + Math.cos(mAngle) * memberRadius + (Math.random() - 0.5) * 20,
+                  y: cy + Math.sin(mAngle) * memberRadius + (Math.random() - 0.5) * 20,
+                };
+              }
+              groupIdx++;
+            }
+          }
+
+          // Fill any ungrouped nodes in a ring
+          for (const n of editorNodes) {
+            if (!correctedPositions[n.id]) {
+              const angle = Math.random() * 2 * Math.PI;
+              const r = Math.sqrt(totalNodes) * 50 + Math.random() * 200;
+              correctedPositions[n.id] = {
+                x: Math.cos(angle) * r,
+                y: Math.sin(angle) * r,
+              };
+            }
+          }
+
+          // Start force simulation. Apply circular seed BEFORE starting so there's no
+          // position race between the random seed write (below) and the first worker tick.
           if (!this._forceLayout) {
             const workerUrl = new URL('../vendor/symbiote-node/canvas/ForceWorker.js', import.meta.url).href;
             this._forceLayout = new ForceLayout(workerUrl);
@@ -1723,18 +1982,61 @@ export class DepGraph extends Symbiote {
             to: c.to,
           }));
 
-          this._forceLayout.onTick = (positions) => {
+          // BUG-FIX: provide real DOM node dimensions so collision solver works correctly.
+          // Default in ForceWorker is 160×32, but graph-node renders at ~260×40.
+          const nodeSizeEntries = Object.entries(nodeSizes);
+          const measuredW = nodeSizeEntries.length > 0 ? nodeSizeEntries[0][1].w : 260;
+          const measuredH = nodeSizeEntries.length > 0 ? nodeSizeEntries[0][1].h : 40;
+
+          // onTick: provide live visual feedback so user sees nodes spreading, not a freeze.
+          this._forceLayout.onTick = (tickPositions) => {
             if (!this._canvas) return;
             this._canvas.setBatchMode(true);
-            for (const [nodeId, pos] of Object.entries(positions)) {
+            for (const [nodeId, pos] of Object.entries(tickPositions)) {
               this._canvas.setNodePosition(nodeId, pos.x, pos.y);
             }
             this._canvas.setBatchMode(false);
-            this._canvas.refreshConnections();
+            // Throttle connection refresh: expensive for large graphs
+            if (!this._forceTickRaf) {
+              this._forceTickRaf = requestAnimationFrame(() => {
+                this._forceTickRaf = null;
+                this._canvas?.refreshConnections();
+              });
+            }
           };
 
-          this._forceLayout.onDone = (positions) => {
+          this._forceLayout.onDone = (finalPositions) => {
+            if (!this._canvas) return;
+            this._forceTickRaf = null;
             console.log('[dep-graph] Force layout converged');
+            this._canvas.setBatchMode(true);
+            for (const [nodeId, pos] of Object.entries(finalPositions)) {
+              this._canvas.setNodePosition(nodeId, pos.x, pos.y);
+            }
+            this._canvas.setBatchMode(false);
+            this._canvas.syncPhantom?.();
+            this._canvas.refreshConnections();
+            // Reveal canvas and fit view on convergence
+            if (!this._initialViewRestored) {
+              this._initialViewRestored = true;
+              const fullHash = window.location.hash;
+              const hasPath = /^#graph\//.test(fullHash);
+              const hasParams = fullHash.includes('?');
+              if (hasPath || hasParams) {
+                this._router?.restoreFromHash(editor);
+              } else {
+                this._canvas.fitView();
+              }
+              requestAnimationFrame(() => {
+                if (this._canvas) {
+                  this._hideLoader();
+                  this._canvas.style.transition = 'opacity 0.15s ease-in';
+                  this._canvas.style.opacity = '1';
+                }
+              });
+            } else {
+              this._canvas.fitView();
+            }
           };
 
           this._forceLayout.start({
@@ -1742,18 +2044,26 @@ export class DepGraph extends Symbiote {
             edges: forceEdges,
             groups: groups || {},
             options: {
-              repulsion: editorNodes.length > 500 ? 400 : 800,
-              springLength: editorNodes.length > 500 ? 80 : 120,
-              maxIterations: editorNodes.length > 1000 ? 150 : 300,
+              chargeStrength: totalNodes > 500 ? -300 : -150,
+              linkDistance: totalNodes > 500 ? 100 : 150,
+              nodeWidth: measuredW,
+              nodeHeight: measuredH,
             },
           });
-        }
-      }
+
+          // BUG-FIX: Do NOT write correctedPositions to canvas here.
+          // The circular seed has already been applied to forceNodes above.
+          // Writing it now would overwrite the first worker tick with stale random positions.
+          return;
+        } // end if (editorNodes.length >= 50)
+      } // end outer else (flat/tree mode branch)
 
 
+
+
+      // Apply positions (only for non-force paths: small flat graphs and tree mode)
       this._canvas.setBatchMode(true);
       for (const [nodeId, pos] of Object.entries(correctedPositions)) {
-
         this._canvas.setNodePosition(nodeId, pos.x, pos.y);
       }
       this._canvas.setBatchMode(false);
@@ -1779,6 +2089,7 @@ export class DepGraph extends Symbiote {
         // Reveal canvas after layout is stable
         requestAnimationFrame(() => {
           if (this._canvas) {
+            this._hideLoader();
             this._canvas.style.transition = 'opacity 0.15s ease-in';
             this._canvas.style.opacity = '1';
           }

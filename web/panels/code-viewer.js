@@ -16,7 +16,10 @@ function _getLang(path){if(!path)return'js';const i=path.lastIndexOf('.');if(i<0
 //   Toggle button label: "EXPAND" — beautifies via Terser + injects JSDoc from .ctx.
 //   _isReadable = false (compression saves <15% — already compact)
 
-export class CodeViewer extends e{init$={filename:"Select a file",hasFile:!1,viewMode:"source",modeLabel:"source",statsText:"",showToggle:!1,toggleLabel:"",onToggleMode:()=>{
+export class CodeViewer extends e{init$={filename:"Select a file",hasFile:!1,viewMode:"source",modeLabel:"source",statsText:"",showToggle:!1,toggleLabel:"",onShowInGraph:()=>{
+  if(!this._currentPath)return;
+  window.location.hash = `#graph?focus=${encodeURIComponent(this._currentPath)}`;
+},onToggleMode:()=>{
   const lang=_getLang(this._currentPath);
   if(lang==='md'){
     this.$.viewMode=this.$.viewMode==="rendered"?"raw":"rendered";
@@ -125,4 +128,25 @@ if(lang==='md'){
   this.$.toggleLabel=this._isReadable?"compact":"expand";
   i&&(i.$.code=s);
 }
-this.$.hasFile=!0}catch(e){const n=this._getCodeBlock();n&&(n.$.lang='plain',n.$.code=`// Error: ${e.message}`),this.$.showToggle=!1,this.$.hasFile=!0}}}CodeViewer.template='\n  <div class="pg-code-header">\n    <span class="pg-code-filename" bind="textContent: filename"></span>\n    <div class="pg-code-controls">\n      <span class="pg-code-stats" bind="textContent: statsText"></span>\n      <button class="pg-mode-toggle" bind="onclick: onToggleMode; hidden: !showToggle" title="Toggle view mode">\n        <span class="material-symbols-outlined" style="font-size:14px">compress</span>\n        <span class="pg-mode-label" bind="textContent: modeLabel"></span>\n      </button>\n    </div>\n  </div>\n  <code-block></code-block>\n',CodeViewer.rootStyles="\n  pg-code-viewer {\n    display: flex;\n    flex-direction: column;\n    height: 100%;\n    overflow: hidden;\n  }\n  pg-code-viewer:not([has-file]) code-block {\n    display: none;\n  }\n  .pg-code-header {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    padding: 6px 12px;\n    font-family: 'SF Mono', 'Fira Code', monospace;\n    font-size: 11px;\n    color: var(--sn-text-dim, hsl(30, 10%, 45%));\n    border-bottom: 1px solid var(--sn-node-border, hsl(35, 18%, 80%));\n    background: var(--sn-node-header-bg, hsl(37, 25%, 93%));\n    gap: 8px;\n  }\n  .pg-code-filename {\n    white-space: nowrap;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    min-width: 0;\n  }\n  .pg-code-controls {\n    display: flex;\n    align-items: center;\n    gap: 8px;\n    flex-shrink: 0;\n  }\n  .pg-code-stats {\n    font-size: 10px;\n    color: var(--sn-cat-server, hsl(210, 45%, 45%));\n    white-space: nowrap;\n  }\n  .pg-mode-toggle {\n    display: flex;\n    align-items: center;\n    gap: 3px;\n    padding: 2px 8px;\n    border: 1px solid var(--sn-node-border, hsl(35, 18%, 80%));\n    border-radius: 4px;\n    background: var(--sn-bg, hsl(37, 30%, 91%));\n    color: var(--sn-text-dim, hsl(30, 10%, 45%));\n    font-family: inherit;\n    font-size: 10px;\n    cursor: pointer;\n    text-transform: uppercase;\n    letter-spacing: 0.5px;\n    transition: all 120ms ease;\n  }\n  .pg-mode-toggle:hover {\n    background: var(--sn-node-hover, hsl(36, 22%, 88%));\n    color: var(--sn-text, hsl(30, 15%, 18%));\n  }\n  pg-code-viewer[mode-raw] .pg-mode-toggle {\n    background: hsla(210, 45%, 45%, 0.12);\n    border-color: var(--sn-cat-server, hsl(210, 45%, 45%));\n    color: var(--sn-cat-server, hsl(210, 45%, 45%));\n  }\n  .pg-mode-toggle[hidden] {\n    display: none;\n  }\n  code-block {\n    flex: 1;\n    min-height: 0;\n  }\n",CodeViewer.reg("pg-code-viewer");
+this.$.hasFile=!0}catch(e){const n=this._getCodeBlock();n&&(n.$.lang='plain',n.$.code=`// Error: ${e.message}`),this.$.showToggle=!1,this.$.hasFile=!0}}}
+
+CodeViewer.template=`
+  <div class="pg-code-header">
+    <span class="pg-code-filename" bind="textContent: filename"></span>
+    <div class="pg-code-controls">
+      <span class="pg-code-stats" bind="textContent: statsText"></span>
+      <button class="pg-mode-toggle" bind="onclick: onShowInGraph" title="Show in Graph">
+        <span class="material-symbols-outlined" style="font-size:14px">account_tree</span>
+        <span class="pg-mode-label">graph</span>
+      </button>
+      <button class="pg-mode-toggle" bind="onclick: onToggleMode; hidden: !showToggle" title="Toggle view mode">
+        <span class="material-symbols-outlined" style="font-size:14px">compress</span>
+        <span class="pg-mode-label" bind="textContent: modeLabel"></span>
+      </button>
+    </div>
+  </div>
+  <code-block></code-block>
+`;
+
+CodeViewer.rootStyles="\n  pg-code-viewer {\n    display: flex;\n    flex-direction: column;\n    height: 100%;\n    overflow: hidden;\n  }\n  pg-code-viewer:not([has-file]) code-block {\n    display: none;\n  }\n  .pg-code-header {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    padding: 6px 12px;\n    font-family: 'SF Mono', 'Fira Code', monospace;\n    font-size: 11px;\n    color: var(--sn-text-dim, hsl(30, 10%, 45%));\n    border-bottom: 1px solid var(--sn-node-border, hsl(35, 18%, 80%));\n    background: var(--sn-node-header-bg, hsl(37, 25%, 93%));\n    gap: 8px;\n  }\n  .pg-code-filename {\n    white-space: nowrap;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    min-width: 0;\n  }\n  .pg-code-controls {\n    display: flex;\n    align-items: center;\n    gap: 8px;\n    flex-shrink: 0;\n  }\n  .pg-code-stats {\n    font-size: 10px;\n    color: var(--sn-cat-server, hsl(210, 45%, 45%));\n    white-space: nowrap;\n  }\n  .pg-mode-toggle {\n    display: flex;\n    align-items: center;\n    gap: 3px;\n    padding: 2px 8px;\n    border: 1px solid var(--sn-node-border, hsl(35, 18%, 80%));\n    border-radius: 4px;\n    background: var(--sn-bg, hsl(37, 30%, 91%));\n    color: var(--sn-text-dim, hsl(30, 10%, 45%));\n    font-family: inherit;\n    font-size: 10px;\n    cursor: pointer;\n    text-transform: uppercase;\n    letter-spacing: 0.5px;\n    transition: all 120ms ease;\n  }\n  .pg-mode-toggle:hover {\n    background: var(--sn-node-hover, hsl(36, 22%, 88%));\n    color: var(--sn-text, hsl(30, 15%, 18%));\n  }\n  pg-code-viewer[mode-raw] .pg-mode-toggle {\n    background: hsla(210, 45%, 45%, 0.12);\n    border-color: var(--sn-cat-server, hsl(210, 45%, 45%));\n    color: var(--sn-cat-server, hsl(210, 45%, 45%));\n  }\n  .pg-mode-toggle[hidden] {\n    display: none;\n  }\n  code-block {\n    flex: 1;\n    min-height: 0;\n  }\n";
+CodeViewer.reg("pg-code-viewer");
