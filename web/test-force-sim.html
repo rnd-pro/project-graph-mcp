@@ -506,7 +506,22 @@ function draw() {
   // Edges — always center-to-center
   ctx.strokeStyle = 'rgba(74, 158, 255, 0.25)';
   ctx.lineWidth = Math.max(1, 1.5 / zoom);
-  for (const edge of edges) {
+  // Sort edges so background edges are drawn first, active edges drawn last
+  const sortedEdges = dragNode
+    ? [...edges].sort((a, b) => {
+        const dA1 = interactionDepths.has(a.from) ? interactionDepths.get(a.from) : 4;
+        const dA2 = interactionDepths.has(a.to) ? interactionDepths.get(a.to) : 4;
+        const minDA = Math.min(dA1, dA2);
+        
+        const dB1 = interactionDepths.has(b.from) ? interactionDepths.get(b.from) : 4;
+        const dB2 = interactionDepths.has(b.to) ? interactionDepths.get(b.to) : 4;
+        const minDB = Math.min(dB1, dB2);
+        
+        return minDB - minDA; // Larger depth (background) drawn first
+      })
+    : edges;
+
+  for (const edge of sortedEdges) {
     const from = nodeCenter(edge.from);
     const to = nodeCenter(edge.to);
     if (!from || !to) continue;
