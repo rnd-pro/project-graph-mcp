@@ -503,158 +503,159 @@ function draw() {
     }
   }
 
-  // Edges — always center-to-center
-  ctx.strokeStyle = 'rgba(74, 158, 255, 0.25)';
-  ctx.lineWidth = Math.max(1, 1.5 / zoom);
-  // Sort edges so background edges are drawn first, active edges drawn last
-  const sortedEdges = dragNode
-    ? [...edges].sort((a, b) => {
-        const dA1 = interactionDepths.has(a.from) ? interactionDepths.get(a.from) : 4;
-        const dA2 = interactionDepths.has(a.to) ? interactionDepths.get(a.to) : 4;
-        const minDA = Math.min(dA1, dA2);
-        
-        const dB1 = interactionDepths.has(b.from) ? interactionDepths.get(b.from) : 4;
-        const dB2 = interactionDepths.has(b.to) ? interactionDepths.get(b.to) : 4;
-        const minDB = Math.min(dB1, dB2);
-        
-        return minDB - minDA; // Larger depth (background) drawn first
-      })
-    : edges;
+  // Group elements by depth
+  const depthGroups = { 0: { edges: [], nodes: [] }, 1: { edges: [], nodes: [] }, 2: { edges: [], nodes: [] }, 3: { edges: [], nodes: [] }, 4: { edges: [], nodes: [] } };
 
-  for (const edge of sortedEdges) {
-    const from = nodeCenter(edge.from);
-    const to = nodeCenter(edge.to);
-    if (!from || !to) continue;
-    
-    let tAlpha = 0.5;
-    let tWidth = Math.max(1, 1.5 / zoom);
-    
+  for (const edge of edges) {
+    let minD = 4;
     if (dragNode) {
-      const d1 = interactionDepths.has(edge.from) ? interactionDepths.get(edge.from) : 4;
-      const d2 = interactionDepths.has(edge.to) ? interactionDepths.get(edge.to) : 4;
-      const minD = Math.min(d1, d2);
-      if (minD === 0) { tAlpha = 1; tWidth = Math.max(2, 3 / zoom); }
-      else if (minD === 1) { tAlpha = 0.8; tWidth = Math.max(1.5, 2 / zoom); }
-      else if (minD === 2) { tAlpha = 0.4; tWidth = Math.max(1, 1.5 / zoom); }
-      else { tAlpha = 0.05; tWidth = Math.max(0.5, 1 / zoom); }
+      const dA1 = interactionDepths.has(edge.from) ? interactionDepths.get(edge.from) : 4;
+      const dA2 = interactionDepths.has(edge.to) ? interactionDepths.get(edge.to) : 4;
+      minD = Math.min(dA1, dA2);
     }
-    
-    edge.aAlpha = edge.aAlpha !== undefined ? edge.aAlpha : 0.5;
-    edge.aWidth = edge.aWidth || Math.max(1, 1.5 / zoom);
-    
-    edge.aAlpha += (tAlpha - edge.aAlpha) * 0.1;
-    edge.aWidth += (tWidth - edge.aWidth) * 0.1;
-    
-    const nodeFrom = nodeMap ? nodeMap.get(edge.from) : null;
-    const nodeTo = nodeMap ? nodeMap.get(edge.to) : null;
-    
-    // Tapering width based on node scale (perspective/focus depth)
-    const wFrom = (nodeFrom && nodeFrom.aScale ? nodeFrom.aScale : 1) * edge.aWidth * 1.8;
-    const wTo = (nodeTo && nodeTo.aScale ? nodeTo.aScale : 1) * edge.aWidth * 1.8;
-    
-    const dx = to.x - from.x;
-    const dy = to.y - from.y;
-    const len = Math.sqrt(dx * dx + dy * dy);
-    
-    if (len < 0.1) continue;
-    
-    const nx = -dy / len;
-    const ny = dx / len;
-    
-    let fillStyle = blendBg(74, 158, 255, edge.aAlpha);
-    if (dragNode) {
-      const d1 = interactionDepths.has(edge.from) ? interactionDepths.get(edge.from) : 4;
-      const d2 = interactionDepths.has(edge.to) ? interactionDepths.get(edge.to) : 4;
-      if (d1 === 0 || d2 === 0) {
-        const grad = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
-        const c1 = d1 === 0 ? blendBg(255, 107, 107, edge.aAlpha) : blendBg(74, 158, 255, edge.aAlpha);
-        const c2 = d2 === 0 ? blendBg(255, 107, 107, edge.aAlpha) : blendBg(74, 158, 255, edge.aAlpha);
-        grad.addColorStop(0, c1);
-        grad.addColorStop(1, c2);
-        fillStyle = grad;
-      }
-    }
-    
-    ctx.fillStyle = fillStyle;
-    ctx.beginPath();
-    
-    // Chewing gum effect: thicker at the nodes, pinching elastically in the middle
-    const midX = from.x + dx * 0.5;
-    const midY = from.y + dy * 0.5;
-    
-    // The further they are pulled apart, the thinner the middle gets
-    const pinchRatio = Math.max(0.02, 12 / Math.max(12, len));
-    const pinchW = Math.min(wFrom, wTo) * pinchRatio;
-
-    ctx.moveTo(from.x + nx * wFrom, from.y + ny * wFrom);
-    ctx.quadraticCurveTo(midX + nx * pinchW, midY + ny * pinchW, to.x + nx * wTo, to.y + ny * wTo);
-    ctx.lineTo(to.x - nx * wTo, to.y - ny * wTo);
-    ctx.quadraticCurveTo(midX - nx * pinchW, midY - ny * pinchW, from.x - nx * wFrom, from.y - ny * wFrom);
-    
-    ctx.closePath();
-    ctx.fill();
+    minD = Math.min(4, Math.max(0, minD));
+    depthGroups[minD].edges.push(edge);
   }
 
-  // Sort nodes so background is drawn first, dragged is drawn last
-  const sortedNodes = dragNode 
-    ? [...nodes].sort((a, b) => {
-        const dA = interactionDepths.has(a.id) ? interactionDepths.get(a.id) : 4;
-        const dB = interactionDepths.has(b.id) ? interactionDepths.get(b.id) : 4;
-        return dB - dA;
-      })
-    : nodes;
+  for (const node of nodes) {
+    let d = 4;
+    if (dragNode) {
+      d = interactionDepths.has(node.id) ? interactionDepths.get(node.id) : 4;
+    }
+    d = Math.min(4, Math.max(0, d));
+    depthGroups[d].nodes.push(node);
+  }
 
-  for (const node of sortedNodes) {
-    const pos = getSmooth(node.id);
-    if (!pos) continue;
-    const isDragged = dragNode && dragNode.id === node.id;
-    
-    const targetDepth = dragNode ? (interactionDepths.has(node.id) ? interactionDepths.get(node.id) : 4) : -1;
-    if (targetDepth !== -1) node.lastDepth = targetDepth;
-    
-    const scaleT = targetDepth === -1 ? 1 : (targetDepth === 0 ? 1.5 : targetDepth === 1 ? 1.2 : targetDepth === 2 ? 0.9 : targetDepth === 3 ? 0.7 : 0.5);
-    const opacityT = targetDepth === -1 ? 1 : (targetDepth === 0 ? 1 : targetDepth === 1 ? 0.9 : targetDepth === 2 ? 0.6 : targetDepth === 3 ? 0.4 : 0.15);
-    const blurT = targetDepth === -1 ? 0 : (targetDepth === 0 ? 0 : targetDepth === 1 ? 0 : targetDepth === 2 ? 1 : targetDepth === 3 ? 2 : 4);
-    
-    const baseSpeed = targetDepth === -1 ? 0.15 : 0.1;
-    const depthMod = (node.lastDepth || 0) * 0.015;
-    const speed = Math.max(0.02, baseSpeed - depthMod); // Deeper nodes react slightly slower
-    
-    node.aScale = node.aScale || 1;
-    node.aOpacity = node.aOpacity !== undefined ? node.aOpacity : 1;
-    node.aBlur = node.aBlur || 0;
-    
-    node.aScale += (scaleT - node.aScale) * speed;
-    node.aOpacity += (opacityT - node.aOpacity) * speed;
-    node.aBlur += (blurT - node.aBlur) * speed;
-    
-    const scale = node.aScale;
-    const opacity = node.aOpacity;
-    const blur = node.aBlur;
-    
-    ctx.filter = blur > 0.1 ? `blur(${blur}px)` : 'none';
+  ctx.strokeStyle = 'rgba(74, 158, 255, 0.25)';
+  ctx.lineWidth = Math.max(1, 1.5 / zoom);
 
-    if (renderMode === 'dots') {
+  // Draw from background (4) to foreground (0)
+  for (let d = 4; d >= 0; d--) {
+    // 1. Draw Edges for this depth
+    for (const edge of depthGroups[d].edges) {
+      const from = nodeCenter(edge.from);
+      const to = nodeCenter(edge.to);
+      if (!from || !to) continue;
+      
+      let tAlpha = 0.5;
+      let tWidth = Math.max(1, 1.5 / zoom);
+      
+      if (dragNode) {
+        const d1 = interactionDepths.has(edge.from) ? interactionDepths.get(edge.from) : 4;
+        const d2 = interactionDepths.has(edge.to) ? interactionDepths.get(edge.to) : 4;
+        const minD = Math.min(d1, d2);
+        if (minD === 0) { tAlpha = 1; tWidth = Math.max(2, 3 / zoom); }
+        else if (minD === 1) { tAlpha = 0.8; tWidth = Math.max(1.5, 2 / zoom); }
+        else if (minD === 2) { tAlpha = 0.4; tWidth = Math.max(1, 1.5 / zoom); }
+        else { tAlpha = 0.05; tWidth = Math.max(0.5, 1 / zoom); }
+      }
+      
+      edge.aAlpha = edge.aAlpha !== undefined ? edge.aAlpha : 0.5;
+      edge.aWidth = edge.aWidth || Math.max(1, 1.5 / zoom);
+      
+      edge.aAlpha += (tAlpha - edge.aAlpha) * 0.1;
+      edge.aWidth += (tWidth - edge.aWidth) * 0.1;
+      
+      const nodeFrom = nodeMap ? nodeMap.get(edge.from) : null;
+      const nodeTo = nodeMap ? nodeMap.get(edge.to) : null;
+      
+      const wFrom = (nodeFrom && nodeFrom.aScale ? nodeFrom.aScale : 1) * edge.aWidth * 1.8;
+      const wTo = (nodeTo && nodeTo.aScale ? nodeTo.aScale : 1) * edge.aWidth * 1.8;
+      
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      
+      if (len < 0.1) continue;
+      
+      const nx = -dy / len;
+      const ny = dx / len;
+      
+      let fillStyle = blendBg(74, 158, 255, edge.aAlpha);
+      if (dragNode) {
+        const d1 = interactionDepths.has(edge.from) ? interactionDepths.get(edge.from) : 4;
+        const d2 = interactionDepths.has(edge.to) ? interactionDepths.get(edge.to) : 4;
+        if (d1 === 0 || d2 === 0) {
+          const grad = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
+          const c1 = d1 === 0 ? blendBg(255, 107, 107, edge.aAlpha) : blendBg(74, 158, 255, edge.aAlpha);
+          const c2 = d2 === 0 ? blendBg(255, 107, 107, edge.aAlpha) : blendBg(74, 158, 255, edge.aAlpha);
+          grad.addColorStop(0, c1);
+          grad.addColorStop(1, c2);
+          fillStyle = grad;
+        }
+      }
+      
+      ctx.fillStyle = fillStyle;
       ctx.beginPath();
-      ctx.arc(pos.x, pos.y, DOT_RADIUS * scale, 0, Math.PI * 2);
-      ctx.fillStyle = isDragged ? blendBg(255, 107, 107, opacity) : blendBg(74, 158, 255, opacity);
-      ctx.fill();
-    } else {
-      const w = node.w * scale, h = node.h * scale, x = pos.x - (w - node.w)/2, y = pos.y - (h - node.h)/2;
-      ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(x, y, w, h, 4);
-      else ctx.rect(x, y, w, h);
-      ctx.fillStyle = isDragged ? blendBg(255, 107, 107, opacity) : blendBg(42, 58, 94, opacity);
-      ctx.fill();
-      ctx.strokeStyle = isDragged ? blendBg(255, 153, 153, opacity) : blendBg(74, 158, 255, opacity);
-      ctx.lineWidth = isDragged ? 2 : 1;
-      ctx.stroke();
+      
+      const midX = from.x + dx * 0.5;
+      const midY = from.y + dy * 0.5;
+      
+      const pinchRatio = Math.max(0.02, 12 / Math.max(12, len));
+      const pinchW = Math.min(wFrom, wTo) * pinchRatio;
 
-      ctx.font = `${12 * scale}px sans-serif`;
-      ctx.fillStyle = blendBg(255, 255, 255, opacity);
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(node.label || node.id, x + w / 2, y + h / 2);
+      ctx.moveTo(from.x + nx * wFrom, from.y + ny * wFrom);
+      ctx.quadraticCurveTo(midX + nx * pinchW, midY + ny * pinchW, to.x + nx * wTo, to.y + ny * wTo);
+      ctx.lineTo(to.x - nx * wTo, to.y - ny * wTo);
+      ctx.quadraticCurveTo(midX - nx * pinchW, midY - ny * pinchW, from.x - nx * wFrom, from.y - ny * wFrom);
+      
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // 2. Draw Nodes for this depth
+    for (const node of depthGroups[d].nodes) {
+      const pos = getSmooth(node.id);
+      if (!pos) continue;
+      const isDragged = dragNode && dragNode.id === node.id;
+      
+      const targetDepth = dragNode ? (interactionDepths.has(node.id) ? interactionDepths.get(node.id) : 4) : -1;
+      if (targetDepth !== -1) node.lastDepth = targetDepth;
+      
+      const scaleT = targetDepth === -1 ? 1 : (targetDepth === 0 ? 1.5 : targetDepth === 1 ? 1.2 : targetDepth === 2 ? 0.9 : targetDepth === 3 ? 0.7 : 0.5);
+      const opacityT = targetDepth === -1 ? 1 : (targetDepth === 0 ? 1 : targetDepth === 1 ? 0.9 : targetDepth === 2 ? 0.6 : targetDepth === 3 ? 0.4 : 0.15);
+      const blurT = targetDepth === -1 ? 0 : (targetDepth === 0 ? 0 : targetDepth === 1 ? 0 : targetDepth === 2 ? 1 : targetDepth === 3 ? 2 : 4);
+      
+      const baseSpeed = targetDepth === -1 ? 0.15 : 0.1;
+      const depthMod = (node.lastDepth || 0) * 0.015;
+      const speed = Math.max(0.02, baseSpeed - depthMod);
+      
+      node.aScale = node.aScale || 1;
+      node.aOpacity = node.aOpacity !== undefined ? node.aOpacity : 1;
+      node.aBlur = node.aBlur || 0;
+      
+      node.aScale += (scaleT - node.aScale) * speed;
+      node.aOpacity += (opacityT - node.aOpacity) * speed;
+      node.aBlur += (blurT - node.aBlur) * speed;
+      
+      const scale = node.aScale;
+      const opacity = node.aOpacity;
+      const blur = node.aBlur;
+      
+      ctx.filter = blur > 0.1 ? `blur(${blur}px)` : 'none';
+
+      if (renderMode === 'dots') {
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, DOT_RADIUS * scale, 0, Math.PI * 2);
+        ctx.fillStyle = isDragged ? blendBg(255, 107, 107, opacity) : blendBg(74, 158, 255, opacity);
+        ctx.fill();
+      } else {
+        const w = node.w * scale, h = node.h * scale, x = pos.x - (w - node.w)/2, y = pos.y - (h - node.h)/2;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x, y, w, h, 4);
+        else ctx.rect(x, y, w, h);
+        ctx.fillStyle = isDragged ? blendBg(255, 107, 107, opacity) : blendBg(42, 58, 94, opacity);
+        ctx.fill();
+        ctx.strokeStyle = isDragged ? blendBg(255, 153, 153, opacity) : blendBg(74, 158, 255, opacity);
+        ctx.lineWidth = isDragged ? 2 : 1;
+        ctx.stroke();
+
+        ctx.font = `${12 * scale}px sans-serif`;
+        ctx.fillStyle = blendBg(255, 255, 255, opacity);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(node.label || node.id, x + w / 2, y + h / 2);
+      }
     }
   }
   
