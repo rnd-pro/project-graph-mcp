@@ -538,7 +538,21 @@ function draw() {
     const nx = -dy / len;
     const ny = dx / len;
     
-    ctx.fillStyle = `rgba(74, 158, 255, ${edge.aAlpha})`;
+    let fillStyle = `rgba(74, 158, 255, ${edge.aAlpha})`;
+    if (dragNode) {
+      const d1 = interactionDepths.has(edge.from) ? interactionDepths.get(edge.from) : 4;
+      const d2 = interactionDepths.has(edge.to) ? interactionDepths.get(edge.to) : 4;
+      if (d1 === 0 || d2 === 0) {
+        const grad = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
+        const c1 = d1 === 0 ? `rgba(255, 107, 107, ${edge.aAlpha})` : `rgba(74, 158, 255, ${edge.aAlpha})`;
+        const c2 = d2 === 0 ? `rgba(255, 107, 107, ${edge.aAlpha})` : `rgba(74, 158, 255, ${edge.aAlpha})`;
+        grad.addColorStop(0, c1);
+        grad.addColorStop(1, c2);
+        fillStyle = grad;
+      }
+    }
+    
+    ctx.fillStyle = fillStyle;
     ctx.beginPath();
     
     // Chewing gum effect: thicker at the nodes, pinching elastically in the middle
