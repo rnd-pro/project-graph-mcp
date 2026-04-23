@@ -503,20 +503,20 @@ function draw() {
     const to = nodeCenter(edge.to);
     if (!from || !to) continue;
     
-    let tAlpha = 0.25;
+    let tAlpha = 0.5;
     let tWidth = Math.max(1, 1.5 / zoom);
     
     if (dragNode) {
       const d1 = interactionDepths.has(edge.from) ? interactionDepths.get(edge.from) : 4;
       const d2 = interactionDepths.has(edge.to) ? interactionDepths.get(edge.to) : 4;
       const minD = Math.min(d1, d2);
-      if (minD === 0) { tAlpha = 0.8; tWidth = Math.max(2, 2.5 / zoom); }
-      else if (minD === 1) { tAlpha = 0.4; tWidth = Math.max(1.5, 2 / zoom); }
-      else if (minD === 2) { tAlpha = 0.15; tWidth = Math.max(1, 1.5 / zoom); }
+      if (minD === 0) { tAlpha = 1; tWidth = Math.max(2, 3 / zoom); }
+      else if (minD === 1) { tAlpha = 0.8; tWidth = Math.max(1.5, 2 / zoom); }
+      else if (minD === 2) { tAlpha = 0.4; tWidth = Math.max(1, 1.5 / zoom); }
       else { tAlpha = 0.05; tWidth = Math.max(0.5, 1 / zoom); }
     }
     
-    edge.aAlpha = edge.aAlpha !== undefined ? edge.aAlpha : 0.25;
+    edge.aAlpha = edge.aAlpha !== undefined ? edge.aAlpha : 0.5;
     edge.aWidth = edge.aWidth || Math.max(1, 1.5 / zoom);
     
     edge.aAlpha += (tAlpha - edge.aAlpha) * 0.1;
@@ -546,7 +546,7 @@ function draw() {
     const midY = from.y + dy * 0.5;
     
     // The further they are pulled apart, the thinner the middle gets
-    const pinchRatio = Math.max(0.15, 30 / Math.max(30, len));
+    const pinchRatio = Math.max(0.02, 12 / Math.max(12, len));
     const pinchW = Math.min(wFrom, wTo) * pinchRatio;
 
     ctx.moveTo(from.x + nx * wFrom, from.y + ny * wFrom);
