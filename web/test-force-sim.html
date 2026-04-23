@@ -522,13 +522,40 @@ function draw() {
     edge.aAlpha += (tAlpha - edge.aAlpha) * 0.1;
     edge.aWidth += (tWidth - edge.aWidth) * 0.1;
     
-    ctx.strokeStyle = `rgba(74, 158, 255, ${edge.aAlpha})`;
-    ctx.lineWidth = edge.aWidth;
+    const nodeFrom = nodeMap ? nodeMap.get(edge.from) : null;
+    const nodeTo = nodeMap ? nodeMap.get(edge.to) : null;
     
+    // Tapering width based on node scale (perspective/focus depth)
+    const wFrom = (nodeFrom && nodeFrom.aScale ? nodeFrom.aScale : 1) * edge.aWidth * 1.8;
+    const wTo = (nodeTo && nodeTo.aScale ? nodeTo.aScale : 1) * edge.aWidth * 1.8;
+    
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    
+    if (len < 0.1) continue;
+    
+    const nx = -dy / len;
+    const ny = dx / len;
+    
+    ctx.fillStyle = `rgba(74, 158, 255, ${edge.aAlpha})`;
     ctx.beginPath();
-    ctx.moveTo(from.x, from.y);
-    ctx.lineTo(to.x, to.y);
-    ctx.stroke();
+    
+    // Chewing gum effect: thicker at the nodes, pinching elastically in the middle
+    const midX = from.x + dx * 0.5;
+    const midY = from.y + dy * 0.5;
+    
+    // The further they are pulled apart, the thinner the middle gets
+    const pinchRatio = Math.max(0.15, 30 / Math.max(30, len));
+    const pinchW = Math.min(wFrom, wTo) * pinchRatio;
+
+    ctx.moveTo(from.x + nx * wFrom, from.y + ny * wFrom);
+    ctx.quadraticCurveTo(midX + nx * pinchW, midY + ny * pinchW, to.x + nx * wTo, to.y + ny * wTo);
+    ctx.lineTo(to.x - nx * wTo, to.y - ny * wTo);
+    ctx.quadraticCurveTo(midX - nx * pinchW, midY - ny * pinchW, from.x - nx * wFrom, from.y - ny * wFrom);
+    
+    ctx.closePath();
+    ctx.fill();
   }
 
   // Sort nodes so background is drawn first, dragged is drawn last
