@@ -592,7 +592,9 @@ function draw() {
       const midX = from.x + dx * 0.5;
       const midY = from.y + dy * 0.5;
       
-      const pinchRatio = Math.max(0.02, 12 / Math.max(12, len));
+      // The further they are pulled apart, the thinner the middle gets. 
+      // Using a quadratic curve so it pinches very strongly like stretched gum.
+      const pinchRatio = Math.max(0.005, Math.pow(15 / Math.max(15, len), 1.8));
       const pinchW = Math.min(wFrom, wTo) * pinchRatio;
       
       const ang = Math.atan2(dy, dx);
