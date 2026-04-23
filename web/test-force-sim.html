@@ -498,6 +498,29 @@ const depthGroups = {
   4: { edges: [], nodes: [] } 
 };
 
+// ─── OFFSCREEN LAYERS ───
+const offscreenCanvases = {
+  1: { canvas: document.createElement('canvas'), ctx: null },
+  2: { canvas: document.createElement('canvas'), ctx: null },
+  3: { canvas: document.createElement('canvas'), ctx: null },
+  4: { canvas: document.createElement('canvas'), ctx: null }
+};
+
+for (let i = 1; i <= 4; i++) {
+  offscreenCanvases[i].ctx = offscreenCanvases[i].canvas.getContext('2d', { alpha: true });
+}
+
+function resizeOffscreenCanvases() {
+  const dpr = window.devicePixelRatio || 1;
+  for (let i = 1; i <= 4; i++) {
+    const oc = offscreenCanvases[i].canvas;
+    if (oc.width !== canvas.width || oc.height !== canvas.height) {
+      oc.width = canvas.width;
+      oc.height = canvas.height;
+    }
+  }
+}
+
 // ─── RENDERING ───
 function blendBg(r, g, b, alpha) {
   const br = 15, bg = 23, bb = 42; // #0f172a
@@ -511,7 +534,19 @@ function draw() {
   const dpr = window.devicePixelRatio || 1;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.setTransform(dpr * zoom, 0, 0, dpr * zoom, dpr * panX, dpr * panY);
+  
+  resizeOffscreenCanvases();
+  
+  // Clear and setup offscreen canvases
+  for (let i = 1; i <= 4; i++) {
+    const octx = offscreenCanvases[i].ctx;
+    octx.setTransform(1, 0, 0, 1, 0, 0);
+    octx.clearRect(0, 0, canvas.width, canvas.height);
+    octx.setTransform(dpr * zoom, 0, 0, dpr * zoom, dpr * panX, dpr * panY);
+  }
+  
+  const mainCtx = ctx;
+  mainCtx.setTransform(dpr * zoom, 0, 0, dpr * zoom, dpr * panX, dpr * panY);
 
   // Lerp smoothing: interpolate displayed positions toward simulation positions
   const t = 1 - smoothing; // smoothing=0 → t=1 (instant), smoothing=0.9 → t=0.1 (very smooth)
@@ -545,11 +580,10 @@ function draw() {
     depthGroups[node.targetDepth !== undefined ? node.targetDepth : 4].nodes.push(node);
   }
 
-  ctx.strokeStyle = 'rgba(74, 158, 255, 0.25)';
-  ctx.lineWidth = Math.max(1, 1.5 / zoom);
+  const drawDepth = (d, currentCtx) => {
+    currentCtx.strokeStyle = 'rgba(74, 158, 255, 0.25)';
+    currentCtx.lineWidth = Math.max(1, 1.5 / zoom);
 
-  // Draw from background (4) to foreground (0)
-  for (let d = 4; d >= 0; d--) {
     // 1. Draw Edges for this depth
     for (const edge of depthGroups[d].edges) {
       const from = nodeCenter(edge.from);
@@ -593,7 +627,7 @@ function draw() {
         const alpha1 = nodeFrom && nodeFrom.aOpacity !== undefined ? nodeFrom.aOpacity : edge.aAlpha;
         const alpha2 = nodeTo && nodeTo.aOpacity !== undefined ? nodeTo.aOpacity : edge.aAlpha;
         
-        const grad = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
+        const grad = currentCtx.createLinearGradient(from.x, from.y, to.x, to.y);
         const c1 = (nodeFrom && nodeFrom.targetDepth === 0) ? blendBg(255, 107, 107, alpha1) : blendBg(74, 158, 255, alpha1);
         const c2 = (nodeTo && nodeTo.targetDepth === 0) ? blendBg(255, 107, 107, alpha2) : blendBg(74, 158, 255, alpha2);
         grad.addColorStop(0, c1);
@@ -601,29 +635,27 @@ function draw() {
         fillStyle = grad;
       }
       
-      ctx.fillStyle = fillStyle;
-      ctx.beginPath();
+      currentCtx.fillStyle = fillStyle;
+      currentCtx.beginPath();
       
       const midX = from.x + dx * 0.5;
       const midY = from.y + dy * 0.5;
       
-      // The further they are pulled apart, the thinner the middle gets. 
-      // Using a quadratic curve so it pinches very strongly like stretched gum.
       const pinchRatio = Math.max(0.005, Math.pow(15 / Math.max(15, len), 1.8));
       const pinchW = Math.min(wFrom, wTo) * pinchRatio;
       
       const ang = Math.atan2(dy, dx);
 
-      ctx.moveTo(from.x + nx * wFrom, from.y + ny * wFrom);
-      ctx.quadraticCurveTo(midX + nx * pinchW, midY + ny * pinchW, to.x + nx * wTo, to.y + ny * wTo);
+      currentCtx.moveTo(from.x + nx * wFrom, from.y + ny * wFrom);
+      currentCtx.quadraticCurveTo(midX + nx * pinchW, midY + ny * pinchW, to.x + nx * wTo, to.y + ny * wTo);
       // Rounded end at to
-      ctx.arc(to.x, to.y, wTo, ang + Math.PI/2, ang - Math.PI/2, true);
-      ctx.quadraticCurveTo(midX - nx * pinchW, midY - ny * pinchW, from.x - nx * wFrom, from.y - ny * wFrom);
+      currentCtx.arc(to.x, to.y, wTo, ang + Math.PI/2, ang - Math.PI/2, true);
+      currentCtx.quadraticCurveTo(midX - nx * pinchW, midY - ny * pinchW, from.x - nx * wFrom, from.y - ny * wFrom);
       // Rounded end at from
-      ctx.arc(from.x, from.y, wFrom, ang - Math.PI/2, ang - Math.PI * 1.5, true);
+      currentCtx.arc(from.x, from.y, wFrom, ang - Math.PI/2, ang - Math.PI * 1.5, true);
       
-      ctx.closePath();
-      ctx.fill();
+      currentCtx.closePath();
+      currentCtx.fill();
     }
 
     // 2. Draw Nodes for this depth
@@ -639,52 +671,69 @@ function draw() {
       const isIdle = !dragNode;
       const scaleT = isIdle ? 1 : (targetDepth === 0 ? 1.5 : targetDepth === 1 ? 1.2 : targetDepth === 2 ? 0.9 : targetDepth === 3 ? 0.7 : 0.5);
       const opacityT = isIdle ? 1 : (targetDepth === 0 ? 1 : targetDepth === 1 ? 0.9 : targetDepth === 2 ? 0.6 : targetDepth === 3 ? 0.4 : 0.15);
-      const blurT = isIdle ? 0 : (targetDepth === 0 ? 0 : targetDepth === 1 ? 0 : targetDepth === 2 ? 1 : targetDepth === 3 ? 2 : 4);
       
       const baseSpeed = isIdle ? 0.15 : 0.1;
       const depthMod = (node.lastDepth || 0) * 0.015;
       const speed = Math.max(0.02, baseSpeed - depthMod);
       
-      node.aScale = node.aScale || 1;
-      node.aOpacity = node.aOpacity !== undefined ? node.aOpacity : 1;
-      node.aBlur = node.aBlur || 0;
+      if (!('aScale' in node)) node.aScale = 1;
+      if (!('aOpacity' in node)) node.aOpacity = 1;
       
       node.aScale += (scaleT - node.aScale) * speed;
       node.aOpacity += (opacityT - node.aOpacity) * speed;
-      node.aBlur += (blurT - node.aBlur) * speed;
       
       const scale = node.aScale;
       const opacity = node.aOpacity;
-      const blur = node.aBlur;
       
-      ctx.filter = blur > 0.1 ? `blur(${blur}px)` : 'none';
-
       if (renderMode === 'dots') {
-        ctx.beginPath();
-        ctx.arc(pos.x, pos.y, DOT_RADIUS * scale, 0, Math.PI * 2);
-        ctx.fillStyle = isDragged ? blendBg(255, 107, 107, opacity) : blendBg(74, 158, 255, opacity);
-        ctx.fill();
+        currentCtx.beginPath();
+        currentCtx.arc(pos.x, pos.y, DOT_RADIUS * scale, 0, Math.PI * 2);
+        currentCtx.fillStyle = isDragged ? blendBg(255, 107, 107, opacity) : blendBg(74, 158, 255, opacity);
+        currentCtx.fill();
       } else {
         const w = node.w * scale, h = node.h * scale, x = pos.x - (w - node.w)/2, y = pos.y - (h - node.h)/2;
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(x, y, w, h, 4);
-        else ctx.rect(x, y, w, h);
-        ctx.fillStyle = isDragged ? blendBg(255, 107, 107, opacity) : blendBg(42, 58, 94, opacity);
-        ctx.fill();
-        ctx.strokeStyle = isDragged ? blendBg(255, 153, 153, opacity) : blendBg(74, 158, 255, opacity);
-        ctx.lineWidth = isDragged ? 2 : 1;
-        ctx.stroke();
+        currentCtx.beginPath();
+        if (currentCtx.roundRect) currentCtx.roundRect(x, y, w, h, 4);
+        else currentCtx.rect(x, y, w, h);
+        currentCtx.fillStyle = isDragged ? blendBg(255, 107, 107, opacity) : blendBg(42, 58, 94, opacity);
+        currentCtx.fill();
+        currentCtx.strokeStyle = isDragged ? blendBg(255, 153, 153, opacity) : blendBg(74, 158, 255, opacity);
+        currentCtx.lineWidth = isDragged ? 2 : 1;
+        currentCtx.stroke();
 
-        ctx.font = `${12 * scale}px sans-serif`;
-        ctx.fillStyle = blendBg(255, 255, 255, opacity);
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(node.label || node.id, x + w / 2, y + h / 2);
+        currentCtx.font = `${12 * scale}px sans-serif`;
+        currentCtx.fillStyle = blendBg(255, 255, 255, opacity);
+        currentCtx.textAlign = 'center';
+        currentCtx.textBaseline = 'middle';
+        currentCtx.fillText(node.label || node.id, x + w / 2, y + h / 2);
       }
     }
+  };
+
+  // 1. Draw backgrounds (depths 4 to 1) into offscreen canvases
+  for (let d = 4; d >= 1; d--) {
+    drawDepth(d, offscreenCanvases[d].ctx);
   }
   
-  ctx.filter = 'none';
+  // 2. Composite offscreen layers onto main canvas with blur (from 4 up to 1)
+  mainCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform for composition
+  for (let d = 4; d >= 1; d--) {
+    const isIdle = !dragNode;
+    const blurPx = isIdle ? 0 : (d === 1 ? 0 : d === 2 ? 1 : d === 3 ? 3 : 5);
+    
+    if (blurPx > 0) {
+      mainCtx.filter = `blur(${blurPx}px)`;
+    } else {
+      mainCtx.filter = 'none';
+    }
+    
+    mainCtx.drawImage(offscreenCanvases[d].canvas, 0, 0);
+  }
+  mainCtx.filter = 'none';
+
+  // 3. Draw foreground (depth 0) directly on top
+  mainCtx.setTransform(dpr * zoom, 0, 0, dpr * zoom, dpr * panX, dpr * panY);
+  drawDepth(0, mainCtx);
 
   // Stats (cached DOM elements) — update every 500ms
   const now = performance.now();
@@ -978,6 +1027,7 @@ document.getElementById('btnAdd10').addEventListener('click', () => {
   rebuildAdjMap();
   rebuildNodeMap();
   updateStats();
+  updateInteractionDepths();
   if (worker) {
     worker.postMessage({ type: 'add', nodes: extra.nodes, edges: extra.edges });
   }
@@ -991,6 +1041,7 @@ document.getElementById('btnAdd50').addEventListener('click', () => {
   rebuildAdjMap();
   rebuildNodeMap();
   updateStats();
+  updateInteractionDepths();
   if (worker) {
     worker.postMessage({ type: 'add', nodes: extra.nodes, edges: extra.edges });
   }
