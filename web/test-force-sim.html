@@ -507,14 +507,14 @@ function draw() {
   const depthGroups = { 0: { edges: [], nodes: [] }, 1: { edges: [], nodes: [] }, 2: { edges: [], nodes: [] }, 3: { edges: [], nodes: [] }, 4: { edges: [], nodes: [] } };
 
   for (const edge of edges) {
-    let minD = 4;
+    let maxD = 4;
     if (dragNode) {
       const dA1 = interactionDepths.has(edge.from) ? interactionDepths.get(edge.from) : 4;
       const dA2 = interactionDepths.has(edge.to) ? interactionDepths.get(edge.to) : 4;
-      minD = Math.min(dA1, dA2);
+      maxD = Math.max(dA1, dA2);
     }
-    minD = Math.min(4, Math.max(0, minD));
-    depthGroups[minD].edges.push(edge);
+    maxD = Math.min(4, Math.max(0, maxD));
+    depthGroups[maxD].edges.push(edge);
   }
 
   for (const node of nodes) {
@@ -575,14 +575,15 @@ function draw() {
       if (dragNode) {
         const d1 = interactionDepths.has(edge.from) ? interactionDepths.get(edge.from) : 4;
         const d2 = interactionDepths.has(edge.to) ? interactionDepths.get(edge.to) : 4;
-        if (d1 === 0 || d2 === 0) {
-          const grad = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
-          const c1 = d1 === 0 ? blendBg(255, 107, 107, edge.aAlpha) : blendBg(74, 158, 255, edge.aAlpha);
-          const c2 = d2 === 0 ? blendBg(255, 107, 107, edge.aAlpha) : blendBg(74, 158, 255, edge.aAlpha);
-          grad.addColorStop(0, c1);
-          grad.addColorStop(1, c2);
-          fillStyle = grad;
-        }
+        const alpha1 = nodeFrom && nodeFrom.aOpacity !== undefined ? nodeFrom.aOpacity : edge.aAlpha;
+        const alpha2 = nodeTo && nodeTo.aOpacity !== undefined ? nodeTo.aOpacity : edge.aAlpha;
+        
+        const grad = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
+        const c1 = d1 === 0 ? blendBg(255, 107, 107, alpha1) : blendBg(74, 158, 255, alpha1);
+        const c2 = d2 === 0 ? blendBg(255, 107, 107, alpha2) : blendBg(74, 158, 255, alpha2);
+        grad.addColorStop(0, c1);
+        grad.addColorStop(1, c2);
+        fillStyle = grad;
       }
       
       ctx.fillStyle = fillStyle;
@@ -593,11 +594,16 @@ function draw() {
       
       const pinchRatio = Math.max(0.02, 12 / Math.max(12, len));
       const pinchW = Math.min(wFrom, wTo) * pinchRatio;
+      
+      const ang = Math.atan2(dy, dx);
 
       ctx.moveTo(from.x + nx * wFrom, from.y + ny * wFrom);
       ctx.quadraticCurveTo(midX + nx * pinchW, midY + ny * pinchW, to.x + nx * wTo, to.y + ny * wTo);
-      ctx.lineTo(to.x - nx * wTo, to.y - ny * wTo);
+      // Rounded end at to
+      ctx.arc(to.x, to.y, wTo, ang + Math.PI/2, ang - Math.PI/2, true);
       ctx.quadraticCurveTo(midX - nx * pinchW, midY - ny * pinchW, from.x - nx * wFrom, from.y - ny * wFrom);
+      // Rounded end at from
+      ctx.arc(from.x, from.y, wFrom, ang - Math.PI/2, ang - Math.PI * 1.5, true);
       
       ctx.closePath();
       ctx.fill();
