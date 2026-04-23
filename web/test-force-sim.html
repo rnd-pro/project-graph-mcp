@@ -471,6 +471,14 @@ function nodeCenter(id) {
 }
 
 // ─── RENDERING ───
+function blendBg(r, g, b, alpha) {
+  const br = 15, bg = 23, bb = 42; // #0f172a
+  const rr = Math.round(r * alpha + br * (1 - alpha));
+  const gg = Math.round(g * alpha + bg * (1 - alpha));
+  const bbb = Math.round(b * alpha + bb * (1 - alpha));
+  return `rgb(${rr},${gg},${bbb})`;
+}
+
 function draw() {
   const dpr = window.devicePixelRatio || 1;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -538,14 +546,14 @@ function draw() {
     const nx = -dy / len;
     const ny = dx / len;
     
-    let fillStyle = `rgba(74, 158, 255, ${edge.aAlpha})`;
+    let fillStyle = blendBg(74, 158, 255, edge.aAlpha);
     if (dragNode) {
       const d1 = interactionDepths.has(edge.from) ? interactionDepths.get(edge.from) : 4;
       const d2 = interactionDepths.has(edge.to) ? interactionDepths.get(edge.to) : 4;
       if (d1 === 0 || d2 === 0) {
         const grad = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
-        const c1 = d1 === 0 ? `rgba(255, 107, 107, ${edge.aAlpha})` : `rgba(74, 158, 255, ${edge.aAlpha})`;
-        const c2 = d2 === 0 ? `rgba(255, 107, 107, ${edge.aAlpha})` : `rgba(74, 158, 255, ${edge.aAlpha})`;
+        const c1 = d1 === 0 ? blendBg(255, 107, 107, edge.aAlpha) : blendBg(74, 158, 255, edge.aAlpha);
+        const c2 = d2 === 0 ? blendBg(255, 107, 107, edge.aAlpha) : blendBg(74, 158, 255, edge.aAlpha);
         grad.addColorStop(0, c1);
         grad.addColorStop(1, c2);
         fillStyle = grad;
@@ -609,34 +617,32 @@ function draw() {
     const opacity = node.aOpacity;
     const blur = node.aBlur;
     
-    ctx.globalAlpha = opacity;
     ctx.filter = blur > 0.1 ? `blur(${blur}px)` : 'none';
 
     if (renderMode === 'dots') {
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, DOT_RADIUS * scale, 0, Math.PI * 2);
-      ctx.fillStyle = isDragged ? '#ff6b6b' : '#4a9eff';
+      ctx.fillStyle = isDragged ? blendBg(255, 107, 107, opacity) : blendBg(74, 158, 255, opacity);
       ctx.fill();
     } else {
       const w = node.w * scale, h = node.h * scale, x = pos.x - (w - node.w)/2, y = pos.y - (h - node.h)/2;
       ctx.beginPath();
       if (ctx.roundRect) ctx.roundRect(x, y, w, h, 4);
       else ctx.rect(x, y, w, h);
-      ctx.fillStyle = isDragged ? '#ff6b6b' : '#2a3a5e';
+      ctx.fillStyle = isDragged ? blendBg(255, 107, 107, opacity) : blendBg(42, 58, 94, opacity);
       ctx.fill();
-      ctx.strokeStyle = isDragged ? '#ff9999' : '#4a9eff';
+      ctx.strokeStyle = isDragged ? blendBg(255, 153, 153, opacity) : blendBg(74, 158, 255, opacity);
       ctx.lineWidth = isDragged ? 2 : 1;
       ctx.stroke();
 
       ctx.font = `${12 * scale}px sans-serif`;
-      ctx.fillStyle = '#fff';
+      ctx.fillStyle = blendBg(255, 255, 255, opacity);
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(node.label || node.id, x + w / 2, y + h / 2);
     }
   }
   
-  ctx.globalAlpha = 1;
   ctx.filter = 'none';
 
   // Stats (cached DOM elements) — update every 500ms
