@@ -521,6 +521,24 @@ function resizeOffscreenCanvases() {
   }
 }
 
+// ─── LAYER ANIMATION STATE ───
+// Per-layer animated properties (lerped each frame for smooth transitions)
+const layerAnim = {
+  0: { scale: 1, opacity: 1, parallax: 0 },
+  1: { scale: 1, opacity: 1, parallax: 0 },
+  2: { scale: 1, opacity: 1, parallax: 0 },
+  3: { scale: 1, opacity: 1, parallax: 0 },
+  4: { scale: 1, opacity: 1, parallax: 0 }
+};
+
+// Target values when a node is being dragged
+const LAYER_TARGETS = {
+  scale:    [1.12, 1.0,  0.95, 0.88, 0.78],
+  opacity:  [1.0,  0.9,  0.55, 0.35, 0.12],
+  blur:     [0,    0,    1,    3,    5],
+  parallax: [0,    0,    0.02, 0.04, 0.07]
+};
+
 // ─── RENDERING ───
 function blendBg(r, g, b, alpha) {
   const br = 15, bg = 23, bb = 42; // #0f172a
@@ -537,16 +555,55 @@ function draw() {
   
   resizeOffscreenCanvases();
   
-  // Clear and setup offscreen canvases
+  const mainCtx = ctx;
+  const isIdle = !dragNode;
+
+  // ── Lerp layer animation state ──
+  const lerpSpeed = isIdle ? 0.08 : 0.06;
+  for (let d = 0; d <= 4; d++) {
+    const la = layerAnim[d];
+    const tScale    = isIdle ? 1 : LAYER_TARGETS.scale[d];
+    const tOpacity  = isIdle ? 1 : LAYER_TARGETS.opacity[d];
+    const tParallax = isIdle ? 0 : LAYER_TARGETS.parallax[d];
+    
+    la.scale    += (tScale    - la.scale)    * lerpSpeed;
+    la.opacity  += (tOpacity  - la.opacity)  * lerpSpeed;
+    la.parallax += (tParallax - la.parallax) * lerpSpeed;
+  }
+
+  // ── Compute drag screen delta for parallax ──
+  const vcx = canvas.width / 2;
+  const vcy = canvas.height / 2;
+  let dragDeltaX = 0, dragDeltaY = 0;
+  if (dragNode) {
+    const dp = nodePositions.get(dragNode.id);
+    if (dp) {
+      // Dragged node position in screen pixels
+      dragDeltaX = (dpr * zoom * dp.x + dpr * panX) - vcx;
+      dragDeltaY = (dpr * zoom * dp.y + dpr * panY) - vcy;
+    }
+  }
+
+  // ── Setup offscreen canvas transforms with layer scale + parallax ──
   for (let i = 1; i <= 4; i++) {
     const octx = offscreenCanvases[i].ctx;
+    const la = layerAnim[i];
+    const s = la.scale;
+    
+    // Parallax: deeper layers shift opposite to drag direction
+    const pOffX = -la.parallax * dragDeltaX;
+    const pOffY = -la.parallax * dragDeltaY;
+    
     octx.setTransform(1, 0, 0, 1, 0, 0);
     octx.clearRect(0, 0, canvas.width, canvas.height);
-    octx.setTransform(dpr * zoom, 0, 0, dpr * zoom, dpr * panX, dpr * panY);
+    
+    // Scale around viewport center + parallax offset
+    octx.setTransform(
+      s * dpr * zoom, 0, 0, s * dpr * zoom,
+      s * dpr * panX + vcx * (1 - s) + pOffX,
+      s * dpr * panY + vcy * (1 - s) + pOffY
+    );
   }
-  
-  const mainCtx = ctx;
-  mainCtx.setTransform(dpr * zoom, 0, 0, dpr * zoom, dpr * panX, dpr * panY);
 
   // Lerp smoothing: interpolate displayed positions toward simulation positions
   const t = 1 - smoothing; // smoothing=0 → t=1 (instant), smoothing=0.9 → t=0.1 (very smooth)
@@ -581,6 +638,9 @@ function draw() {
   }
 
   const drawDepth = (d, currentCtx) => {
+    const la = layerAnim[d];
+    const layerOpacity = la.opacity;
+    
     currentCtx.strokeStyle = 'rgba(74, 158, 255, 0.25)';
     currentCtx.lineWidth = Math.max(1, 1.5 / zoom);
 
@@ -601,17 +661,20 @@ function draw() {
         else { tAlpha = 0.05; tWidth = Math.max(0.5, 1 / zoom); }
       }
       
+      // Use layer opacity for blending
+      const edgeOpacity = tAlpha * layerOpacity;
+      
       edge.aAlpha = edge.aAlpha !== undefined ? edge.aAlpha : 0.5;
       edge.aWidth = edge.aWidth || Math.max(1, 1.5 / zoom);
       
-      edge.aAlpha += (tAlpha - edge.aAlpha) * 0.1;
+      edge.aAlpha += (edgeOpacity - edge.aAlpha) * 0.1;
       edge.aWidth += (tWidth - edge.aWidth) * 0.1;
       
       const nodeFrom = nodeMap ? nodeMap.get(edge.from) : null;
       const nodeTo = nodeMap ? nodeMap.get(edge.to) : null;
       
-      const wFrom = (nodeFrom && nodeFrom.aScale ? nodeFrom.aScale : 1) * edge.aWidth * 1.8;
-      const wTo = (nodeTo && nodeTo.aScale ? nodeTo.aScale : 1) * edge.aWidth * 1.8;
+      const wFrom = edge.aWidth * 1.8;
+      const wTo = edge.aWidth * 1.8;
       
       const dx = to.x - from.x;
       const dy = to.y - from.y;
@@ -624,12 +687,16 @@ function draw() {
       
       let fillStyle = blendBg(74, 158, 255, edge.aAlpha);
       if (dragNode) {
-        const alpha1 = nodeFrom && nodeFrom.aOpacity !== undefined ? nodeFrom.aOpacity : edge.aAlpha;
-        const alpha2 = nodeTo && nodeTo.aOpacity !== undefined ? nodeTo.aOpacity : edge.aAlpha;
+        const fromDepth = nodeFrom ? (nodeFrom.targetDepth !== undefined ? nodeFrom.targetDepth : 4) : 4;
+        const toDepth = nodeTo ? (nodeTo.targetDepth !== undefined ? nodeTo.targetDepth : 4) : 4;
+        
+        // Match gradient endpoints to each node's layer opacity
+        const fromOpacity = layerAnim[fromDepth].opacity;
+        const toOpacity = layerAnim[toDepth].opacity;
         
         const grad = currentCtx.createLinearGradient(from.x, from.y, to.x, to.y);
-        const c1 = (nodeFrom && nodeFrom.targetDepth === 0) ? blendBg(255, 107, 107, alpha1) : blendBg(74, 158, 255, alpha1);
-        const c2 = (nodeTo && nodeTo.targetDepth === 0) ? blendBg(255, 107, 107, alpha2) : blendBg(74, 158, 255, alpha2);
+        const c1 = (fromDepth === 0) ? blendBg(255, 107, 107, fromOpacity) : blendBg(74, 158, 255, fromOpacity);
+        const c2 = (toDepth === 0) ? blendBg(255, 107, 107, toOpacity) : blendBg(74, 158, 255, toOpacity);
         grad.addColorStop(0, c1);
         grad.addColorStop(1, c2);
         fillStyle = grad;
@@ -641,7 +708,7 @@ function draw() {
       const midX = from.x + dx * 0.5;
       const midY = from.y + dy * 0.5;
       
-      const pinchRatio = Math.max(0.005, Math.pow(15 / Math.max(15, len), 1.8));
+      const pinchRatio = Math.max(0.001, Math.pow(20 / Math.max(20, len), 2.8));
       const pinchW = Math.min(wFrom, wTo) * pinchRatio;
       
       const ang = Math.atan2(dy, dx);
@@ -658,54 +725,32 @@ function draw() {
       currentCtx.fill();
     }
 
-    // 2. Draw Nodes for this depth
+    // 2. Draw Nodes for this depth (scale is handled by canvas transform)
     for (const node of depthGroups[d].nodes) {
       const pos = getSmooth(node.id);
       if (!pos) continue;
       const isDragged = dragNode && dragNode.id === node.id;
       
-      const targetDepth = node.targetDepth !== undefined ? node.targetDepth : 4;
-      if (dragNode) node.lastDepth = targetDepth;
-      
-      // If no dragNode, targetDepth is essentially -1 (default state)
-      const isIdle = !dragNode;
-      const scaleT = isIdle ? 1 : (targetDepth === 0 ? 1.5 : targetDepth === 1 ? 1.2 : targetDepth === 2 ? 0.9 : targetDepth === 3 ? 0.7 : 0.5);
-      const opacityT = isIdle ? 1 : (targetDepth === 0 ? 1 : targetDepth === 1 ? 0.9 : targetDepth === 2 ? 0.6 : targetDepth === 3 ? 0.4 : 0.15);
-      
-      const baseSpeed = isIdle ? 0.15 : 0.1;
-      const depthMod = (node.lastDepth || 0) * 0.015;
-      const speed = Math.max(0.02, baseSpeed - depthMod);
-      
-      if (!('aScale' in node)) node.aScale = 1;
-      if (!('aOpacity' in node)) node.aOpacity = 1;
-      
-      node.aScale += (scaleT - node.aScale) * speed;
-      node.aOpacity += (opacityT - node.aOpacity) * speed;
-      
-      const scale = node.aScale;
-      const opacity = node.aOpacity;
-      
       if (renderMode === 'dots') {
         currentCtx.beginPath();
-        currentCtx.arc(pos.x, pos.y, DOT_RADIUS * scale, 0, Math.PI * 2);
-        currentCtx.fillStyle = isDragged ? blendBg(255, 107, 107, opacity) : blendBg(74, 158, 255, opacity);
+        currentCtx.arc(pos.x, pos.y, DOT_RADIUS, 0, Math.PI * 2);
+        currentCtx.fillStyle = isDragged ? blendBg(255, 107, 107, layerOpacity) : blendBg(74, 158, 255, layerOpacity);
         currentCtx.fill();
       } else {
-        const w = node.w * scale, h = node.h * scale, x = pos.x - (w - node.w)/2, y = pos.y - (h - node.h)/2;
         currentCtx.beginPath();
-        if (currentCtx.roundRect) currentCtx.roundRect(x, y, w, h, 4);
-        else currentCtx.rect(x, y, w, h);
-        currentCtx.fillStyle = isDragged ? blendBg(255, 107, 107, opacity) : blendBg(42, 58, 94, opacity);
+        if (currentCtx.roundRect) currentCtx.roundRect(pos.x, pos.y, node.w, node.h, 4);
+        else currentCtx.rect(pos.x, pos.y, node.w, node.h);
+        currentCtx.fillStyle = isDragged ? blendBg(255, 107, 107, layerOpacity) : blendBg(42, 58, 94, layerOpacity);
         currentCtx.fill();
-        currentCtx.strokeStyle = isDragged ? blendBg(255, 153, 153, opacity) : blendBg(74, 158, 255, opacity);
+        currentCtx.strokeStyle = isDragged ? blendBg(255, 153, 153, layerOpacity) : blendBg(74, 158, 255, layerOpacity);
         currentCtx.lineWidth = isDragged ? 2 : 1;
         currentCtx.stroke();
 
-        currentCtx.font = `${12 * scale}px sans-serif`;
-        currentCtx.fillStyle = blendBg(255, 255, 255, opacity);
+        currentCtx.font = `12px sans-serif`;
+        currentCtx.fillStyle = blendBg(255, 255, 255, layerOpacity);
         currentCtx.textAlign = 'center';
         currentCtx.textBaseline = 'middle';
-        currentCtx.fillText(node.label || node.id, x + w / 2, y + h / 2);
+        currentCtx.fillText(node.label || node.id, pos.x + node.w / 2, pos.y + node.h / 2);
       }
     }
   };
@@ -716,13 +761,15 @@ function draw() {
   }
   
   // 2. Composite offscreen layers onto main canvas with blur (from 4 up to 1)
-  mainCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform for composition
+  mainCtx.setTransform(1, 0, 0, 1, 0, 0);
   for (let d = 4; d >= 1; d--) {
-    const isIdle = !dragNode;
-    const blurPx = isIdle ? 0 : (d === 1 ? 0 : d === 2 ? 1 : d === 3 ? 3 : 5);
+    const blurPx = LAYER_TARGETS.blur[d];
+    const animBlur = isIdle ? 0 : blurPx * Math.min(1, 1 - layerAnim[d].scale / 1);
+    // Use the animated parallax proximity to determine blur intensity
+    const blurIntensity = Math.abs(1 - layerAnim[d].scale) * blurPx * 8;
     
-    if (blurPx > 0) {
-      mainCtx.filter = `blur(${blurPx}px)`;
+    if (blurIntensity > 0.3) {
+      mainCtx.filter = `blur(${blurIntensity.toFixed(1)}px)`;
     } else {
       mainCtx.filter = 'none';
     }
@@ -731,9 +778,24 @@ function draw() {
   }
   mainCtx.filter = 'none';
 
-  // 3. Draw foreground (depth 0) directly on top
-  mainCtx.setTransform(dpr * zoom, 0, 0, dpr * zoom, dpr * panX, dpr * panY);
-  drawDepth(0, mainCtx);
+  // 3. Draw foreground (depth 0) — scale around dragged node so it stays under cursor
+  {
+    const s = layerAnim[0].scale;
+    const dragPos = dragNode ? getSmooth(dragNode.id) : null;
+    if (dragPos && Math.abs(s - 1) > 0.001) {
+      // Scale around the dragged node's screen position
+      const sx = dpr * zoom * dragPos.x + dpr * panX;
+      const sy = dpr * zoom * dragPos.y + dpr * panY;
+      mainCtx.setTransform(
+        s * dpr * zoom, 0, 0, s * dpr * zoom,
+        sx * (1 - s) + s * dpr * panX,
+        sy * (1 - s) + s * dpr * panY
+      );
+    } else {
+      mainCtx.setTransform(dpr * zoom, 0, 0, dpr * zoom, dpr * panX, dpr * panY);
+    }
+    drawDepth(0, mainCtx);
+  }
 
   // Stats (cached DOM elements) — update every 500ms
   const now = performance.now();

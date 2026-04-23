@@ -1,0 +1,808 @@
+{
+  "nodes": [
+    {
+      "id": "analysis/analysis-cache.js",
+      "label": "analysis-cache.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "analysis/complexity.js",
+      "label": "complexity.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "analysis/custom-rules.js",
+      "label": "custom-rules.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "analysis/db-analysis.js",
+      "label": "db-analysis.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "analysis/dead-code.js",
+      "label": "dead-code.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "analysis/full-analysis.js",
+      "label": "full-analysis.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "analysis/jsdoc-checker.js",
+      "label": "jsdoc-checker.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "analysis/jsdoc-generator.js",
+      "label": "jsdoc-generator.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "core/parser.js",
+      "label": "parser.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "analysis/large-files.js",
+      "label": "large-files.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "analysis/outdated-patterns.js",
+      "label": "outdated-patterns.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "analysis/similar-functions.js",
+      "label": "similar-functions.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "analysis/test-annotations.js",
+      "label": "test-annotations.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "analysis/type-checker.js",
+      "label": "type-checker.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "analysis/undocumented.js",
+      "label": "undocumented.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "cli/cli.js",
+      "label": "cli.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "compact/ai-context.js",
+      "label": "ai-context.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "compact/compact-migrate.js",
+      "label": "compact-migrate.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "compact/compact.js",
+      "label": "compact.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "compact/expand.js",
+      "label": "expand.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "compact/compress.js",
+      "label": "compress.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "compact/ctx-resolver.js",
+      "label": "ctx-resolver.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "compact/ctx-to-jsdoc.js",
+      "label": "ctx-to-jsdoc.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "compact/doc-dialect.js",
+      "label": "doc-dialect.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "compact/framework-references.js",
+      "label": "framework-references.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "compact/instructions.js",
+      "label": "instructions.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "compact/jsdoc-builder.js",
+      "label": "jsdoc-builder.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "compact/mode-config.js",
+      "label": "mode-config.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "compact/split-declarations.js",
+      "label": "split-declarations.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "compact/validate-pipeline.js",
+      "label": "validate-pipeline.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "core/event-bus.js",
+      "label": "event-bus.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "core/file-walker.js",
+      "label": "file-walker.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "core/filters.js",
+      "label": "filters.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "core/graph-builder.js",
+      "label": "graph-builder.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "core/utils.js",
+      "label": "utils.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "core/workspace.js",
+      "label": "workspace.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "lang/lang-go.js",
+      "label": "lang-go.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "lang/lang-python.js",
+      "label": "lang-python.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "lang/lang-sql.js",
+      "label": "lang-sql.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "lang/lang-typescript.js",
+      "label": "lang-typescript.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "lang/lang-utils.js",
+      "label": "lang-utils.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "mcp/mcp-server.js",
+      "label": "mcp-server.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "mcp/tools.js",
+      "label": "tools.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "network/backend-lifecycle.js",
+      "label": "backend-lifecycle.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "network/local-gateway.js",
+      "label": "local-gateway.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "network/mdns.js",
+      "label": "mdns.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "network/web-server.js",
+      "label": "web-server.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "cli/cli-handlers.js",
+      "label": "cli-handlers.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "mcp/tool-defs.js",
+      "label": "tool-defs.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "network/backend.js",
+      "label": "backend.js",
+      "w": 160,
+      "h": 40
+    },
+    {
+      "id": "network/server.js",
+      "label": "server.js",
+      "w": 160,
+      "h": 40
+    }
+  ],
+  "edges": [
+    {
+      "from": "analysis/complexity.js",
+      "to": "core/filters.js"
+    },
+    {
+      "from": "analysis/custom-rules.js",
+      "to": "core/filters.js"
+    },
+    {
+      "from": "analysis/db-analysis.js",
+      "to": "core/parser.js"
+    },
+    {
+      "from": "analysis/db-analysis.js",
+      "to": "core/graph-builder.js"
+    },
+    {
+      "from": "analysis/dead-code.js",
+      "to": "core/filters.js"
+    },
+    {
+      "from": "analysis/full-analysis.js",
+      "to": "analysis/dead-code.js"
+    },
+    {
+      "from": "analysis/full-analysis.js",
+      "to": "analysis/undocumented.js"
+    },
+    {
+      "from": "analysis/full-analysis.js",
+      "to": "analysis/similar-functions.js"
+    },
+    {
+      "from": "analysis/full-analysis.js",
+      "to": "analysis/complexity.js"
+    },
+    {
+      "from": "analysis/full-analysis.js",
+      "to": "analysis/large-files.js"
+    },
+    {
+      "from": "analysis/full-analysis.js",
+      "to": "analysis/outdated-patterns.js"
+    },
+    {
+      "from": "analysis/full-analysis.js",
+      "to": "analysis/db-analysis.js"
+    },
+    {
+      "from": "analysis/full-analysis.js",
+      "to": "analysis/jsdoc-checker.js"
+    },
+    {
+      "from": "analysis/full-analysis.js",
+      "to": "analysis/analysis-cache.js"
+    },
+    {
+      "from": "analysis/full-analysis.js",
+      "to": "core/filters.js"
+    },
+    {
+      "from": "analysis/full-analysis.js",
+      "to": "core/workspace.js"
+    },
+    {
+      "from": "analysis/jsdoc-checker.js",
+      "to": "core/filters.js"
+    },
+    {
+      "from": "analysis/jsdoc-generator.js",
+      "to": "core/workspace.js"
+    },
+    {
+      "from": "analysis/large-files.js",
+      "to": "core/filters.js"
+    },
+    {
+      "from": "analysis/outdated-patterns.js",
+      "to": "core/filters.js"
+    },
+    {
+      "from": "analysis/similar-functions.js",
+      "to": "core/filters.js"
+    },
+    {
+      "from": "analysis/undocumented.js",
+      "to": "core/filters.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "mcp/tools.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "analysis/test-annotations.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "core/filters.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "compact/instructions.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "analysis/undocumented.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "analysis/dead-code.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "analysis/jsdoc-generator.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "analysis/similar-functions.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "analysis/complexity.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "analysis/large-files.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "analysis/outdated-patterns.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "analysis/full-analysis.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "compact/compress.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "compact/doc-dialect.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "core/parser.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "core/workspace.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "analysis/jsdoc-checker.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "analysis/type-checker.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "compact/compact.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "compact/ctx-to-jsdoc.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "compact/mode-config.js"
+    },
+    {
+      "from": "cli/cli-handlers.js",
+      "to": "compact/compact-migrate.js"
+    },
+    {
+      "from": "cli/cli.js",
+      "to": "cli/cli-handlers.js"
+    },
+    {
+      "from": "compact/ai-context.js",
+      "to": "core/utils.js"
+    },
+    {
+      "from": "compact/ai-context.js",
+      "to": "mcp/tools.js"
+    },
+    {
+      "from": "compact/ai-context.js",
+      "to": "compact/doc-dialect.js"
+    },
+    {
+      "from": "compact/ai-context.js",
+      "to": "compact/compress.js"
+    },
+    {
+      "from": "compact/ai-context.js",
+      "to": "core/parser.js"
+    },
+    {
+      "from": "compact/compact-migrate.js",
+      "to": "core/file-walker.js"
+    },
+    {
+      "from": "compact/compact-migrate.js",
+      "to": "compact/compact.js"
+    },
+    {
+      "from": "compact/compact-migrate.js",
+      "to": "compact/validate-pipeline.js"
+    },
+    {
+      "from": "compact/compact-migrate.js",
+      "to": "compact/mode-config.js"
+    },
+    {
+      "from": "compact/compact.js",
+      "to": "compact/ctx-resolver.js"
+    },
+    {
+      "from": "compact/compact.js",
+      "to": "core/file-walker.js"
+    },
+    {
+      "from": "compact/compress.js",
+      "to": "core/utils.js"
+    },
+    {
+      "from": "compact/ctx-to-jsdoc.js",
+      "to": "core/file-walker.js"
+    },
+    {
+      "from": "compact/ctx-to-jsdoc.js",
+      "to": "compact/ctx-resolver.js"
+    },
+    {
+      "from": "compact/ctx-to-jsdoc.js",
+      "to": "compact/jsdoc-builder.js"
+    },
+    {
+      "from": "compact/doc-dialect.js",
+      "to": "analysis/analysis-cache.js"
+    },
+    {
+      "from": "compact/doc-dialect.js",
+      "to": "analysis/complexity.js"
+    },
+    {
+      "from": "compact/doc-dialect.js",
+      "to": "analysis/undocumented.js"
+    },
+    {
+      "from": "compact/doc-dialect.js",
+      "to": "analysis/jsdoc-checker.js"
+    },
+    {
+      "from": "compact/expand.js",
+      "to": "compact/jsdoc-builder.js"
+    },
+    {
+      "from": "compact/expand.js",
+      "to": "compact/ctx-resolver.js"
+    },
+    {
+      "from": "compact/expand.js",
+      "to": "core/file-walker.js"
+    },
+    {
+      "from": "compact/framework-references.js",
+      "to": "analysis/custom-rules.js"
+    },
+    {
+      "from": "compact/validate-pipeline.js",
+      "to": "core/file-walker.js"
+    },
+    {
+      "from": "compact/validate-pipeline.js",
+      "to": "core/utils.js"
+    },
+    {
+      "from": "compact/validate-pipeline.js",
+      "to": "compact/ctx-to-jsdoc.js"
+    },
+    {
+      "from": "compact/validate-pipeline.js",
+      "to": "compact/expand.js"
+    },
+    {
+      "from": "compact/validate-pipeline.js",
+      "to": "core/parser.js"
+    },
+    {
+      "from": "compact/validate-pipeline.js",
+      "to": "mcp/tools.js"
+    },
+    {
+      "from": "compact/validate-pipeline.js",
+      "to": "compact/doc-dialect.js"
+    },
+    {
+      "from": "compact/validate-pipeline.js",
+      "to": "compact/split-declarations.js"
+    },
+    {
+      "from": "core/parser.js",
+      "to": "core/filters.js"
+    },
+    {
+      "from": "core/parser.js",
+      "to": "lang/lang-typescript.js"
+    },
+    {
+      "from": "core/parser.js",
+      "to": "lang/lang-python.js"
+    },
+    {
+      "from": "core/parser.js",
+      "to": "lang/lang-go.js"
+    },
+    {
+      "from": "core/parser.js",
+      "to": "lang/lang-sql.js"
+    },
+    {
+      "from": "lang/lang-go.js",
+      "to": "lang/lang-utils.js"
+    },
+    {
+      "from": "lang/lang-python.js",
+      "to": "lang/lang-utils.js"
+    },
+    {
+      "from": "lang/lang-typescript.js",
+      "to": "lang/lang-utils.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "mcp/tool-defs.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "core/event-bus.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "mcp/tools.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "analysis/test-annotations.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "core/filters.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "compact/instructions.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "analysis/undocumented.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "analysis/dead-code.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "analysis/jsdoc-generator.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "analysis/similar-functions.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "analysis/complexity.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "analysis/large-files.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "analysis/outdated-patterns.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "analysis/full-analysis.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "analysis/custom-rules.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "compact/framework-references.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "core/workspace.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "analysis/db-analysis.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "compact/compress.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "compact/doc-dialect.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "core/parser.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "compact/ai-context.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "analysis/jsdoc-checker.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "analysis/type-checker.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "compact/compact.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "compact/expand.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "compact/validate-pipeline.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "compact/ctx-to-jsdoc.js"
+    },
+    {
+      "from": "mcp/mcp-server.js",
+      "to": "compact/mode-config.js"
+    },
+    {
+      "from": "mcp/tools.js",
+      "to": "core/parser.js"
+    },
+    {
+      "from": "mcp/tools.js",
+      "to": "core/graph-builder.js"
+    },
+    {
+      "from": "network/backend.js",
+      "to": "network/web-server.js"
+    },
+    {
+      "from": "network/backend.js",
+      "to": "network/backend-lifecycle.js"
+    },
+    {
+      "from": "network/local-gateway.js",
+      "to": "network/mdns.js"
+    },
+    {
+      "from": "network/web-server.js",
+      "to": "mcp/mcp-server.js"
+    },
+    {
+      "from": "network/web-server.js",
+      "to": "core/event-bus.js"
+    },
+    {
+      "from": "network/web-server.js",
+      "to": "network/local-gateway.js"
+    },
+    {
+      "from": "network/web-server.js",
+      "to": "compact/compress.js"
+    },
+    {
+      "from": "network/web-server.js",
+      "to": "compact/expand.js"
+    },
+    {
+      "from": "network/web-server.js",
+      "to": "core/workspace.js"
+    }
+  ]
+}
