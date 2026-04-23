@@ -321,13 +321,25 @@ function rebuildAdjMap() {
 
 function updateInteractionDepths() {
   interactionDepths.clear();
+  
+  // Pre-set all to default background depth (4)
+  for (const node of nodes) node.targetDepth = 4;
+  for (const edge of edges) {
+    edge.targetDepth = 4;
+    edge.minTargetDepth = 4;
+  }
+  
   if (!dragNode) return;
+  
   const queue = [[dragNode.id, 0]];
   const visited = new Set([dragNode.id]);
   interactionDepths.set(dragNode.id, 0);
 
   while (queue.length > 0) {
     const [curr, depth] = queue.shift();
+    const currNode = nodeMap.get(curr);
+    if (currNode) currNode.targetDepth = depth;
+    
     if (depth >= 3) continue;
     const neighbors = adjMap.get(curr) || new Set();
     for (const n of neighbors) {
@@ -337,6 +349,14 @@ function updateInteractionDepths() {
         queue.push([n, depth + 1]);
       }
     }
+  }
+  
+  // Precalculate edge depths to avoid Math.min/max in draw loop
+  for (const edge of edges) {
+    const d1 = interactionDepths.has(edge.from) ? interactionDepths.get(edge.from) : 4;
+    const d2 = interactionDepths.has(edge.to) ? interactionDepths.get(edge.to) : 4;
+    edge.targetDepth = Math.max(d1, d2);
+    edge.minTargetDepth = Math.min(d1, d2);
   }
 }
 
@@ -470,12 +490,20 @@ function nodeCenter(id) {
   return { x: pos.x + node.w / 2, y: pos.y + node.h / 2 };
 }
 
+const depthGroups = { 
+  0: { edges: [], nodes: [] }, 
+  1: { edges: [], nodes: [] }, 
+  2: { edges: [], nodes: [] }, 
+  3: { edges: [], nodes: [] }, 
+  4: { edges: [], nodes: [] } 
+};
+
 // ─── RENDERING ───
 function blendBg(r, g, b, alpha) {
   const br = 15, bg = 23, bb = 42; // #0f172a
-  const rr = Math.round(r * alpha + br * (1 - alpha));
-  const gg = Math.round(g * alpha + bg * (1 - alpha));
-  const bbb = Math.round(b * alpha + bb * (1 - alpha));
+  const rr = (r * alpha + br * (1 - alpha)) | 0;
+  const gg = (g * alpha + bg * (1 - alpha)) | 0;
+  const bbb = (b * alpha + bb * (1 - alpha)) | 0;
   return `rgb(${rr},${gg},${bbb})`;
 }
 
@@ -504,26 +532,17 @@ function draw() {
   }
 
   // Group elements by depth
-  const depthGroups = { 0: { edges: [], nodes: [] }, 1: { edges: [], nodes: [] }, 2: { edges: [], nodes: [] }, 3: { edges: [], nodes: [] }, 4: { edges: [], nodes: [] } };
+  for (let i = 0; i <= 4; i++) {
+    depthGroups[i].edges.length = 0;
+    depthGroups[i].nodes.length = 0;
+  }
 
   for (const edge of edges) {
-    let maxD = 4;
-    if (dragNode) {
-      const dA1 = interactionDepths.has(edge.from) ? interactionDepths.get(edge.from) : 4;
-      const dA2 = interactionDepths.has(edge.to) ? interactionDepths.get(edge.to) : 4;
-      maxD = Math.max(dA1, dA2);
-    }
-    maxD = Math.min(4, Math.max(0, maxD));
-    depthGroups[maxD].edges.push(edge);
+    depthGroups[edge.targetDepth !== undefined ? edge.targetDepth : 4].edges.push(edge);
   }
 
   for (const node of nodes) {
-    let d = 4;
-    if (dragNode) {
-      d = interactionDepths.has(node.id) ? interactionDepths.get(node.id) : 4;
-    }
-    d = Math.min(4, Math.max(0, d));
-    depthGroups[d].nodes.push(node);
+    depthGroups[node.targetDepth !== undefined ? node.targetDepth : 4].nodes.push(node);
   }
 
   ctx.strokeStyle = 'rgba(74, 158, 255, 0.25)';
@@ -541,9 +560,7 @@ function draw() {
       let tWidth = Math.max(1, 1.5 / zoom);
       
       if (dragNode) {
-        const d1 = interactionDepths.has(edge.from) ? interactionDepths.get(edge.from) : 4;
-        const d2 = interactionDepths.has(edge.to) ? interactionDepths.get(edge.to) : 4;
-        const minD = Math.min(d1, d2);
+        const minD = edge.minTargetDepth;
         if (minD === 0) { tAlpha = 1; tWidth = Math.max(2, 3 / zoom); }
         else if (minD === 1) { tAlpha = 0.8; tWidth = Math.max(1.5, 2 / zoom); }
         else if (minD === 2) { tAlpha = 0.4; tWidth = Math.max(1, 1.5 / zoom); }
@@ -573,14 +590,12 @@ function draw() {
       
       let fillStyle = blendBg(74, 158, 255, edge.aAlpha);
       if (dragNode) {
-        const d1 = interactionDepths.has(edge.from) ? interactionDepths.get(edge.from) : 4;
-        const d2 = interactionDepths.has(edge.to) ? interactionDepths.get(edge.to) : 4;
         const alpha1 = nodeFrom && nodeFrom.aOpacity !== undefined ? nodeFrom.aOpacity : edge.aAlpha;
         const alpha2 = nodeTo && nodeTo.aOpacity !== undefined ? nodeTo.aOpacity : edge.aAlpha;
         
         const grad = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
-        const c1 = d1 === 0 ? blendBg(255, 107, 107, alpha1) : blendBg(74, 158, 255, alpha1);
-        const c2 = d2 === 0 ? blendBg(255, 107, 107, alpha2) : blendBg(74, 158, 255, alpha2);
+        const c1 = (nodeFrom && nodeFrom.targetDepth === 0) ? blendBg(255, 107, 107, alpha1) : blendBg(74, 158, 255, alpha1);
+        const c2 = (nodeTo && nodeTo.targetDepth === 0) ? blendBg(255, 107, 107, alpha2) : blendBg(74, 158, 255, alpha2);
         grad.addColorStop(0, c1);
         grad.addColorStop(1, c2);
         fillStyle = grad;
@@ -617,14 +632,16 @@ function draw() {
       if (!pos) continue;
       const isDragged = dragNode && dragNode.id === node.id;
       
-      const targetDepth = dragNode ? (interactionDepths.has(node.id) ? interactionDepths.get(node.id) : 4) : -1;
-      if (targetDepth !== -1) node.lastDepth = targetDepth;
+      const targetDepth = node.targetDepth !== undefined ? node.targetDepth : 4;
+      if (dragNode) node.lastDepth = targetDepth;
       
-      const scaleT = targetDepth === -1 ? 1 : (targetDepth === 0 ? 1.5 : targetDepth === 1 ? 1.2 : targetDepth === 2 ? 0.9 : targetDepth === 3 ? 0.7 : 0.5);
-      const opacityT = targetDepth === -1 ? 1 : (targetDepth === 0 ? 1 : targetDepth === 1 ? 0.9 : targetDepth === 2 ? 0.6 : targetDepth === 3 ? 0.4 : 0.15);
-      const blurT = targetDepth === -1 ? 0 : (targetDepth === 0 ? 0 : targetDepth === 1 ? 0 : targetDepth === 2 ? 1 : targetDepth === 3 ? 2 : 4);
+      // If no dragNode, targetDepth is essentially -1 (default state)
+      const isIdle = !dragNode;
+      const scaleT = isIdle ? 1 : (targetDepth === 0 ? 1.5 : targetDepth === 1 ? 1.2 : targetDepth === 2 ? 0.9 : targetDepth === 3 ? 0.7 : 0.5);
+      const opacityT = isIdle ? 1 : (targetDepth === 0 ? 1 : targetDepth === 1 ? 0.9 : targetDepth === 2 ? 0.6 : targetDepth === 3 ? 0.4 : 0.15);
+      const blurT = isIdle ? 0 : (targetDepth === 0 ? 0 : targetDepth === 1 ? 0 : targetDepth === 2 ? 1 : targetDepth === 3 ? 2 : 4);
       
-      const baseSpeed = targetDepth === -1 ? 0.15 : 0.1;
+      const baseSpeed = isIdle ? 0.15 : 0.1;
       const depthMod = (node.lastDepth || 0) * 0.015;
       const speed = Math.max(0.02, baseSpeed - depthMod);
       
