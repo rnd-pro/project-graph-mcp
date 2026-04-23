@@ -829,6 +829,8 @@ export class DepGraph extends Symbiote {
 
   /** @type {NodeEditor|null} */
   _editor = null;
+  /** @type {boolean} Tracks whether a node was dragged (suppresses click-to-focus) */
+  _wasDragged = false;
   /** @type {Map<string, string>} */
   _fileMap = new Map();
   /** @type {boolean} */
@@ -1113,6 +1115,12 @@ export class DepGraph extends Symbiote {
     this._canvas?.addEventListener('click', (e) => {
       const nodeEl = e.target.closest('graph-node');
       if (!nodeEl) return;
+
+      // Skip click-to-focus if this click came from a drag-end
+      if (this._wasDragged) {
+        this._wasDragged = false;
+        return;
+      }
       
       const nodeId = nodeEl.getAttribute('node-id');
       const path = this._idToPath?.get(nodeId);
@@ -1694,6 +1702,7 @@ export class DepGraph extends Symbiote {
           this._canvas.setNodePosition(nodeId, pos.x, pos.y);
         }
         this._canvas.setBatchMode(false);
+        this._canvas.syncPhantom?.();
         // Throttle refreshConnections — expensive for 2000+ nodes
         if (!this._forceTickRaf) {
           this._forceTickRaf = requestAnimationFrame(() => {
@@ -1712,6 +1721,15 @@ export class DepGraph extends Symbiote {
           if (!_hashHasFocus) {
             this._canvas.fitView();
           }
+          // In continuous mode: restore hash navigation after initial convergence settles
+          setTimeout(() => {
+            const fullHash = window.location.hash;
+            const hasPath = /^#graph\//.test(fullHash);
+            const hasParams = fullHash.includes('?');
+            if (hasPath || hasParams) {
+              this._router?.restoreFromHash(editor);
+            }
+          }, 800);
         }
       };
 
@@ -1756,7 +1774,33 @@ export class DepGraph extends Symbiote {
           linkDistance: nodeCount > 500 ? 100 : 150,
           nodeWidth: 260,
           nodeHeight: 40,
+          mode: 'continuous',
+          brownian: 0,
         },
+      });
+
+      // Hook drag events to pin/unpin nodes in force simulation
+      // When user picks up a node → pin it (fix position in simulation)
+      // When user moves it → update pinned position (neighbors react)
+      // When user drops it → unpin (let simulation settle naturally)
+      editor.on('nodepicked', (node) => {
+        if (!this._forceLayout?.running) return;
+        const el = this._canvas?.getNodeView?.(node.id) || this._canvas?.querySelector(`[node-id="${node.id}"]`);
+        const pos = el?._position;
+        if (pos) {
+          this._forceLayout.pin(node.id, pos.x, pos.y);
+        }
+      });
+
+      editor.on('nodetranslated', ({ id, position }) => {
+        if (!this._forceLayout?.running) return;
+        this._forceLayout.pin(id, position.x, position.y);
+      });
+
+      editor.on('nodedragged', ({ id }) => {
+        this._wasDragged = true;
+        if (!this._forceLayout?.running) return;
+        this._forceLayout.unpin(id);
       });
 
       // Don't wait for ResizeObserver — we already started the worker above.
@@ -2000,13 +2044,6 @@ export class DepGraph extends Symbiote {
             to: c.to,
           }));
 
-          // BUG-FIX: provide real DOM node dimensions so collision solver works correctly.
-          // Default in ForceWorker is 160×32, but graph-node renders at ~260×40.
-          // Now sizes are passed per-node in forceNodes.
-          const nodeSizeEntries = Object.entries(nodeSizes);
-          const measuredW = nodeSizeEntries.length > 0 ? nodeSizeEntries[0][1].w : 260;
-          const measuredH = nodeSizeEntries.length > 0 ? nodeSizeEntries[0][1].h : 40;
-
           // onTick: provide live visual feedback so user sees nodes spreading, not a freeze.
           this._forceLayout.onTick = (tickPositions) => {
             if (!this._canvas) return;
@@ -2065,8 +2102,6 @@ export class DepGraph extends Symbiote {
             options: {
               chargeStrength: totalNodes > 500 ? -300 : -150,
               linkDistance: totalNodes > 500 ? 100 : 150,
-              nodeWidth: measuredW,
-              nodeHeight: measuredH,
             },
           });
 

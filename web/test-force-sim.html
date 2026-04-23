@@ -231,8 +231,8 @@
   <h3>Render Smoothing</h3>
   <div class="control">
     <label>Lerp Factor</label>
-    <input type="range" id="smoothing" min="0" max="0.99" step="0.01" value="0.9">
-    <div class="val" id="smoothingVal">0.9</div>
+    <input type="range" id="smoothing" min="0" max="0.99" step="0.01" value="0.99">
+    <div class="val" id="smoothingVal">0.99</div>
   </div>
   <div class="hint">0 = instant (raw). 0.5+ = silky smooth interpolation.</div>
 
@@ -249,6 +249,8 @@ const HIT_RADIUS = 14; // larger than visual for easier clicking
 // ─── STATE ───
 let nodes = [];
 let edges = [];
+let adjMap = new Map();
+let interactionDepths = new Map();
 let nodePositions = new Map();
 let nodeIds = [];
 let worker = null;
@@ -289,7 +291,7 @@ const params = {
 // Position smoothing — lerp between raw sim positions and display
 const smoothPositions = new Map(); // id → {x, y}
 const prevPositions = new Map();   // id → {x, y} for velocity tracking
-let smoothing = 0.9; // 0=instant, 1=frozen  (0.9 = heavy interpolation)
+let smoothing = 0.99; // 0=instant, 1=frozen  (0.99 = extreme heavy interpolation)
 
 // ─── CANVAS ───
 const canvas = document.getElementById('canvas');
@@ -308,6 +310,36 @@ window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
 // ─── GRAPH GENERATION ───
+function rebuildAdjMap() {
+  adjMap.clear();
+  for (const n of nodes) adjMap.set(n.id, new Set());
+  for (const e of edges) {
+    if (adjMap.has(e.from)) adjMap.get(e.from).add(e.to);
+    if (adjMap.has(e.to)) adjMap.get(e.to).add(e.from);
+  }
+}
+
+function updateInteractionDepths() {
+  interactionDepths.clear();
+  if (!dragNode) return;
+  const queue = [[dragNode.id, 0]];
+  const visited = new Set([dragNode.id]);
+  interactionDepths.set(dragNode.id, 0);
+
+  while (queue.length > 0) {
+    const [curr, depth] = queue.shift();
+    if (depth >= 3) continue;
+    const neighbors = adjMap.get(curr) || new Set();
+    for (const n of neighbors) {
+      if (!visited.has(n)) {
+        visited.add(n);
+        interactionDepths.set(n, depth + 1);
+        queue.push([n, depth + 1]);
+      }
+    }
+  }
+}
+
 function generateGraph(count) {
   const n = [];
   const e = [];
@@ -405,6 +437,7 @@ function updateStats() {
 const initial = generateGraph(INIT_NODE_COUNT);
 nodes = initial.nodes;
 edges = initial.edges;
+rebuildAdjMap();
 updateStats();
 startWorker();
 
@@ -469,25 +502,58 @@ function draw() {
     const from = nodeCenter(edge.from);
     const to = nodeCenter(edge.to);
     if (!from || !to) continue;
+    
+    let edgeAlpha = 0.25;
+    let edgeWidth = Math.max(1, 1.5 / zoom);
+    
+    if (dragNode) {
+      const d1 = interactionDepths.has(edge.from) ? interactionDepths.get(edge.from) : 4;
+      const d2 = interactionDepths.has(edge.to) ? interactionDepths.get(edge.to) : 4;
+      const minD = Math.min(d1, d2);
+      if (minD === 0) { edgeAlpha = 0.8; edgeWidth = Math.max(2, 2.5 / zoom); }
+      else if (minD === 1) { edgeAlpha = 0.4; edgeWidth = Math.max(1.5, 2 / zoom); }
+      else if (minD === 2) { edgeAlpha = 0.15; edgeWidth = Math.max(1, 1.5 / zoom); }
+      else { edgeAlpha = 0.05; edgeWidth = Math.max(0.5, 1 / zoom); }
+    }
+    
+    ctx.strokeStyle = `rgba(74, 158, 255, ${edgeAlpha})`;
+    ctx.lineWidth = edgeWidth;
+    
     ctx.beginPath();
     ctx.moveTo(from.x, from.y);
     ctx.lineTo(to.x, to.y);
     ctx.stroke();
   }
 
-  // Nodes
-  for (const node of nodes) {
+  // Sort nodes so background is drawn first, dragged is drawn last
+  const sortedNodes = dragNode 
+    ? [...nodes].sort((a, b) => {
+        const dA = interactionDepths.has(a.id) ? interactionDepths.get(a.id) : 4;
+        const dB = interactionDepths.has(b.id) ? interactionDepths.get(b.id) : 4;
+        return dB - dA;
+      })
+    : nodes;
+
+  for (const node of sortedNodes) {
     const pos = getSmooth(node.id);
     if (!pos) continue;
     const isDragged = dragNode && dragNode.id === node.id;
+    
+    const depth = dragNode ? (interactionDepths.has(node.id) ? interactionDepths.get(node.id) : 4) : 0;
+    const scale = dragNode ? (depth === 0 ? 1.5 : depth === 1 ? 1.2 : depth === 2 ? 0.9 : depth === 3 ? 0.7 : 0.5) : 1;
+    const opacity = dragNode ? (depth === 0 ? 1 : depth === 1 ? 0.9 : depth === 2 ? 0.6 : depth === 3 ? 0.4 : 0.15) : 1;
+    const blur = dragNode ? (depth === 0 ? 0 : depth === 1 ? 0 : depth === 2 ? 1 : depth === 3 ? 2 : 4) : 0;
+    
+    ctx.globalAlpha = opacity;
+    ctx.filter = dragNode ? `blur(${blur}px)` : 'none';
 
     if (renderMode === 'dots') {
       ctx.beginPath();
-      ctx.arc(pos.x, pos.y, DOT_RADIUS, 0, Math.PI * 2);
+      ctx.arc(pos.x, pos.y, DOT_RADIUS * scale, 0, Math.PI * 2);
       ctx.fillStyle = isDragged ? '#ff6b6b' : '#4a9eff';
       ctx.fill();
     } else {
-      const x = pos.x, y = pos.y, w = node.w, h = node.h;
+      const w = node.w * scale, h = node.h * scale, x = pos.x - (w - node.w)/2, y = pos.y - (h - node.h)/2;
       ctx.beginPath();
       if (ctx.roundRect) ctx.roundRect(x, y, w, h, 4);
       else ctx.rect(x, y, w, h);
@@ -497,13 +563,16 @@ function draw() {
       ctx.lineWidth = isDragged ? 2 : 1;
       ctx.stroke();
 
-      ctx.font = '12px sans-serif';
+      ctx.font = `${12 * scale}px sans-serif`;
       ctx.fillStyle = '#fff';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(node.label || node.id, x + w / 2, y + h / 2);
     }
   }
+  
+  ctx.globalAlpha = 1;
+  ctx.filter = 'none';
 
   // Stats (cached DOM elements) — update every 500ms
   const now = performance.now();
@@ -632,6 +701,7 @@ canvas.addEventListener('pointerdown', (e) => {
 
   if (hit) {
     dragNode = hit;
+    updateInteractionDepths();
     const pos = nodePositions.get(hit.id);
     dragOffset.x = world.x - pos.x;
     dragOffset.y = world.y - pos.y;
@@ -666,6 +736,7 @@ canvas.addEventListener('pointerup', () => {
     worker.postMessage({ type: 'unpin', id: dragNode.id });
     document.getElementById('dragInfo').textContent = 'none';
     dragNode = null;
+    updateInteractionDepths();
   }
   isPanning = false;
   canvas.classList.remove('dragging');
@@ -731,7 +802,7 @@ bindSlider('pinReheat', 'pinReheat', 'pinReheat');
 // Smoothing slider (render-side only, not sent to worker)
 document.getElementById('smoothing').addEventListener('input', (e) => {
   smoothing = parseFloat(e.target.value);
-  document.getElementById('smoothingVal').textContent = smoothing;
+  document.getElementById('smoothingVal').textContent = smoothing.toFixed(2);
 });
 bindSlider('pinCap', 'pinCap', 'pinCap');
 
@@ -787,25 +858,31 @@ document.getElementById('btnRealGraph').onclick = () => {
     .catch(err => alert('Failed to load graph: ' + err.message));
 };
 
-document.getElementById('btnAdd10').onclick = () => {
+document.getElementById('btnAdd10').addEventListener('click', () => {
   const extra = generateGraph(10);
   for (const n of extra.nodes) edges.push({ from: nodes[Math.floor(Math.random() * nodes.length)].id, to: n.id });
   nodes.push(...extra.nodes);
   edges.push(...extra.edges);
+  rebuildAdjMap();
   rebuildNodeMap();
   updateStats();
-  startWorker();
-};
+  if (worker) {
+    worker.postMessage({ type: 'add', nodes: extra.nodes, edges: extra.edges });
+  }
+});
 
-document.getElementById('btnAdd50').onclick = () => {
+document.getElementById('btnAdd50').addEventListener('click', () => {
   const extra = generateGraph(50);
   for (const n of extra.nodes) edges.push({ from: nodes[Math.floor(Math.random() * nodes.length)].id, to: n.id });
   nodes.push(...extra.nodes);
   edges.push(...extra.edges);
+  rebuildAdjMap();
   rebuildNodeMap();
   updateStats();
-  startWorker();
-};
+  if (worker) {
+    worker.postMessage({ type: 'add', nodes: extra.nodes, edges: extra.edges });
+  }
+});
 </script>
 
 </body>
