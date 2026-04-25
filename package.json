@@ -12,7 +12,8 @@
   },
   "scripts": {
     "start": "node src/network/server.js",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "test:consumer": "node scripts/consumer-test.mjs"
   },
   "keywords": [
     "mcp",
