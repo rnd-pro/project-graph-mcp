@@ -29,7 +29,7 @@ export class CodeViewer extends e{init$={filename:"Select a file",hasFile:!1,vie
   // Toggle between source and the transformation
   this.$.viewMode=this.$.viewMode==="source"?"transformed":"source";
   this._showCurrentMode();
-}};_fileData=null;_isReadable=!1;_transformCache=null;_loadingTransform=!1;_currentPath=null;initCallback(){t.addEventListener("file-selected",e=>this._loadFile(e.detail.path));if(o.activeFile)requestAnimationFrame(()=>this._loadFile(o.activeFile))}renderCallback(){this.sub("hasFile",e=>{this.toggleAttribute("has-file",e)}),this.sub("viewMode",e=>{
+}};_fileData=null;_isReadable=!1;_transformCache=null;_loadingTransform=!1;_currentPath=null;initCallback(){t.addEventListener("file-selected",e=>this._loadFile(e.detail.path));t.addEventListener("follow-focus-changed",e=>{const d=e.detail;if(d.type==="file"&&d.target){this._loadFile(d.target);if(d.meta?.startLine){setTimeout(()=>{const c=this._getCodeBlock();if(c&&c.scrollToLine)c.scrollToLine(d.meta.startLine)},200)}}});if(o.activeFile)requestAnimationFrame(()=>this._loadFile(o.activeFile))}renderCallback(){this.sub("hasFile",e=>{this.toggleAttribute("has-file",e)}),this.sub("viewMode",e=>{
   const lang=_getLang(this._currentPath);
   this.toggleAttribute("mode-raw","source"!==e);
   if(lang==='md'){

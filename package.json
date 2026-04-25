@@ -40,7 +40,6 @@
   "license": "MIT",
   "dependencies": {
     "@symbiotejs/symbiote": "^3.2.1",
-    "symbiote-node": "file:vendor/symbiote-node",
     "ws": "^8.20.0"
   },
   "engines": {
