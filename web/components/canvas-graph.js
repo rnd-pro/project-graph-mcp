@@ -26,12 +26,12 @@ function getNodeRadius(node, conns, opts = {}) {
 
 const NODE_TYPES = ['data', 'action', 'output', 'config', 'external'];
 const TYPE_COLORS = {
-  data:     [74, 158, 255],
-  action:   [255, 107, 107],
-  output:   [16, 185, 129],
-  config:   [251, 191, 36],
-  external: [168, 85, 247],
-  group:    [100, 220, 220],
+  data:     [120, 180, 255],   // Pastel blue
+  action:   [255, 150, 140],   // Soft coral
+  output:   [120, 210, 170],   // Sage green
+  config:   [255, 200, 120],   // Warm amber
+  external: [190, 150, 255],   // Lavender
+  group:    [230, 180, 110],   // Golden pastel orange
 };
 
 const MENU_ITEMS = [
