@@ -1051,10 +1051,10 @@ export class CanvasGraph extends Symbiote {
             currentCtx.fillStyle = this.blendBg(tc[0], tc[1], tc[2], layerOpacity);
             currentCtx.fill();
             
-            // Dynamic orbit dots based on children count
             const childCount = Math.max(2, Math.min(12, node.children?.length || 3));
             const innerR = r * Math.max(0.1, 0.18 - (childCount - 3) * 0.008);
-            const orbitR = r * 0.6;
+            // Orbit right inside the golden ring: r (total) - ringW (outer edge) - innerR (dot radius) - 2px padding
+            const orbitR = Math.max(0, r - ringW - innerR - 1);
             const isHovered = this.hoverNode && this.hoverNode.id === node.id;
             node.aRotSpeed = node.aRotSpeed || 0;
             const targetRotSpeed = (isActive || isHovered) ? 0.025 : 0;
