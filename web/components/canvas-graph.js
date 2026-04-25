@@ -1039,7 +1039,7 @@ export class CanvasGraph extends Symbiote {
             currentCtx.fillStyle = GHOST_COLOR;
             currentCtx.fill();
           } else if (node.isGroup) {
-            const ringW = r * 0.25;
+            const ringW = r * 0.12;
             currentCtx.beginPath();
             currentCtx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
             currentCtx.fillStyle = `rgba(${this._bgR}, ${this._bgG}, ${this._bgB}, ${layerOpacity})`;

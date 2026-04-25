@@ -1212,6 +1212,12 @@ export class DepGraph extends Symbiote {
       const focusParam = params.get('focus');
       if (focusParam && this._pgCanvasGraph) {
         const decoded = decodeURIComponent(focusParam);
+        // Skip if focus target is the same group we just drilled into
+        const focusClean = decoded.replace(/\/$/, '');
+        if (focusClean === pathStr) {
+          // We're already inside this group — just fit the view
+          return;
+        }
         requestAnimationFrame(() => {
           this._pgCanvasGraph.flyToNode(decoded);
         });
