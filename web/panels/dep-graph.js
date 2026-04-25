@@ -687,8 +687,6 @@ export class DepGraph extends Symbiote {
   _wasDragged = false;
   /** @type {Map<string, string>} */
   _fileMap = new Map();
-  /** @type {boolean} */
-  _autopilot = false;
   /** @type {HTMLElement|null} */
   _canvas = null;
   /** @type {object|null} Skeleton data for resolving pin names */
@@ -851,11 +849,6 @@ export class DepGraph extends Symbiote {
         this._restoreFlatFocus();
       }
     });
-    
-    // Follow mode: listen for global state (set from topbar)
-    events.addEventListener('follow-mode-changed', (e) => {
-      this._autopilot = e.detail.enabled;
-    });
 
     // Label Mode controls
     const labelBtns = this.querySelectorAll('.label-mode-btn');
@@ -983,17 +976,14 @@ export class DepGraph extends Symbiote {
     ro.observe(this);
     this._resizeObserver = ro;
 
-    // Bind and save global listener functions for clean up
     this._onSkeletonLoaded = (e) => {
       if (this._graphBuilt || this.style.display === 'none' || this.offsetWidth === 0) return;
       requestAnimationFrame(() => this._buildGraph(e.detail));
     };
     
-    this._onToolEvent = (e) => {
+    this._onFollowFocusChanged = (e) => {
       if (this.style.display === 'none' || this.offsetWidth === 0) return;
-      if (this._autopilot) {
-        this._handleAutopilot(e.detail);
-      }
+      this._handleFollowFocus(e.detail);
     };
     
     this._onFileSelected = (e) => {
@@ -1026,8 +1016,8 @@ export class DepGraph extends Symbiote {
       }).catch(() => {});
     }
 
-    // Autopilot: listen for agent tool events
-    events.addEventListener('tool-event', this._onToolEvent);
+    // Autopilot: listen for orchestrator events
+    events.addEventListener('follow-focus-changed', this._onFollowFocusChanged);
 
     // Update route within graph section
     // On node click → save file path (just focusing)
@@ -1165,7 +1155,7 @@ export class DepGraph extends Symbiote {
   disconnectedCallback() {
     super.disconnectedCallback?.();
     if (this._onSkeletonLoaded) events.removeEventListener('skeleton-loaded', this._onSkeletonLoaded);
-    if (this._onToolEvent) events.removeEventListener('tool-event', this._onToolEvent);
+    if (this._onFollowFocusChanged) events.removeEventListener('follow-focus-changed', this._onFollowFocusChanged);
     if (this._onFileSelected) events.removeEventListener('file-selected', this._onFileSelected);
     if (this._onHashChange) window.removeEventListener('hashchange', this._onHashChange);
     if (this._resizeObserver) {
@@ -2498,37 +2488,26 @@ export class DepGraph extends Symbiote {
   }
 
   /**
-   * Handle agent tool events for autopilot mode
-   * @param {object} event
+   * Handle orchestrated visual focus from FollowController
+   * @param {object} detail 
    */
-  _handleAutopilot(event) {
+  _handleFollowFocus({ type, target, action }) {
     if (!this._editor || !this._canvas) return;
+    if (type !== 'graph' && type !== 'file') return; // React to graph and file actions
 
-    const toolName = event.tool || event.name || '';
-    const args = event.args || {};
-
-    // tool:call events
-    if (event.phase === 'call' || event.type === 'tool:call') {
-      if (toolName === 'navigate' && args.action === 'expand' && args.symbol) {
-        this._focusSymbol(args.symbol);
-      } else if (toolName === 'navigate' && args.action === 'deps' && args.symbol) {
-        this._highlightDeps(args.symbol);
-      } else if (toolName === 'navigate' && args.action === 'call_chain') {
-        // Phase 4: animate call chain when agent traces a path
-        if (args.from && args.to) {
-          this._highlightCallChain(args.from, args.to);
-        }
-      } else if (toolName === 'navigate' && args.action === 'usages' && args.symbol) {
-        this._highlightDeps(args.symbol);
-      } else if (toolName === 'get_skeleton') {
+    if (type === 'graph') {
+      if (action === 'focus' && target) {
+        this._focusSymbol(target);
+      } else if (action === 'deps' && target) {
+        this._highlightDeps(target);
+      } else if (action === 'chain' && target.from && target.to) {
+        this._highlightCallChain(target.from, target.to);
+      } else if (action === 'fit') {
         this._canvas.fitView();
-      } else if (toolName === 'compact' && args.path) {
-        this._pulseFile(args.path);
-      } else if (toolName === 'view_file' && args.path) {
-        // Agent opened a file — focus it on the board
-        this._focusFile(args.path);
-        this._pulseFile(args.path);
       }
+    } else if (type === 'file' && target) {
+      this._focusFile(target);
+      this._pulseFile(target);
     }
   }
 

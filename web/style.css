@@ -123,6 +123,12 @@ html, body {
   background: rgba(76, 139, 245, 0.15);
   color: #4c8bf5;
   border-color: rgba(76, 139, 245, 0.3);
+  animation: follow-btn-glow 2s ease-in-out infinite;
+}
+
+@keyframes follow-btn-glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(76, 139, 245, 0.1); }
+  50% { box-shadow: 0 0 12px rgba(76, 139, 245, 0.4); }
 }
 
 /* Agent badge */

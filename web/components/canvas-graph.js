@@ -16,12 +16,18 @@ const HIT_RADIUS = 14;
 function getNodeRadius(node, conns, opts = {}) {
   const hubScale = 1 + Math.min(conns, 8) * 0.1;
   const aScale = opts.scale ?? (node.aScale || 1);
-  let r = DOT_RADIUS * hubScale * aScale;
+  let baseR = DOT_RADIUS * hubScale * aScale;
   if (node.isGroup) {
-    const childCount = node.children?.length || 1;
-    r *= 1.0 + Math.sqrt(Math.max(1, Math.min(childCount, 25))) * 0.5;
+    const childCount = Math.max(2, Math.min(12, node.children?.length || 3));
+    const innerR = baseR * Math.max(0.1, 0.18 - (childCount - 3) * 0.008);
+    const spacing = innerR * 2.5;
+    const orbitR = spacing / (2 * Math.sin(Math.PI / childCount));
+    // r = orbitR + innerR + ringW + padding
+    // ringW = r * 0.12
+    // r = (orbitR + innerR + 2) / 0.88
+    return (orbitR + innerR + 2) / 0.88;
   }
-  return r;
+  return baseR;
 }
 
 const NODE_TYPES = ['data', 'action', 'output', 'config', 'external', 'style', 'docs', 'asset'];
@@ -276,6 +282,17 @@ export class CanvasGraph extends Symbiote {
       this._targetPanX = null;
       this._targetPanY = null;
     }
+    this.needsDraw = true;
+    this._wakeLoop();
+  }
+
+  pulseNode(nodeId, durationMs = 1500) {
+    this._pulses = this._pulses || [];
+    this._pulses.push({
+      id: nodeId,
+      startTime: performance.now(),
+      duration: durationMs
+    });
     this.needsDraw = true;
     this._wakeLoop();
   }
@@ -617,8 +634,8 @@ export class CanvasGraph extends Symbiote {
       nodeWidth: this.renderMode === 'dots' ? DOT_RADIUS * 2 : 160,
       nodeHeight: this.renderMode === 'dots' ? DOT_RADIUS * 2 : 40,
       mode: 'continuous',
-      activeGroupId: groupId,
-      boundaryRadius: groupId ? this.graphDB.nodes.get(groupId).w / 2 : null,
+      activeGroupId: this.currentGroupId,
+      boundaryRadius: this.currentGroupId ? this.graphDB.nodes.get(this.currentGroupId).w / 2 : null,
       attractors: null,
     };
     
@@ -1063,15 +1080,13 @@ export class CanvasGraph extends Symbiote {
             currentCtx.fillStyle = this.blendBg(tc[0], tc[1], tc[2], layerOpacity);
             currentCtx.fill();
             
+            let baseR = DOT_RADIUS * hubScale * (node.aScale || 1);
             const childCount = Math.max(2, Math.min(12, node.children?.length || 3));
-            const innerR = r * Math.max(0.1, 0.18 - (childCount - 3) * 0.008);
+            const innerR = baseR * Math.max(0.1, 0.18 - (childCount - 3) * 0.008);
             
             // Calculate perfect orbit radius to maintain consistent spacing between dots
             const spacing = innerR * 2.5; // Gap between dots
-            const idealOrbitR = spacing / (2 * Math.sin(Math.PI / childCount));
-            // Ensure they never spill out of the golden ring
-            const maxOrbitR = Math.max(0, r - ringW - innerR - 2);
-            const orbitR = Math.min(idealOrbitR, maxOrbitR);
+            const orbitR = spacing / (2 * Math.sin(Math.PI / childCount));
             const isHovered = this.hoverNode && this.hoverNode.id === node.id;
             node.aRotSpeed = node.aRotSpeed || 0;
             const targetRotSpeed = (isActive || isHovered) ? 0.025 : 0;
@@ -1130,6 +1145,29 @@ export class CanvasGraph extends Symbiote {
         mainCtx.setTransform(dpr * this.zoom, 0, 0, dpr * this.zoom, dpr * this.panX, dpr * this.panY);
       }
       drawDepth(0, mainCtx);
+      
+      if (this._pulses && this._pulses.length > 0) {
+        const now = performance.now();
+        this._pulses = this._pulses.filter(p => {
+          const elapsed = now - p.startTime;
+          if (elapsed > p.duration) return false;
+          const pos = this.getSmooth(p.id) || this.nodePositions.get(p.id);
+          if (!pos) return false;
+          const progress = elapsed / p.duration;
+          const pulsePhase = (progress * 3) % 1;
+          const r = 20 + (pulsePhase * 80);
+          const opacity = 1 - pulsePhase;
+          mainCtx.beginPath();
+          mainCtx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+          mainCtx.fillStyle = `rgba(76, 139, 245, ${opacity * 0.4})`;
+          mainCtx.fill();
+          mainCtx.lineWidth = 2;
+          mainCtx.strokeStyle = `rgba(76, 139, 245, ${opacity * 0.8})`;
+          mainCtx.stroke();
+          this.needsDraw = true;
+          return true;
+        });
+      }
     }
 
     const showMenu = this.activeNode && !this.dragNode && !this.deactivating;
@@ -1557,6 +1595,7 @@ export class CanvasGraph extends Symbiote {
     });
 
     this.canvas.addEventListener('pointerup', (e) => {
+      const draggedNode = this.dragNode;
       if (this.dragNode) {
         this.worker.postMessage({ type: 'unpin', id: this.dragNode.id });
         this.dragNode = null;
