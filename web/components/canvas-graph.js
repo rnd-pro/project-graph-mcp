@@ -1054,7 +1054,7 @@ export class CanvasGraph extends Symbiote {
             // Dynamic orbit dots based on children count
             const childCount = Math.max(2, Math.min(12, node.children?.length || 3));
             const innerR = r * Math.max(0.1, 0.18 - (childCount - 3) * 0.008);
-            const orbitR = r * 0.42;
+            const orbitR = r * 0.6;
             const isHovered = this.hoverNode && this.hoverNode.id === node.id;
             node.aRotSpeed = node.aRotSpeed || 0;
             const targetRotSpeed = (isActive || isHovered) ? 0.025 : 0;
@@ -1465,7 +1465,9 @@ export class CanvasGraph extends Symbiote {
         const sim = this.nodePositions.get(hit.id);
         if (vis && sim) { sim.x = vis.x; sim.y = vis.y; }
         
+        let isNewActivation = false;
         if (this.activeNode && this.activeNode.id !== hit.id) {
+          isNewActivation = true;
           if (this.currentGroupId) {
             // Instant switch inside group
             this.activeNode = hit;
@@ -1478,11 +1480,13 @@ export class CanvasGraph extends Symbiote {
             this.dragNode = hit;
           }
         } else {
+          if (!this.activeNode) isNewActivation = true;
           this.activeNode = hit;
           this.dragNode = hit;
           this.deactivating = false;
           this.updateInteractionDepths();
         }
+        this._nodeActivatedOnDown = isNewActivation;
         const pos = this.nodePositions.get(hit.id);
         this.dragOffset.x = world.x - pos.x;
         this.dragOffset.y = world.y - pos.y;
@@ -1565,7 +1569,16 @@ export class CanvasGraph extends Symbiote {
             this.dispatchEvent(new CustomEvent('node-deselected'));
           }
         }
+      } else if (draggedNode && this._nodeActivatedOnDown) {
+        // We dragged a node that was just activated on pointerdown.
+        // Emit selection event so URL and UI synchronize.
+        if (draggedNode.isGroup) {
+          this.dispatchEvent(new CustomEvent('group-selected', { detail: { path: draggedNode.id } }));
+        } else {
+          this.dispatchEvent(new CustomEvent('file-selected', { detail: { path: draggedNode.id } }));
+        }
       }
+      this._nodeActivatedOnDown = false;
       this._dragStartX = 0;
       this._dragStartY = 0;
     });
