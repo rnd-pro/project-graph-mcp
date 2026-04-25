@@ -92,6 +92,39 @@ html, body {
   font-size: 14px;
 }
 
+/* Follow Button */
+.follow-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  color: var(--sn-text-dim, #999);
+  border: 1px solid transparent;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.5px;
+}
+
+.follow-btn .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.follow-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--sn-text, #f0f0f0);
+}
+
+.follow-btn.active {
+  background: rgba(76, 139, 245, 0.15);
+  color: #4c8bf5;
+  border-color: rgba(76, 139, 245, 0.3);
+}
+
 /* Agent badge */
 .agent-badge {
   font-size: 11px;
