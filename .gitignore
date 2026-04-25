@@ -5,7 +5,8 @@ node_modules/
 .agent/
 .agents/
 .gemini/
-.context/.cache/
+.context/
+.contextignore
 .expanded/
 dev-docs/
 tests/benchmark*
@@ -13,6 +14,13 @@ trace.json
 canvas-debug.png
 canvas-render-test.png
 web/debug.js
+web/debug-*.js
+web/test-*.html
+web/test-*.json
+web/tune-*.js
+patch.js
+temp_output*
+test-graph.js
 tests/check-dom.*
 tests/debug-*
 tests/flicker-*

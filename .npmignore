@@ -1,0 +1,55 @@
+# ── Source control & CI ──
+.git/
+.github/
+.gitmodules
+
+# ── Internal agent/delegation files ──
+.agent/
+.agents/
+.gemini/
+
+# ── Generated context & cache ──
+.context/
+.contextignore
+.expanded/
+*.project-graph-cache.json
+
+# ── Dev-only config files ──
+.graphignore
+.pgignore
+
+# ── Debug & temp files ──
+web/debug-*.js
+web/test-*.html
+web/test-*.json
+web/tune-*.js
+patch.js
+temp_output.txt
+temp_output_rects.txt
+canvas-debug.png
+canvas-render-test.png
+trace.json
+
+# ── Tests ──
+tests/
+
+# ── Internal dev scripts ──
+scripts/
+
+# ── Dev docs (internal) ──
+dev-docs/
+
+# ── Docs images (referenced via GitHub raw URLs in README) ──
+docs/img/
+
+# ── Vendor bloat — engine/demo/tests not used by project-graph-mcp ──
+vendor/symbiote-node/engine/
+vendor/symbiote-node/demo/
+vendor/symbiote-node/tests/
+vendor/symbiote-node/test-ssr.js
+vendor/symbiote-node/.git
+vendor/symbiote-node/.agent/
+
+# ── Misc dev files ──
+test-graph.js
+node_modules/

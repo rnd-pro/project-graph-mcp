@@ -1,23 +1,16 @@
 {
   "name": "project-graph-mcp",
-  "version": "2.2.7",
+  "version": "2.3.0",
   "type": "module",
   "description": "MCP server for AI agents — project graph, code quality analysis, visual web explorer. JS, TS, Python, Go.",
   "main": "src/network/server.js",
   "bin": {
     "project-graph-mcp": "src/network/server.js"
   },
-  "files": [
-    "src/",
-    "web/",
-    "vendor/",
-    "rules/",
-    "docs/",
-    "GUIDE.md",
-    "CONFIGURATION.md",
-    "README.md",
-    "LICENSE"
-  ],
+  "publishConfig": {
+    "access": "public"
+  },
+
   "scripts": {
     "start": "node src/network/server.js",
     "test": "node --test tests/*.test.js"

@@ -6,9 +6,9 @@
 
 **Maximize your AI agent's context window.** An MCP server that lets agents read and edit your codebase in **compact mode** — minified source with all variable names preserved. Code tokens drop **↓40%**, and `.ctx` documentation is injected only in the focus zone. Fewer tokens per file → more files fit in context → **deeper understanding of your codebase**.
 
-![Expanded view — formatted code with JSDoc, 28+ lines per function](docs/img/explorer-expanded.jpg)
+![Expanded view — formatted code with JSDoc, 28+ lines per function](https://raw.githubusercontent.com/rnd-pro/project-graph-mcp/main/docs/img/explorer-expanded.jpg)
 
-![Compact mode — same file, 14 lines total, ↓40% tokens. Agents read and edit this directly.](docs/img/explorer-compact.jpg)
+![Compact mode — same file, 14 lines total, ↓40% tokens. Agents read and edit this directly.](https://raw.githubusercontent.com/rnd-pro/project-graph-mcp/main/docs/img/explorer-compact.jpg)
 
 Includes a built-in [Web Dashboard](#web-dashboard) (`npx project-graph-mcp serve`) to visualize token metrics and compact ⇄ raw code in real-time.
 
@@ -328,11 +328,16 @@ See **[CONFIGURATION.md](CONFIGURATION.md)** for all supported IDEs (Antigravity
 <summary>Alternative: from source</summary>
 
 ```bash
-git clone https://github.com/rnd-pro/project-graph-mcp
+git clone --recursive https://github.com/rnd-pro/project-graph-mcp
 cd project-graph-mcp
-# No npm install needed — zero dependencies
+npm install
 # Use "node /path/to/project-graph-mcp/src/network/server.js" as the command in MCP config
 ```
+
+> **Note:** The `--recursive` flag is required to fetch the `vendor/symbiote-node` submodule. If you already cloned without it, run:
+> ```bash
+> git submodule update --init --recursive
+> ```
 
 </details>
 
