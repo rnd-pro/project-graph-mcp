@@ -5,6 +5,25 @@ const EDGE_RATIO = 1.2;
 const DOT_RADIUS = 6;
 const HIT_RADIUS = 14;
 
+/**
+ * Universal node radius calculator.
+ * @param {object} node - Node object with isGroup, children, aScale
+ * @param {number} conns - Number of connections (from adjMap)
+ * @param {object} [opts] - Options
+ * @param {number} [opts.scale] - Override aScale (default: node.aScale || 1)
+ * @returns {number} Visual radius in world units
+ */
+function getNodeRadius(node, conns, opts = {}) {
+  const hubScale = 1 + Math.min(conns, 8) * 0.1;
+  const aScale = opts.scale ?? (node.aScale || 1);
+  let r = DOT_RADIUS * hubScale * aScale;
+  if (node.isGroup) {
+    const childCount = node.children?.length || 1;
+    r *= 1.0 + Math.sqrt(Math.max(1, Math.min(childCount, 25))) * 0.5;
+  }
+  return r;
+}
+
 const NODE_TYPES = ['data', 'action', 'output', 'config', 'external'];
 const TYPE_COLORS = {
   data:     [74, 158, 255],
@@ -515,8 +534,9 @@ export class CanvasGraph extends Symbiote {
     
     for (const node of this.graphDB.nodes.values()) {
       if (node.isGroup) {
-        node.w = DOT_RADIUS * 3;
-        node.h = DOT_RADIUS * 3;
+        const groupR = getNodeRadius(node, 0);
+        node.w = groupR * 2;
+        node.h = groupR * 2;
       }
     }
 
@@ -659,9 +679,7 @@ export class CanvasGraph extends Symbiote {
         let finalW = n.w, finalH = n.h;
         if (this.renderMode === 'dots') {
           const conns = this.adjMap.get(n.id)?.size || 0;
-          const hubScale = 1 + Math.min(conns, 8) * 0.1;
-          let r = DOT_RADIUS * hubScale;
-          if (n.isGroup) r *= 1.5;
+          const r = getNodeRadius(n, conns);
           finalW = finalH = r * 2;
         }
         return {
@@ -1013,8 +1031,7 @@ export class CanvasGraph extends Symbiote {
         node.aGlow += ((isActive ? 1 : 0) - node.aGlow) * 0.1;
         
         if (this.renderMode === 'dots') {
-          let r = DOT_RADIUS * hubScale * node.aScale;
-          if (node.isGroup) r *= 1.5;
+          let r = getNodeRadius(node, conns, { scale: node.aScale });
           
           if (isGhost) {
             currentCtx.beginPath();
@@ -1034,15 +1051,18 @@ export class CanvasGraph extends Symbiote {
             currentCtx.fillStyle = this.blendBg(tc[0], tc[1], tc[2], layerOpacity);
             currentCtx.fill();
             
-            const innerR = r * 0.18, orbitR = r * 0.42;
+            // Dynamic orbit dots based on children count
+            const childCount = Math.max(2, Math.min(12, node.children?.length || 3));
+            const innerR = r * Math.max(0.1, 0.18 - (childCount - 3) * 0.008);
+            const orbitR = r * 0.42;
             const isHovered = this.hoverNode && this.hoverNode.id === node.id;
             node.aRotSpeed = node.aRotSpeed || 0;
             const targetRotSpeed = (isActive || isHovered) ? 0.025 : 0;
             node.aRotSpeed += (targetRotSpeed - node.aRotSpeed) * 0.05;
             node.aRot = (node.aRot || 0) + node.aRotSpeed;
 
-            for (let k = 0; k < 3; k++) {
-              const angle = (k * Math.PI * 2 / 3) - Math.PI / 2 + node.aRot;
+            for (let k = 0; k < childCount; k++) {
+              const angle = (k * Math.PI * 2 / childCount) - Math.PI / 2 + node.aRot;
               const cx = pos.x + Math.cos(angle) * orbitR;
               const cy = pos.y + Math.sin(angle) * orbitR;
               currentCtx.beginPath();
@@ -1106,9 +1126,7 @@ export class CanvasGraph extends Symbiote {
       const apos = this.getSmooth(this.activeNode.id);
       if (apos) {
         const conns = this.adjMap.get(this.activeNode.id)?.size || 0;
-        const hubScale = 1 + Math.min(conns, 8) * 0.1;
-        let nodeR = DOT_RADIUS * hubScale * (this.activeNode.aScale || 1.5);
-        if (this.activeNode.isGroup) nodeR *= 1.5;
+        const nodeR = getNodeRadius(this.activeNode, conns, { scale: this.activeNode.aScale || 1.5 });
         const menuDist = nodeR + 14;
         const itemR = 6;
         
@@ -1285,9 +1303,7 @@ export class CanvasGraph extends Symbiote {
     // Compute actual node radius to avoid overlap
     // Must account for: dot radius + glow + radial menu items
     const conns = this.adjMap.get(this.activeNode.id)?.size || 0;
-    const hubScale = 1 + Math.min(conns, 8) * 0.1;
-    let dotR = DOT_RADIUS * hubScale * (this.activeNode.aScale || 1.5);
-    if (this.activeNode.isGroup) dotR *= 1.5;
+    const dotR = getNodeRadius(this.activeNode, conns, { scale: this.activeNode.aScale || 1.5 });
     // Menu orbits at dotR + 14, each item has radius 6
     const menuExtent = dotR + 14 + 6;
     const panelGap = 10;
@@ -1415,9 +1431,7 @@ export class CanvasGraph extends Symbiote {
         const apos = this.getSmooth(this.activeNode.id);
         if (apos) {
           const conns = this.adjMap.get(this.activeNode.id)?.size || 0;
-          const hubScale = 1 + Math.min(conns, 8) * 0.1;
-          let nodeR = DOT_RADIUS * hubScale * (this.activeNode.aScale || 1.5);
-          if (this.activeNode.isGroup) nodeR *= 1.5;
+          const nodeR = getNodeRadius(this.activeNode, conns, { scale: this.activeNode.aScale || 1.5 });
           const menuDist = nodeR + 14;
           const itemR = 6;
           

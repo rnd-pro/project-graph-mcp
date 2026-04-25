@@ -59,153 +59,6 @@ function baseName(filePath) {
 }
 
 
-/**
- * Build a file-level graph from skeleton data.
- * Each file becomes a Node, each import relationship becomes a Connection.
- *
- * @param {object} skeleton - skeleton from get_skeleton
- * @returns {{ editor: NodeEditor, fileMap: Map<string, string> }}
- */
-function buildFileGraph(skeleton) {
-  const editor = new NodeEditor();
-  const fileMap = new Map(); // filePath → nodeId
-  const dirMap = new Map(); // dirPath → nodeId (hub nodes)
-
-  // Collect all files that have symbols
-  const files = new Set();
-  const assetFiles = new Set(); // non-source files (.css, .html, .json, .md, etc.)
-  // From nodes (classes) — each has .f (file) property
-  for (const data of Object.values(skeleton.n || {})) {
-    if (data.f) files.add(data.f);
-  }
-  // From exports map — keys are files
-  for (const file of Object.keys(skeleton.X || {})) {
-    files.add(file);
-  }
-  // From source files without symbols
-  for (const [dir, names] of Object.entries(skeleton.f || {})) {
-    for (const name of names) {
-      files.add(dir === './' ? name : dir + name);
-    }
-  }
-  // From non-source/asset files (.css, .html, .json, .md, etc.)
-  for (const [dir, names] of Object.entries(skeleton.a || {})) {
-    for (const name of names) {
-      const fullPath = dir === './' ? name : dir + name;
-      files.add(fullPath);
-      assetFiles.add(fullPath);
-    }
-  }
-
-  if (files.size === 0) return { editor, fileMap };
-
-  // Group files by directory
-  const dirFiles = new Map();
-  for (const file of files) {
-    const dir = dirOf(file);
-    if (!dirFiles.has(dir)) dirFiles.set(dir, []);
-    dirFiles.get(dir).push(file);
-  }
-
-  // TODO Phase 2: Create directory hub nodes when LOD zoom expansion is ready
-  // Hub nodes without connections create disconnected groups — skip for now
-  // for (const [dir, dirFileList] of dirFiles) {
-  //   if (dirFileList.length < 2) continue;
-  //   const dirLabel = dir.replace(/\/$/, '').split('/').pop() || 'root';
-  //   const hubNode = new Node(dirLabel, { type: 'directory', category: 'server', shape: 'hexagon' });
-  //   hubNode.params = { path: dir, dir, isHub: true };
-  //   hubNode.addOutput('out', new Output(S_EXPORT, ''));
-  //   hubNode.addInput('in', new Input(S_IMPORT, ''));
-  //   editor.addNode(hubNode);
-  //   dirMap.set(dir, hubNode.id);
-  // }
-
-  // Create file nodes (standard HTML nodes with icons)
-  for (const file of files) {
-    const dir = dirOf(file);
-    const label = baseName(file);
-    const isAsset = assetFiles.has(file);
-    const node = new Node(label, {
-      type: isAsset ? 'asset' : 'file',
-      category: isAsset ? 'asset' : 'file',
-    });
-    node.params = { path: file, dir };
-
-    // Every file has one output (exports) and one input (imports)
-    node.addOutput('out', new Output(S_EXPORT, ''));
-    node.addInput('in', new Input(S_IMPORT, ''));
-
-    editor.addNode(node);
-    fileMap.set(file, node.id);
-  }
-
-  // Build import edges from skeleton.I (file-level import map)
-  // skeleton.I[file] = [source1, source2, ...]
-  const edgesAdded = new Set();
-  for (const [srcFile, sources] of Object.entries(skeleton.I || {})) {
-    const srcId = fileMap.get(srcFile);
-    if (!srcId) continue;
-
-    for (const impPath of sources) {
-      // Skip node builtins and external packages
-      if (impPath.startsWith('node:') || (!impPath.startsWith('.') && !impPath.startsWith('/'))) continue;
-
-      const targetFile = resolveImport(impPath, srcFile, files);
-      if (!targetFile) continue;
-
-      const tgtId = fileMap.get(targetFile);
-      if (!tgtId || tgtId === srcId) continue;
-
-      const edgeKey = `${srcId}->${tgtId}`;
-      if (edgesAdded.has(edgeKey)) continue;
-      edgesAdded.add(edgeKey);
-
-      const srcNode = editor.getNode(srcId);
-      const tgtNode = editor.getNode(tgtId);
-      try {
-        const conn = new Connection(srcNode, 'out', tgtNode, 'in');
-        // Phase 3: tag cross-directory connections as "via"
-        const srcDir = dirOf(srcFile);
-        const tgtDir = dirOf(targetFile);
-        if (srcDir !== tgtDir) {
-          conn._via = true;
-          conn._srcDir = srcDir;
-          conn._tgtDir = tgtDir;
-        }
-        editor.addConnection(conn);
-      } catch {
-        // Skip invalid connections
-      }
-    }
-  }
-
-  // Hub node: find node with highest connectivity → module category
-  const connCounts = new Map();
-  for (const conn of editor.getConnections()) {
-    connCounts.set(conn.from, (connCounts.get(conn.from) || 0) + 1);
-    connCounts.set(conn.to, (connCounts.get(conn.to) || 0) + 1);
-  }
-  let maxConns = 0;
-  let hubId = null;
-  for (const [nodeId, count] of connCounts) {
-    if (count > maxConns) {
-      maxConns = count;
-      hubId = nodeId;
-    }
-  }
-  if (hubId) {
-    const hubNode = editor.getNode(hubId);
-    if (hubNode && hubNode.options) {
-      hubNode.options.category = 'module';
-    }
-  }
-
-  // ── Build Reverse ID Lookup ──
-  const idToPath = new Map();
-  for (const [path, id] of fileMap.entries()) idToPath.set(id, path);
-
-  return { editor, fileMap, dirMap, dirFiles, idToPath };
-}
 
 /**
  * Resolve import path to a known file
@@ -610,7 +463,8 @@ const PCB_CSS = `
     contain: strict;
   }
 
-  pg-dep-graph node-canvas {
+  pg-dep-graph node-canvas,
+  pg-dep-graph pg-canvas-graph {
     width: 100%;
     height: 100%;
   }
@@ -906,45 +760,101 @@ export class DepGraph extends Symbiote {
           <span class="material-symbols-outlined">fit_screen</span>
           FIT
         </button>
-        <button class="pcb-btn" data-action="autopilot" title="Follow agent actions">
-          <span class="material-symbols-outlined">smart_toy</span>
-          AUTOPILOT
-        </button>
         <div class="pcb-toolbar-sep"></div>
-        <button class="pcb-btn label-mode-btn" data-mode="always" data-active title="Always show labels">LBL:ALW</button>
-        <button class="pcb-btn label-mode-btn" data-mode="hover" title="Hover labels">LBL:HOV</button>
-        <button class="pcb-btn label-mode-btn" data-mode="focus" title="Focus labels">LBL:FOC</button>
-        <div class="pcb-toolbar-sep"></div>
-        <button class="pcb-btn pcb-layer-btn" data-layer="zones" data-active title="Toggle directory zones">ZONES</button>
-        <button class="pcb-btn pcb-layer-btn" data-layer="vias" data-active title="Toggle via markers">VIAS</button>
+        <button class="pcb-btn label-mode-btn pcb-structured-only" data-mode="always" data-active title="Always show labels">LBL:ALW</button>
+        <button class="pcb-btn label-mode-btn pcb-structured-only" data-mode="hover" title="Hover labels">LBL:HOV</button>
+        <button class="pcb-btn label-mode-btn pcb-structured-only" data-mode="focus" title="Focus labels">LBL:FOC</button>
+        <div class="pcb-toolbar-sep pcb-structured-only"></div>
+        <button class="pcb-btn pcb-layer-btn pcb-structured-only" data-layer="zones" data-active title="Toggle directory zones">ZONES</button>
+        <button class="pcb-btn pcb-layer-btn pcb-structured-only" data-layer="vias" data-active title="Toggle via markers">VIAS</button>
         <div class="pcb-toolbar-sep"></div>
         <button class="pcb-btn" data-action="view-mode" title="Toggle view: Flat ↔ Structured">
           <span class="material-symbols-outlined">account_tree</span>
           FLAT
         </button>
-        <button class="pcb-btn" data-action="path-style" title="Toggle lines: PCB ↔ Bezier">
+        <button class="pcb-btn pcb-structured-only" data-action="path-style" title="Toggle lines: PCB ↔ Bezier">
           <span class="material-symbols-outlined">route</span>
           PCB
         </button>
       </div>
       <node-canvas connection-engine="canvas"></node-canvas>
+      <pg-canvas-graph></pg-canvas-graph>
       <div class="pcb-stats"></div>
     `;
 
     this._canvas = this.querySelector('node-canvas');
+    this._pgCanvasGraph = this.querySelector('pg-canvas-graph');
 
     // Toolbar handlers
     this.querySelector('[data-action="fit"]').addEventListener('click', () => {
-      this._canvas.fitView();
-    });
-    this.querySelector('[data-action="autopilot"]').addEventListener('click', (e) => {
-      this._autopilot = !this._autopilot;
-      const btn = e.currentTarget;
-      if (this._autopilot) {
-        btn.setAttribute('data-active', '');
+      if (this._viewMode === 'flat') {
+        this._pgCanvasGraph?.resetView();
       } else {
-        btn.removeAttribute('data-active');
+        this._canvas?.fitView();
       }
+    });
+    
+    this._pgCanvasGraph.addEventListener('path-changed', (e) => {
+      if (this._viewMode === 'flat' && this._initialViewRestored) {
+        const path = e.detail.path;
+        const hash = path ? `#graph/${path}` : `#graph`;
+        // Preserve mode query param but clear focus= when returning to root
+        let searchStr = window.location.hash.includes('?') ? '?' + window.location.hash.split('?')[1] : '';
+        if (!path && searchStr) {
+          // Remove focus param when exiting to root
+          const params = new URLSearchParams(searchStr.slice(1));
+          params.delete('focus');
+          searchStr = params.toString() ? '?' + params.toString() : '';
+        }
+        history.replaceState(null, '', hash + searchStr);
+      }
+    });
+    
+    this._pgCanvasGraph.addEventListener('file-selected', (e) => {
+      const path = e.detail.path;
+      // Update URL with focus= so it's bookmarkable
+      this._updateHashParam('focus', path);
+      emit('file-selected', { path, source: 'canvas' });
+    });
+
+    this._pgCanvasGraph.addEventListener('group-selected', (e) => {
+      const path = e.detail.path;
+      // Update URL with focus= so group selection is also bookmarkable in flat mode
+      this._updateHashParam('focus', path);
+      // Sync: highlight directory in the tree sidebar (add trailing / for dir convention)
+      emit('file-selected', { path: path + '/', source: 'canvas' });
+    });
+
+    // Deselect in flat mode: clear focus= when clicking empty space
+    this._pgCanvasGraph.addEventListener('node-deselected', () => {
+      if (!this._initialViewRestored) return;
+      if (window.location.hash.includes('focus=')) {
+        this._updateHashParam('focus', null);
+      }
+    });
+    
+    // Flat mode init: fitView early after a few ticks (not waiting for full convergence)
+    // In continuous mode, layout-done can take seconds. Positions are usable after ~10 ticks.
+    this._flatTickCount = 0;
+    this._pgCanvasGraph.addEventListener('layout-tick', () => {
+      if (this._viewMode !== 'flat' || this._initialViewRestored) return;
+      this._flatTickCount++;
+      if (this._flatTickCount >= 10) {
+        this._initialViewRestored = true;
+        this._restoreFlatFocus();
+      }
+    });
+    // Fallback: also listen for layout-done in case continuous mode is disabled
+    this._pgCanvasGraph.addEventListener('layout-done', () => {
+      if (this._viewMode === 'flat' && !this._initialViewRestored) {
+        this._initialViewRestored = true;
+        this._restoreFlatFocus();
+      }
+    });
+    
+    // Follow mode: listen for global state (set from topbar)
+    events.addEventListener('follow-mode-changed', (e) => {
+      this._autopilot = e.detail.enabled;
     });
 
     // Label Mode controls
@@ -988,6 +898,8 @@ export class DepGraph extends Symbiote {
         viewModeBtn.removeAttribute('data-active');
       }
     }
+    // Hide structured-only buttons in flat mode
+    this._updateStructuredOnlyVisibility(this._viewMode);
     viewModeBtn?.addEventListener('click', () => {
       const wantFlat = this._viewMode !== 'flat';
       this._viewMode = wantFlat ? 'flat' : 'structured';
@@ -999,6 +911,7 @@ export class DepGraph extends Symbiote {
       } else {
         viewModeBtn.removeAttribute('data-active');
       }
+      this._updateStructuredOnlyVisibility(this._viewMode);
 
       // Persist mode in URL hash
       this._updateHashParam('mode', this._viewMode === 'flat' ? 'flat' : 'tree');
@@ -1089,7 +1002,13 @@ export class DepGraph extends Symbiote {
       const file = e.detail.path;
       if (file) {
         this._updateHashParam('focus', file);
-        this._router?.navigateTo(file);
+        // Strip trailing slash for directory paths — canvas-graph stores dirs without trailing /
+        const nodeId = file.endsWith('/') ? file.replace(/\/$/, '') : file;
+        if (this._viewMode === 'flat' && this._pgCanvasGraph) {
+          this._pgCanvasGraph.flyToNode(nodeId);
+        } else {
+          this._router?.navigateTo(file);
+        }
       }
     };
 
@@ -1175,17 +1094,30 @@ export class DepGraph extends Symbiote {
       }
     });
 
-    // Toolbar custom actions (e.g. explore)
-    this._canvas?.addEventListener('toolbar-action', (e) => {
+    // Toolbar custom actions (e.g. explore, view-code, enter)
+    this.addEventListener('toolbar-action', (e) => {
       const { action, nodeId } = e.detail;
       if (action === 'explore') {
-        this._exploreFromNode(nodeId);
+        if (this._viewMode === 'flat') {
+          this._pgCanvasGraph?.flyToNode(nodeId);
+        } else {
+          this._exploreFromNode(nodeId);
+        }
       } else if (action === 'view-code') {
-        const path = this._idToPath?.get(nodeId);
-        const isSymbol = this._symbolMap?.has(nodeId);
-        const file = isSymbol ? this._symbolMap.get(nodeId).file : path;
+        let file;
+        if (this._viewMode === 'flat') {
+          file = nodeId;
+        } else {
+          const path = this._idToPath?.get(nodeId);
+          const isSymbol = this._symbolMap?.has(nodeId);
+          file = isSymbol ? this._symbolMap.get(nodeId).file : path;
+        }
         if (file) {
           window.location.hash = `#explorer/${file}`;
+        }
+      } else if (action === 'enter') {
+        if (this._viewMode === 'flat' && this._pgCanvasGraph) {
+          this._pgCanvasGraph.drill(nodeId);
         }
       }
     });
@@ -1194,9 +1126,27 @@ export class DepGraph extends Symbiote {
 
     // React to hash changes from file-tree, back/forward, or external URL paste
     this._onHashChange = () => {
-      if (!this._router || !this._editor || !this._initialViewRestored) return;
       const hash = window.location.hash;
       if (!hash.startsWith('#graph')) return;
+      
+      if (this._viewMode === 'flat') {
+        const [hashBase, queryStr] = hash.replace('#', '').split('?');
+        const hashParams = hashBase.split('/');
+        if (hashParams[0] === 'graph') hashParams.shift();
+        const pathStr = hashParams.join('/');
+        if (this._pgCanvasGraph) this._pgCanvasGraph.setPath(pathStr);
+        // Parse and apply focus= parameter
+        if (queryStr) {
+          const params = new URLSearchParams(queryStr);
+          const focusParam = params.get('focus');
+          if (focusParam && this._pgCanvasGraph) {
+            this._pgCanvasGraph.flyToNode(decodeURIComponent(focusParam));
+          }
+        }
+        return;
+      }
+      
+      if (!this._router || !this._editor || !this._initialViewRestored) return;
       
       let attempts = 0;
       const doRestore = () => {
@@ -1241,11 +1191,64 @@ export class DepGraph extends Symbiote {
   }
 
   /**
+   * Restore focus= from URL in flat mode (where SubgraphRouter is not available).
+   * Parses the hash, extracts path drill + focus param, and calls flyToNode.
+   */
+  _restoreFlatFocus() {
+    const hash = window.location.hash;
+    const [hashBase, queryStr] = hash.replace('#', '').split('?');
+    
+    // Apply drill path if present: #graph/src/core/ → setPath('src/core')
+    const hashParams = hashBase.split('/');
+    if (hashParams[0] === 'graph') hashParams.shift();
+    const pathStr = hashParams.join('/');
+    if (pathStr && this._pgCanvasGraph) {
+      this._pgCanvasGraph.setPath(pathStr);
+    }
+    
+    // Apply focus= if present
+    if (queryStr) {
+      const params = new URLSearchParams(queryStr);
+      const focusParam = params.get('focus');
+      if (focusParam && this._pgCanvasGraph) {
+        const decoded = decodeURIComponent(focusParam);
+        requestAnimationFrame(() => {
+          this._pgCanvasGraph.flyToNode(decoded);
+        });
+        // Check if focus target is a group (directory) — tree uses trailing / for dirs
+        const graphNode = this._pgCanvasGraph.graphDB?.nodes.get(decoded);
+        const treePath = (graphNode && graphNode.isGroup) ? decoded + '/' : decoded;
+        // Sync tree sidebar
+        state.activeFile = treePath;
+        emit('file-selected', { path: treePath, source: 'canvas' });
+        setTimeout(() => emit('file-selected', { path: treePath, source: 'canvas' }), 500);
+        return;
+      }
+    }
+    
+    // No focus param — fit the full view
+    if (this._pgCanvasGraph) {
+      this._pgCanvasGraph.fitView?.();
+    }
+  }
+
+  /**
    * Update a single URL hash parameter without page reload.
    * Preserves existing hash path and other params.
    * @param {string} key - Parameter name (e.g. 'mode', 'focus')
    * @param {string|null} value - Parameter value, null to remove
    */
+  /**
+   * Show/hide toolbar buttons that only apply in structured mode.
+   * @param {string} mode - 'flat' or 'structured'
+   */
+  _updateStructuredOnlyVisibility(mode) {
+    const hide = mode === 'flat';
+    this.querySelectorAll('.pcb-structured-only').forEach(el => {
+      el.style.display = hide ? 'none' : '';
+    });
+  }
+
   _updateHashParam(key, value) {
     const hash = window.location.hash;
     const [basePath, queryStr] = hash.split('?');
@@ -1519,8 +1522,30 @@ export class DepGraph extends Symbiote {
     // Phase 0: Parsing
     this._setProgress(10, 'Parsing graph…', '');
 
-
     const isStructured = this._viewMode === 'structured';
+
+    if (!isStructured) {
+      if (this._canvas) this._canvas.style.display = 'none';
+      if (this._pgCanvasGraph) {
+        this._pgCanvasGraph.style.display = 'block';
+        this._pgCanvasGraph.setSkeleton(skeleton);
+        
+        // Restore path from URL
+        const hashData = location.hash.replace('#', '').split('?')[0];
+        const hashParams = hashData.split('/');
+        if (hashParams[0] === 'graph') {
+          hashParams.shift(); // remove "graph"
+        }
+        const pathStr = hashParams.join('/');
+        this._pgCanvasGraph.setPath(pathStr);
+      }
+      this._hideLoader();
+      this._graphBuilt = true;
+      return;
+    }
+
+    if (this._pgCanvasGraph) this._pgCanvasGraph.style.display = 'none';
+    if (this._canvas) this._canvas.style.display = '';
 
     // Cache key: reuse previously built graph for same skeleton+mode
     const cacheKey = isStructured ? 'structured' : 'flat';
@@ -1533,14 +1558,12 @@ export class DepGraph extends Symbiote {
       ({ editor, fileMap, dirFiles, dirNodeMap, idToPath, symbolMap } = this._graphCache[cacheKey]);
       this._setProgress(40, 'Building nodes…', `${editor.getNodes().length} nodes (cached)`);
     } else {
-      console.time('[graph] build');
+
       this._setProgress(15, 'Parsing graph…', isStructured ? 'structured mode' : 'flat mode');
       if (isStructured) {
         ({ editor, fileMap, dirFiles, dirNodeMap, idToPath, symbolMap } = buildStructuredGraph(skeleton));
-      } else {
-        ({ editor, fileMap, dirFiles, idToPath, symbolMap: symbolMap = new Map() } = buildFileGraph(skeleton));
       }
-      console.timeEnd('[graph] build');
+
       this._setProgress(40, 'Building nodes…', `${editor.getNodes().length} nodes`);
       this._graphCache[cacheKey] = { skeleton, editor, fileMap, dirFiles, dirNodeMap, idToPath, symbolMap };
     }
@@ -1564,10 +1587,10 @@ export class DepGraph extends Symbiote {
     });
 
     // Set editor on canvas
-    console.time('[graph] setEditor');
+
     this._setProgress(55, 'Building nodes…', 'rendering DOM');
     this._canvas.setEditor(editor);
-    console.timeEnd('[graph] setEditor');
+
     this._setProgress(70, 'Placing nodes…', '');
 
     // Apply settings
@@ -1727,7 +1750,11 @@ export class DepGraph extends Symbiote {
             const hasPath = /^#graph\//.test(fullHash);
             const hasParams = fullHash.includes('?');
             if (hasPath || hasParams) {
-              this._router?.restoreFromHash(editor);
+              if (this._router) {
+                this._router.restoreFromHash(editor);
+              } else if (this._pgCanvasGraph) {
+                this._restoreFlatFocus();
+              }
             }
           }, 800);
         }
@@ -1736,7 +1763,7 @@ export class DepGraph extends Symbiote {
       this._forceLayout.onDone = (finalPositions) => {
         if (!this._canvas) return;
         this._forceTickRaf = null;
-        console.log('[dep-graph] Force layout converged, nodes:', editorNodes.length);
+
         this._canvas.setBatchMode(true);
         for (const [nodeId, pos] of Object.entries(finalPositions)) {
           this._canvas.setNodePosition(nodeId, pos.x, pos.y);
@@ -1758,7 +1785,11 @@ export class DepGraph extends Symbiote {
         const hasPath = /^#graph\//.test(fullHash);
         const hasParams = fullHash.includes('?');
         if (hasPath || hasParams) {
-          this._router?.restoreFromHash(editor);
+          if (this._router) {
+            this._router.restoreFromHash(editor);
+          } else if (this._pgCanvasGraph) {
+            this._restoreFlatFocus();
+          }
         } else {
           this._canvas.fitView();
         }
@@ -2064,7 +2095,7 @@ export class DepGraph extends Symbiote {
           this._forceLayout.onDone = (finalPositions) => {
             if (!this._canvas) return;
             this._forceTickRaf = null;
-            console.log('[dep-graph] Force layout converged');
+
             this._canvas.setBatchMode(true);
             for (const [nodeId, pos] of Object.entries(finalPositions)) {
               this._canvas.setNodePosition(nodeId, pos.x, pos.y);
@@ -2079,7 +2110,11 @@ export class DepGraph extends Symbiote {
               const hasPath = /^#graph\//.test(fullHash);
               const hasParams = fullHash.includes('?');
               if (hasPath || hasParams) {
-                this._router?.restoreFromHash(editor);
+                if (this._router) {
+                  this._router.restoreFromHash(editor);
+                } else if (this._pgCanvasGraph) {
+                  this._restoreFlatFocus();
+                }
               } else {
                 this._canvas.fitView();
               }
@@ -2133,7 +2168,11 @@ export class DepGraph extends Symbiote {
         const hasPath = /^#graph\//.test(fullHash);
         const hasParams = fullHash.includes('?');
         if (hasPath || hasParams) {
-          this._router?.restoreFromHash(editor);
+          if (this._router) {
+            this._router.restoreFromHash(editor);
+          } else if (this._pgCanvasGraph) {
+            this._restoreFlatFocus();
+          }
         } else {
           this._canvas.fitView();
         }
@@ -2283,9 +2322,16 @@ export class DepGraph extends Symbiote {
     }
     this._canvas.setBatchMode(false);
 
-    this._router?.restoreFromHash(editor);
+    if (this._router) {
+      this._router.restoreFromHash(editor);
+    } else if (this._pgCanvasGraph) {
+      this._restoreFlatFocus();
+    }
     this._canvas.refreshConnections();
-    this._canvas.fitView();
+    // Only fit the full view if no focus= was applied (focus already positions the viewport)
+    if (!window.location.hash.includes('focus=')) {
+      this._canvas.fitView();
+    }
   }
 
   /**
