@@ -22,12 +22,12 @@ import {
   computeAutoLayout,
   computeTreeLayout,
   applyTheme,
+  SubgraphRouter,
+  LODManager,
+  PinExpansion,
+  ForceLayout,
+  PCB_DARK,
 } from 'symbiote-node';
-import { SubgraphRouter } from '../vendor/symbiote-node/canvas/SubgraphRouter.js';
-import { LODManager } from '../vendor/symbiote-node/canvas/LODManager.js';
-import { PinExpansion } from '../vendor/symbiote-node/canvas/PinExpansion.js';
-import { ForceLayout } from '../vendor/symbiote-node/canvas/ForceLayout.js';
-import { PCB_DARK } from '../vendor/symbiote-node/themes/pcb.js';
 import { api, state, events, emit } from '../app.js';
 
 // ── Socket types (for wire coloring) ──
@@ -693,11 +693,11 @@ export class DepGraph extends Symbiote {
   _canvas = null;
   /** @type {object|null} Skeleton data for resolving pin names */
   _skeleton = null;
-  /** @type {import('../vendor/symbiote-node/canvas/SubgraphRouter.js').SubgraphRouter} */
+  /** @type {SubgraphRouter} */
   _router = null;
-  /** @type {import('../vendor/symbiote-node/canvas/PinExpansion.js').PinExpansion} */
+  /** @type {PinExpansion} */
   _pinExpansion = null;
-  /** @type {import('../vendor/symbiote-node/canvas/LODManager.js').LODManager} */
+  /** @type {LODManager} */
   _lodManager = null;
   /** @type {boolean} Guard against duplicate graph builds */
   _graphBuilt = false;

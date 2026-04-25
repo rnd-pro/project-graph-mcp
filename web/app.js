@@ -1,6 +1,5 @@
 // @ctx .context/web/app.ctx
-import{Layout as e,LayoutTree as t,applyTheme as n}from"symbiote-node";
-import{CARBON as o}from"./vendor/symbiote-node/themes/carbon.js";
+import{Layout as e,LayoutTree as t,applyTheme as n,CARBON as o}from"symbiote-node";
 import{state as a,subscribe as s,onEvent as i,call as r,connect as c}from"./state.js";
 import"./panels/file-tree.js";
 import"./panels/code-viewer.js";
@@ -10,6 +9,7 @@ import"./panels/health-panel.js";
 import"./panels/live-monitor.js";
 import"./panels/SettingsPanel/SettingsPanel.js";
 import"./components/quick-open.js";
+import"./components/canvas-graph.js";
 export const state={skeleton:null,activeFile:null,ws:null,monitorEvents:[]};
 export{formatStats}from"./stats-format.js";
 export const baseUrl=new URL(".",import.meta.url).href;const l=baseUrl;
@@ -20,4 +20,5 @@ const p={"file-tree":{title:"Files",icon:"folder",component:"pg-file-tree"},"cod
 async function u(){(function(){n(document.documentElement,o);const e=document.querySelector(".app-workspace"),t=document.createElement("layout-sidebar");e.prepend(t);const a=e.querySelector(".app-content"),s=document.createElement("panel-layout");s.setAttribute("storage-key","pg-explorer-layout"),s.setAttribute("min-panel-size","150"),s.id="main-layout",a.appendChild(s),requestAnimationFrame(()=>{for(const[e,t]of Object.entries(p))s.registerPanelType(e,t);let lastSection="";function e(){const e=location.hash.replace("#","")||"explorer",t=e.indexOf("?"),n=t>=0?e.substring(0,t):e,o=n.indexOf("/"),a=o>=0?n.substring(0,o):n,i=o>=0?n.substring(o+1):"";if(d[a]&&a!==lastSection){lastSection=a;s.setLayout(d[a]())}"explorer"===a&&i&&requestAnimationFrame(()=>{state.activeFile=i,emit("file-selected",{path:i,fromRoute:!0})})}t.setSections(m),window.addEventListener("hashchange",e),events.addEventListener("file-selected",e=>{if(e.detail.fromRoute)return;if(e.detail.source==="canvas")return;const t=e.detail.path;const _sec=(location.hash.replace("#","").split("?")[0].split("/")[0])||"explorer";if(t&&_sec==="explorer")history.replaceState(null,"",`#explorer/${t}`)}),localStorage.getItem("pg-explorer-layout")||s.setLayout(d.explorer()),location.hash&&"#"!==location.hash?e():location.hash="explorer"})})(),s("project",e=>{e&&(document.title=`${e.name} — Project Graph`,document.getElementById("project-name").textContent=e.name,document.documentElement.style.setProperty("--project-accent",e.color),g(e.agents))}),events.addEventListener("skeleton-loaded",e=>{const t=e.detail;if(!t)return;state.skeleton=t;const n=new Set;for(const e of Object.values(t.n||{}))e.f&&n.add(e.f);for(const e of Object.keys(t.X||{}))n.add(e);for(const[e,o]of Object.entries(t.f||{}))for(const t of o)n.add("./"===e?t:`${e}${t}`);for(const[e,o]of Object.entries(t.a||{}))for(const t of o)n.add("./"===e?t:`${e}${t}`);const o=document.getElementById("project-files");o&&(o.textContent=`${n.size} files`)}),s("skeleton",e=>{if(!e)return;state.skeleton=e;emit("skeleton-loaded",e)}),s("connected",e=>{const t=document.getElementById("status-indicator");t&&(t.className=e?"status connected":"status disconnected")}),i(e=>{if("agent_connect"===e.type||"agent_disconnect"===e.type)return g(e.agents),void emit("agent-event",e);state.monitorEvents.push(e),state.monitorEvents.length>500&&state.monitorEvents.shift(),emit("tool-event",e)}),c()}
 function g(e){let t=document.getElementById("agent-badge");if(!t){const e=document.querySelector(".app-topbar");if(!e)return;t=document.createElement("span"),t.id="agent-badge",t.className="agent-badge",e.appendChild(t)}t.textContent=e>0?`● ${e} agent${1!==e?"s":""}`:"",t.style.display=e>0?"":"none"}
 function f(){document.querySelector("pg-quick-open")||document.body.appendChild(document.createElement("pg-quick-open"))}
-"loading"===document.readyState?document.addEventListener("DOMContentLoaded",()=>{u(),f()}):(u(),f());
+function h(){const btn=document.getElementById("follow-btn");if(!btn)return;let active=false;btn.addEventListener("click",()=>{active=!active;if(active){btn.setAttribute("data-active","");btn.classList.add("active")}else{btn.removeAttribute("data-active");btn.classList.remove("active")}events.dispatchEvent(new CustomEvent("follow-mode-changed",{detail:{enabled:active}}))})}
+"loading"===document.readyState?document.addEventListener("DOMContentLoaded",()=>{u(),f(),h()}):(u(),f(),h());
