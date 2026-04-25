@@ -24,13 +24,16 @@ function getNodeRadius(node, conns, opts = {}) {
   return r;
 }
 
-const NODE_TYPES = ['data', 'action', 'output', 'config', 'external'];
+const NODE_TYPES = ['data', 'action', 'output', 'config', 'external', 'style', 'docs', 'asset'];
 const TYPE_COLORS = {
-  data:     [120, 180, 255],   // Pastel blue
-  action:   [255, 150, 140],   // Soft coral
-  output:   [120, 210, 170],   // Sage green
-  config:   [255, 200, 120],   // Warm amber
-  external: [190, 150, 255],   // Lavender
+  action:   [255, 150, 140],   // Soft coral (JS/TS logic)
+  output:   [120, 210, 170],   // Sage green (HTML/Entry/UI)
+  data:     [120, 180, 255],   // Pastel blue (JSON data)
+  config:   [255, 200, 120],   // Warm amber (Configs, Env)
+  external: [190, 150, 255],   // Lavender (Tests, Specs)
+  style:    [255, 180, 220],   // Pastel pink (CSS/SCSS)
+  docs:     [200, 210, 215],   // Slate/grey-blue (MD/TXT)
+  asset:    [150, 230, 230],   // Mint/Cyan (SVG/PNG)
   group:    [230, 180, 110],   // Golden pastel orange
 };
 
@@ -351,15 +354,24 @@ export class CanvasGraph extends Symbiote {
   _classifyFile(file, classFiles) {
     const name = file.split('/').pop().toLowerCase();
     const ext = name.split('.').pop();
-    if (classFiles.has(file)) return 'action';  // has classes/exports → action (coral)
-    if (ext === 'css' || ext === 'scss') return 'config';       // amber
-    if (ext === 'html' || ext === 'tpl') return 'output';       // emerald
-    if (ext === 'json' || ext === 'yaml' || ext === 'yml' || ext === 'env') return 'data'; // blue
-    if (ext === 'md' || ext === 'txt' || ext === 'svg' || ext === 'png') return 'data';
-    if (name.includes('test') || name.includes('spec')) return 'external'; // purple
-    if (name === 'index.js' || name === 'index.mjs') return 'output';      // emerald — entry points
-    if (ext === 'js' || ext === 'ts' || ext === 'mjs' || ext === 'py') return 'action'; // coral
-    return 'data'; // blue default
+    
+    // Explicit file names
+    if (name.includes('test') || name.includes('spec')) return 'external';
+    if (name === 'index.js' || name === 'index.mjs') return 'output';
+    if (name === 'package.json' || name.startsWith('.env') || name.startsWith('.git')) return 'config';
+
+    // By extension
+    if (ext === 'css' || ext === 'scss' || ext === 'less') return 'style';
+    if (ext === 'html' || ext === 'tpl' || ext === 'vue' || ext === 'jsx' || ext === 'tsx') return 'output';
+    if (ext === 'json' || ext === 'yaml' || ext === 'yml' || ext === 'toml') return 'config';
+    if (ext === 'md' || ext === 'txt' || ext === 'csv') return 'docs';
+    if (ext === 'svg' || ext === 'png' || ext === 'jpg' || ext === 'jpeg' || ext === 'gif' || ext === 'ico') return 'asset';
+    
+    // Default code files
+    if (ext === 'js' || ext === 'ts' || ext === 'mjs' || ext === 'py' || ext === 'go' || ext === 'rs') return 'action';
+    
+    if (classFiles.has(file)) return 'action';
+    return 'data';
   }
 
   // ─── SKELETON PARSER ───
@@ -1217,7 +1229,17 @@ export class CanvasGraph extends Symbiote {
     if (node.id !== node.label) lines.push(node.id);
     lines.push('');
 
-    const typeLabels = { data: 'Data', action: 'Action', output: 'Output', config: 'Config', external: 'External', group: 'Directory' };
+    const typeLabels = { 
+      data: 'Data', 
+      action: 'Action', 
+      output: 'Output', 
+      config: 'Config', 
+      external: 'External', 
+      style: 'Style',
+      docs: 'Docs',
+      asset: 'Asset',
+      group: 'Directory' 
+    };
     lines.push(`Type: ${typeLabels[node.type] || node.type}`);
 
     const conns = this.adjMap.get(node.id)?.size || 0;
