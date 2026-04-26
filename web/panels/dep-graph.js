@@ -116,6 +116,154 @@ function buildBasenameIndex(knownFiles) {
 }
 
 /**
+ * Build a file-level graph from skeleton data.
+ * Each file becomes a Node, each import relationship becomes a Connection.
+ *
+ * @param {object} skeleton - skeleton from get_skeleton
+ * @returns {{ editor: NodeEditor, fileMap: Map<string, string> }}
+ */
+function buildFileGraph(skeleton) {
+  const editor = new NodeEditor();
+  const fileMap = new Map(); // filePath → nodeId
+  const dirMap = new Map(); // dirPath → nodeId (hub nodes)
+
+  // Collect all files that have symbols
+  const files = new Set();
+  const assetFiles = new Set(); // non-source files (.css, .html, .json, .md, etc.)
+  // From nodes (classes) — each has .f (file) property
+  for (const data of Object.values(skeleton.n || {})) {
+    if (data.f) files.add(data.f);
+  }
+  // From exports map — keys are files
+  for (const file of Object.keys(skeleton.X || {})) {
+    files.add(file);
+  }
+  // From source files without symbols
+  for (const [dir, names] of Object.entries(skeleton.f || {})) {
+    for (const name of names) {
+      files.add(dir === './' ? name : dir + name);
+    }
+  }
+  // From non-source/asset files (.css, .html, .json, .md, etc.)
+  for (const [dir, names] of Object.entries(skeleton.a || {})) {
+    for (const name of names) {
+      const fullPath = dir === './' ? name : dir + name;
+      files.add(fullPath);
+      assetFiles.add(fullPath);
+    }
+  }
+
+  if (files.size === 0) return { editor, fileMap };
+
+  // Group files by directory
+  const dirFiles = new Map();
+  for (const file of files) {
+    const dir = dirOf(file);
+    if (!dirFiles.has(dir)) dirFiles.set(dir, []);
+    dirFiles.get(dir).push(file);
+  }
+
+  // TODO Phase 2: Create directory hub nodes when LOD zoom expansion is ready
+  // Hub nodes without connections create disconnected groups — skip for now
+  // for (const [dir, dirFileList] of dirFiles) {
+  //   if (dirFileList.length < 2) continue;
+  //   const dirLabel = dir.replace(/\/$/, '').split('/').pop() || 'root';
+  //   const hubNode = new Node(dirLabel, { type: 'directory', category: 'server', shape: 'hexagon' });
+  //   hubNode.params = { path: dir, dir, isHub: true };
+  //   hubNode.addOutput('out', new Output(S_EXPORT, ''));
+  //   hubNode.addInput('in', new Input(S_IMPORT, ''));
+  //   editor.addNode(hubNode);
+  //   dirMap.set(dir, hubNode.id);
+  // }
+
+  // Create file nodes (standard HTML nodes with icons)
+  for (const file of files) {
+    const dir = dirOf(file);
+    const label = baseName(file);
+    const isAsset = assetFiles.has(file);
+    const node = new Node(label, {
+      type: isAsset ? 'asset' : 'file',
+      category: isAsset ? 'asset' : 'file',
+    });
+    node.params = { path: file, dir };
+
+    // Every file has one output (exports) and one input (imports)
+    node.addOutput('out', new Output(S_EXPORT, ''));
+    node.addInput('in', new Input(S_IMPORT, ''));
+
+    editor.addNode(node);
+    fileMap.set(file, node.id);
+  }
+
+  // Build import edges from skeleton.I (file-level import map)
+  // skeleton.I[file] = [source1, source2, ...]
+  const edgesAdded = new Set();
+  for (const [srcFile, sources] of Object.entries(skeleton.I || {})) {
+    const srcId = fileMap.get(srcFile);
+    if (!srcId) continue;
+
+    for (const impPath of sources) {
+      // Skip node builtins and external packages
+      if (impPath.startsWith('node:') || (!impPath.startsWith('.') && !impPath.startsWith('/'))) continue;
+
+      const targetFile = resolveImport(impPath, srcFile, files);
+      if (!targetFile) continue;
+
+      const tgtId = fileMap.get(targetFile);
+      if (!tgtId || tgtId === srcId) continue;
+
+      const edgeKey = `${srcId}->${tgtId}`;
+      if (edgesAdded.has(edgeKey)) continue;
+      edgesAdded.add(edgeKey);
+
+      const srcNode = editor.getNode(srcId);
+      const tgtNode = editor.getNode(tgtId);
+      try {
+        const conn = new Connection(srcNode, 'out', tgtNode, 'in');
+        // Phase 3: tag cross-directory connections as "via"
+        const srcDir = dirOf(srcFile);
+        const tgtDir = dirOf(targetFile);
+        if (srcDir !== tgtDir) {
+          conn._via = true;
+          conn._srcDir = srcDir;
+          conn._tgtDir = tgtDir;
+        }
+        editor.addConnection(conn);
+      } catch {
+        // Skip invalid connections
+      }
+    }
+  }
+
+  // Hub node: find node with highest connectivity → module category
+  const connCounts = new Map();
+  for (const conn of editor.getConnections()) {
+    connCounts.set(conn.from, (connCounts.get(conn.from) || 0) + 1);
+    connCounts.set(conn.to, (connCounts.get(conn.to) || 0) + 1);
+  }
+  let maxConns = 0;
+  let hubId = null;
+  for (const [nodeId, count] of connCounts) {
+    if (count > maxConns) {
+      maxConns = count;
+      hubId = nodeId;
+    }
+  }
+  if (hubId) {
+    const hubNode = editor.getNode(hubId);
+    if (hubNode && hubNode.options) {
+      hubNode.options.category = 'module';
+    }
+  }
+
+  // ── Build Reverse ID Lookup ──
+  const idToPath = new Map();
+  for (const [path, id] of fileMap.entries()) idToPath.set(id, path);
+
+  return { editor, fileMap, dirMap, dirFiles, idToPath };
+}
+
+/**
  * Build a hierarchical SubgraphNode graph:
  *   Level 0: directories (SubgraphNode)
  *   Level 1: files inside directories (SubgraphNode or Node)
@@ -723,7 +871,11 @@ export class DepGraph extends Symbiote {
     if (!loader) return;
     loader.setAttribute('data-hidden', '');
     // Remove from DOM after fade to avoid blocking pointer events
-    setTimeout(() => loader.remove(), 350);
+    setTimeout(() => {
+      loader.remove();
+      // Replay any follow-focus that arrived while the graph was building
+      this._replayPendingFollowFocus();
+    }, 350);
   }
 
   /** Show (or re-show) the PCB preloader overlay — safe to call multiple times */
@@ -891,18 +1043,20 @@ export class DepGraph extends Symbiote {
         viewModeBtn.removeAttribute('data-active');
       }
     }
-    // Hide structured-only buttons in flat mode
     this._updateStructuredOnlyVisibility(this._viewMode);
-    viewModeBtn?.addEventListener('click', () => {
-      const wantFlat = this._viewMode !== 'flat';
-      this._viewMode = wantFlat ? 'flat' : 'structured';
+    
+    this._setMode = (newMode) => {
+      if (this._viewMode === newMode) return;
+      this._viewMode = newMode;
       const label = this._viewMode === 'flat' ? 'FLAT' : 'TREE';
       const icon = this._viewMode === 'flat' ? 'account_tree' : 'grid_view';
-      viewModeBtn.innerHTML = `<span class="material-symbols-outlined">${icon}</span>${label}`;
-      if (this._viewMode === 'structured') {
-        viewModeBtn.setAttribute('data-active', '');
-      } else {
-        viewModeBtn.removeAttribute('data-active');
+      if (viewModeBtn) {
+        viewModeBtn.innerHTML = `<span class="material-symbols-outlined">${icon}</span>${label}`;
+        if (this._viewMode === 'structured') {
+          viewModeBtn.setAttribute('data-active', '');
+        } else {
+          viewModeBtn.removeAttribute('data-active');
+        }
       }
       this._updateStructuredOnlyVisibility(this._viewMode);
 
@@ -923,6 +1077,11 @@ export class DepGraph extends Symbiote {
       if (state.skeleton) {
         this._buildGraph(state.skeleton);
       }
+    };
+
+    viewModeBtn?.addEventListener('click', () => {
+      const wantFlat = this._viewMode !== 'flat';
+      this._setMode(wantFlat ? 'flat' : 'structured');
     });
 
     // Connection Path Style toggling
@@ -981,8 +1140,14 @@ export class DepGraph extends Symbiote {
       requestAnimationFrame(() => this._buildGraph(e.detail));
     };
     
+    this._onFollowStateChanged = (e) => {
+      const enabled = e.detail?.enabled;
+      if (enabled && this._viewMode !== 'flat') {
+        this._setMode('flat');
+      }
+    };
+    
     this._onFollowFocusChanged = (e) => {
-      if (this.style.display === 'none' || this.offsetWidth === 0) return;
       this._handleFollowFocus(e.detail);
     };
     
@@ -1018,6 +1183,7 @@ export class DepGraph extends Symbiote {
 
     // Autopilot: listen for orchestrator events
     events.addEventListener('follow-focus-changed', this._onFollowFocusChanged);
+    events.addEventListener('follow-state-changed', this._onFollowStateChanged);
 
     // Update route within graph section
     // On node click → save file path (just focusing)
@@ -1049,10 +1215,7 @@ export class DepGraph extends Symbiote {
           // Root level: path goes into ?focus= parameter
           this._updateHashParam('focus', path);
           this._updateHashParam('in', null);
-          // Pan/zoom to the clicked node — it's already visible, no need to drill
-          if (nodeId && this._canvas?.flyToNode) {
-            this._canvas.flyToNode(nodeId, { zoom: 0.9 });
-          }
+
         } else {
           // Inside a group: preserve drill context URL, set &focus= with relative name
           const drillBase = window.location.hash.split('?')[0]; // e.g. #graph/src/analysis/
@@ -1063,10 +1226,7 @@ export class DepGraph extends Symbiote {
           this._updateHashParam('focus', relativeName);
           this._updateHashParam('in', '1');
           
-          // Pan/zoom to the clicked node within current subgraph
-          if (nodeId && this._canvas?.flyToNode) {
-            this._canvas.flyToNode(nodeId, { zoom: 0.9 });
-          }
+
         }
         // Sync: highlight file in the tree sidebar
         emit('file-selected', { path, source: 'canvas' });
@@ -1155,6 +1315,7 @@ export class DepGraph extends Symbiote {
   disconnectedCallback() {
     super.disconnectedCallback?.();
     if (this._onSkeletonLoaded) events.removeEventListener('skeleton-loaded', this._onSkeletonLoaded);
+    if (this._onFollowStateChanged) events.removeEventListener('follow-state-changed', this._onFollowStateChanged);
     if (this._onFollowFocusChanged) events.removeEventListener('follow-focus-changed', this._onFollowFocusChanged);
     if (this._onFileSelected) events.removeEventListener('file-selected', this._onFileSelected);
     if (this._onHashChange) window.removeEventListener('hashchange', this._onHashChange);
@@ -1558,6 +1719,8 @@ export class DepGraph extends Symbiote {
       this._setProgress(15, 'Parsing graph…', isStructured ? 'structured mode' : 'flat mode');
       if (isStructured) {
         ({ editor, fileMap, dirFiles, dirNodeMap, idToPath, symbolMap } = buildStructuredGraph(skeleton));
+      } else {
+        ({ editor, fileMap, dirFiles, idToPath, symbolMap: symbolMap = new Map() } = buildFileGraph(skeleton));
       }
 
       this._setProgress(40, 'Building nodes…', `${editor.getNodes().length} nodes`);
@@ -2492,9 +2655,21 @@ export class DepGraph extends Symbiote {
    * @param {object} detail 
    */
   _handleFollowFocus({ type, target, action }) {
-    if (!this._editor || !this._canvas) return;
-    if (type !== 'graph' && type !== 'file') return; // React to graph and file actions
+    if (type !== 'graph' && type !== 'file') return;
 
+    // If graph isn't ready yet, queue the focus and replay after build
+    if (!this._editor || !this._canvas || !this._graphBuilt) {
+      this._pendingFollowFocus = { type, target, action };
+      return;
+    }
+
+    this._executeFollowFocus(type, target, action);
+  }
+
+  /**
+   * Execute a follow focus action (called when graph is confirmed ready).
+   */
+  _executeFollowFocus(type, target, action) {
     if (type === 'graph') {
       if (action === 'focus' && target) {
         this._focusSymbol(target);
@@ -2508,6 +2683,17 @@ export class DepGraph extends Symbiote {
     } else if (type === 'file' && target) {
       this._focusFile(target);
       this._pulseFile(target);
+    }
+  }
+
+  /**
+   * Replay any pending follow focus that was queued before the graph was ready.
+   */
+  _replayPendingFollowFocus() {
+    if (this._pendingFollowFocus) {
+      const { type, target, action } = this._pendingFollowFocus;
+      this._pendingFollowFocus = null;
+      this._executeFollowFocus(type, target, action);
     }
   }
 

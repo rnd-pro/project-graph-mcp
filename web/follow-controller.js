@@ -1,10 +1,11 @@
 // @ctx .context/web/follow-controller.ctx
 /**
- * FollowController — Central orchestrator for Follow Mode.
+ * FollowController — Central orchestrator for Follow Mode (Magic Automation Theater).
  *
- * Classifies incoming tool-events and dispatches debounced focus-change
- * signals to subscribed panels (graph, code-viewer, monitor).
- * Also manages the status ribbon text shown during active follow.
+ * Classifies incoming tool-events and drives the UI:
+ *  1. Switches the active panel (graph, code, analysis) via hash routing.
+ *  2. Dispatches debounced focus-change signals to visible panels.
+ *  3. Manages the status ribbon text shown during active follow.
  *
  * NOTE: Does NOT import from app.js to avoid circular dependency.
  * Call init(events, emit) before enable().
@@ -12,6 +13,9 @@
 
 /** Debounce delay for heavy visual updates (camera, code loading) */
 const HEAVY_DEBOUNCE = 800;
+
+/** Delay to allow panel mount after hash change before sending focus */
+const PANEL_MOUNT_DELAY = 300;
 
 class FollowController {
   /** @type {boolean} */
@@ -30,6 +34,8 @@ class FollowController {
   _events = null;
   /** @type {Function|null} */
   _emit = null;
+  /** @type {string} Current active panel type in follow mode */
+  _activePanel = 'graph';
 
   /**
    * Late-bind events bus and emit function (breaks circular import).
@@ -48,6 +54,7 @@ class FollowController {
 
     // Save current location for restoring later
     this._previousHash = location.hash;
+    this._activePanel = 'graph';
 
     // Bind tool-event listener
     this._boundHandler = (e) => this._onToolEvent(e.detail);
@@ -105,12 +112,54 @@ class FollowController {
     // Visual focus — classify and dispatch (debounced for heavy ops)
     const action = this._classify(shortName, args, isCall, isResult, event);
     if (action) {
-      if (action.immediate) {
-        this._emitFocusNow(action.focus);
-      } else {
-        this._emitFocusDebounced(action.focus, action.debounce || HEAVY_DEBOUNCE);
+      this._routeAndFocus(action);
+    }
+  }
+
+  /**
+   * Route to the correct panel, then emit focus.
+   * Two-phase: if the target panel differs from current, switch hash first,
+   * then wait for mount before emitting focus.
+   * @param {{focus: object, debounce?: number, immediate?: boolean}} action
+   */
+  _routeAndFocus(action) {
+    const targetPanel = action.focus.type === 'file' ? 'code' : action.focus.type || 'graph';
+
+    const needsSwitch = this._activePanel !== targetPanel;
+    this._activePanel = targetPanel;
+
+    if (needsSwitch) {
+      // Build new hash for the follow section
+      const hashSection = this._panelToHash(targetPanel);
+      // Use replaceState to avoid polluting browser history during follow
+      const newHash = `#${hashSection}`;
+      if (location.hash !== newHash) {
+        // We need to trigger hashchange so the layout system picks it up
+        location.hash = hashSection;
       }
     }
+
+    // Emit focus — with delay if panel needed mounting, otherwise respect debounce
+    if (needsSwitch) {
+      // Wait for panel to mount after layout change
+      setTimeout(() => {
+        this._emitFocusNow(action.focus);
+      }, PANEL_MOUNT_DELAY);
+    } else if (action.immediate) {
+      this._emitFocusNow(action.focus);
+    } else {
+      this._emitFocusDebounced(action.focus, action.debounce || HEAVY_DEBOUNCE);
+    }
+  }
+
+  /**
+   * Map panel type to hash section.
+   * In follow mode, graph/code/analysis all live under the 'follow' section
+   * but we can use the hash to give routing hints.
+   */
+  _panelToHash(panel) {
+    // All panels are within the 'follow' layout, no need to switch section
+    return 'follow';
   }
 
   /**
@@ -136,6 +185,9 @@ class FollowController {
       if (args.action === 'call_chain' && args.from && args.to) {
         return { focus: { type: 'graph', target: { from: args.from, to: args.to }, action: 'chain' }, immediate: true };
       }
+      if (args.action === 'sub_projects') {
+        return { focus: { type: 'graph', action: 'fit' }, immediate: true };
+      }
     }
 
     // === Skeleton / Overview ===
@@ -148,9 +200,25 @@ class FollowController {
       return { focus: { type: 'file', target: args.path }, debounce: HEAVY_DEBOUNCE };
     }
 
+    // === Documentation ===
+    if (tool === 'docs' && args.file) {
+      return { focus: { type: 'file', target: args.file }, debounce: HEAVY_DEBOUNCE };
+    }
+
     // === Analysis ===
     if (tool === 'analyze') {
-      return { focus: { type: 'analysis' }, immediate: true };
+      // Analysis events should pulse the graph to show "thinking"
+      return { focus: { type: 'graph', action: 'fit' }, immediate: true };
+    }
+
+    // === JSDoc ===
+    if (tool === 'jsdoc' && args.path) {
+      return { focus: { type: 'file', target: args.path }, debounce: HEAVY_DEBOUNCE };
+    }
+
+    // === Focus zone ===
+    if (tool === 'get_focus_zone') {
+      return { focus: { type: 'graph', action: 'fit' }, immediate: true };
     }
 
     return null;
@@ -169,23 +237,24 @@ class FollowController {
 
     switch (tool) {
       case 'navigate': {
-        if (args.action === 'expand') return `Expanding ${args.symbol}`;
-        if (args.action === 'deps') return `Tracing deps of ${args.symbol}`;
-        if (args.action === 'usages') return `Finding usages of ${args.symbol}`;
-        if (args.action === 'call_chain') return `Tracing ${args.from} → ${args.to}`;
-        if (args.action === 'sub_projects') return `Scanning sub-projects`;
-        return `Navigating graph`;
+        if (args.action === 'expand') return `🔍 Expanding ${args.symbol}`;
+        if (args.action === 'deps') return `🔗 Tracing deps of ${args.symbol}`;
+        if (args.action === 'usages') return `📡 Finding usages of ${args.symbol}`;
+        if (args.action === 'call_chain') return `⛓ Tracing ${args.from} → ${args.to}`;
+        if (args.action === 'sub_projects') return `📦 Scanning sub-projects`;
+        return `🧭 Navigating graph`;
       }
-      case 'get_skeleton': return `Scanning project structure`;
-      case 'get_ai_context': return `Loading AI context`;
-      case 'compact': return `Compacting ${short}`;
-      case 'analyze': return `Analyzing: ${args.action || ''}`;
-      case 'docs': return `Documentation: ${args.action || ''}`;
-      case 'jsdoc': return `JSDoc: ${args.action || ''}`;
-      case 'db': return `Database: ${args.action || ''}`;
-      case 'testing': return `Tests: ${args.action || ''}`;
-      case 'filters': return `Filters: ${args.action || ''}`;
-      default: return tool ? `Running ${tool}` : '';
+      case 'get_skeleton': return `🗺️ Scanning project structure`;
+      case 'get_ai_context': return `🧠 Loading AI context`;
+      case 'get_focus_zone': return `🎯 Analyzing recent changes`;
+      case 'compact': return `📄 Reading ${short}`;
+      case 'analyze': return `📊 Analyzing: ${args.action || ''}`;
+      case 'docs': return `📝 Documentation: ${args.action || ''}`;
+      case 'jsdoc': return `📋 JSDoc: ${args.action || ''}`;
+      case 'db': return `🗄️ Database: ${args.action || ''}`;
+      case 'testing': return `🧪 Tests: ${args.action || ''}`;
+      case 'filters': return `⚙️ Filters: ${args.action || ''}`;
+      default: return tool ? `⚡ ${tool}` : '';
     }
   }
 
