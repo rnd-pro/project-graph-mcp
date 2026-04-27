@@ -10,7 +10,7 @@
 
 ![Compact mode — same file, 14 lines total, ↓40% tokens. Agents read and edit this directly.](https://raw.githubusercontent.com/rnd-pro/project-graph-mcp/main/docs/img/explorer-compact.jpg)
 
-Includes a built-in [Web Dashboard](#web-dashboard) (`npx project-graph-mcp serve`) to visualize token metrics and compact ⇄ raw code in real-time.
+The web dashboard has moved to [**mcp-agent-portal**](https://github.com/rnd-pro/mcp-agent-portal) — a unified MCP aggregator that includes project-graph-mcp as a child server with full visual UI.
 
 > [!TIP]
 > **18 MCP tools, zero config.** Add one line to your MCP config and the server downloads itself on the next IDE restart.
@@ -240,18 +240,13 @@ db({ action: "dead_tables", path: "src/" })
 
 ### Web Dashboard
 
-Every project-graph-mcp instance includes a built-in web UI at `http://localhost:{port}/`:
+> [!NOTE]
+> The web dashboard has moved to [**mcp-agent-portal**](https://github.com/rnd-pro/mcp-agent-portal). Install it with `npx mcp-agent-portal` to get the full visual UI: file tree, code viewer, dependency graph, live monitoring, and marketplace.
 
-- **Multi-project dashboard** — overview of all registered projects with token metrics
-- **File tree** — navigate project structure
-- **Code viewer** — compact/raw toggle with syntax highlighting and per-file compression stats
-- **Dependency graph** — visual dependency exploration
-- **Health panel** — analysis results
-- **Live monitor** — real-time agent activity via WebSocket
-
-
-
-With the optional gateway, all projects are accessible under `http://project-graph.local/{project-name}/`.
+```bash
+# Legacy serve command auto-redirects to mcp-agent-portal:
+npx project-graph-mcp serve .
+```
 
 ### Compression Metrics
 
@@ -364,18 +359,29 @@ npx project-graph-mcp help                # All commands
 
 ## MCP Ecosystem
 
-Best used together with [**agent-pool-mcp**](https://www.npmjs.com/package/agent-pool-mcp) — multi-agent task delegation via [Gemini CLI](https://github.com/google-gemini/gemini-cli):
+Best used as part of [**mcp-agent-portal**](https://github.com/rnd-pro/mcp-agent-portal) — a unified MCP aggregator that combines all RND-PRO servers behind a single config entry:
 
-| Layer | project-graph-mcp | agent-pool-mcp |
-|-------|-------------------|----------------|
-| **Primary IDE agent** | Navigates codebase, runs analysis | Delegates tasks, consults peer |
-| **Gemini CLI workers** | Available as MCP tool inside workers | Executes delegated tasks |
+```json
+{
+  "mcpServers": {
+    "agent-portal": {
+      "command": "npx",
+      "args": ["-y", "mcp-agent-portal"]
+    }
+  }
+}
+```
+
+> [!TIP]
+> One entry replaces separate configs for project-graph-mcp, agent-pool-mcp, and any other child servers.
+
+Also works standalone or alongside [**agent-pool-mcp**](https://www.npmjs.com/package/agent-pool-mcp) — multi-agent task delegation:
 
 ```bash
 # Generate configs with correct paths for both servers:
 npx -y project-graph-mcp config
 npx -y agent-pool-mcp config
-# Merge both outputs into your IDE's MCP config file.
+# Or use mcp-agent-portal which bundles both.
 ```
 
 > [!IMPORTANT]
@@ -391,6 +397,7 @@ npx -y agent-pool-mcp config
 - [ROADMAP.md](docs/ROADMAP.md) — Feature roadmap and backlog
 
 ## Related Projects
+- [mcp-agent-portal](https://github.com/rnd-pro/mcp-agent-portal) — Unified MCP aggregator + web dashboard + AI agent runtime
 - [agent-pool-mcp](https://github.com/rnd-pro/agent-pool-mcp) — Multi-agent orchestration via Gemini CLI
 - [Symbiote.js](https://github.com/symbiotejs/symbiote.js) — Isomorphic Reactive Web Components framework
 - [JSDA-Kit](https://github.com/rnd-pro/jsda-kit) — SSG/SSR toolkit for modern web applications
