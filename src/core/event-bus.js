@@ -1,4 +1,4 @@
-// @ctx .context/src/core/event-bus.ctx
+// @ctx event-bus.ctx
 import{EventEmitter as o}from"node:events";
 const t=new o;
 t.setMaxListeners(50);

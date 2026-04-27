@@ -1,2 +1,2 @@
-// @ctx .context/src/compact/split-declarations.ctx
+// @ctx split-declarations.ctx
 import{parse as t}from"../../vendor/acorn.mjs";export function splitDeclarations(r){try{const e=t(r,{ecmaVersion:"latest",sourceType:"module"});if(e.body.length<=3)return r;const n=[];for(const t of e.body)n.push(t.start);n.sort((t,r)=>t-r);const o=[];let s=0;for(const t of n)t>0&&(o.push(r.slice(s,t).trimEnd()),s=t);return o.push(r.slice(s).trimEnd()),o.filter(t=>t).join("\n")}catch{return r}}export function isSingleLineBlob(r){try{if(r.split("\n").filter(t=>!t.startsWith("// @ctx ")&&!t.startsWith("#!")).length>2)return!1;return t(r,{ecmaVersion:"latest",sourceType:"module"}).body.length>3}catch{return!1}}

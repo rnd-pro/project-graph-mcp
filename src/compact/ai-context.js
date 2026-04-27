@@ -1,4 +1,4 @@
-// @ctx .context/src/compact/ai-context.ctx
+// @ctx ai-context.ctx
 import{estimateTokens}from"../core/utils.js";import{resolve as e,extname as t,relative as _rel,join as _join,basename as _base}from"path";import{getSkeleton as s,getGraph as o}from"../mcp/tools.js";import{getProjectDocs as n}from"./doc-dialect.js";import{compressFile as i}from"./compress.js";import{findJSFiles as r}from"../core/parser.js";import{readFileSync as _rf,existsSync as _ex,writeFileSync as _wf}from"fs";
 const c=new Set([".js",".mjs",".ts",".tsx"]);
 const IGNORE_FILE=".contextignore";

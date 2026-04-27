@@ -1,0 +1,9 @@
+--- src/analysis/full-analysis.js ---
+@sig df2774af
+M(t)→t.filter,t.slice|(internal utility)
+export getFullAnalysis(path:string,options:Object=)→n,C,a,S,D,M|run full code health analysis|combines cached and dynamic cross-file metrics
+export getAnalysisSummaryOnly(path:string)→C,a,S,D,M,P|get partial fast health score skipping cross-file analyses
+PATTERNS: incremental caching for per-file metrics|score aggregation with clamping
+EDGE_CASES: cross-file metrics always dynamic|handles missing cache gracefully
+w(a)|calculateHealthScore — internal helper
+F(a,b)|findJSFiles — internal helper

@@ -1,3 +1,0 @@
-[submodule "vendor/symbiote-node"]
-	path = vendor/symbiote-node
-	url = https://github.com/RND-PRO/symbiote-node.git

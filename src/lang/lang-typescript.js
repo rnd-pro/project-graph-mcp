@@ -1,4 +1,4 @@
-// @ctx .context/src/lang/lang-typescript.ctx
+// @ctx lang-typescript.ctx
 import{stripStringsAndComments as s}from"./lang-utils.js";
 export function parseTypeScript(t,e){const r={file:e,classes:[],functions:[],imports:[],exports:[]},c=s(t).split("\n");
 let n=null,a=null;for(let s=0;s<c.length;s++){const t=c[s],o=s+1,i=t.match(/^\s*import\s+(?:type\s+)?(?:\{([^}]+)\}|(\w+))\s+from\s/);if(i){i[1]?i[1].split(",").forEach(s=>{const t=s.trim().replace(/\s+as\s+\w+/,"").replace(/^type\s+/,"");t&&r.imports.push(t)}):i[2]&&r.imports.push(i[2]);continue}const l=t.match(/^\s*import\s+\*\s+as\s+(\w+)\s+from\s/);if(l){r.imports.push(l[1]);continue}const p=t.match(/^\s*export\s+(?:default\s+)?(?:class|function|const|let|var|type|interface|enum|abstract)\s+(\w+)/);p&&r.exports.push(p[1]);

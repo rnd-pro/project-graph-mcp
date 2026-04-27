@@ -1,4 +1,4 @@
-// @ctx .context/src/analysis/large-files.ctx
+// @ctx large-files.ctx
 import{readFileSync as s,readdirSync as e,statSync as t}from"fs";import{join as n,relative as i,resolve as r}from"path";import{parse as o}from"../../vendor/acorn.mjs";import*as l from"../../vendor/walk.mjs";import{shouldExcludeDir as a,shouldExcludeFile as c,parseGitignore as u}from"../core/filters.js";function findJSFiles(s,r=s){s===r&&u(r);
 const o=[];try{for(const l of e(s)){const e=n(s,l),u=i(r,e);t(e).isDirectory()?a(l,u)||o.push(...findJSFiles(e,r)):!l.endsWith(".js")||l.endsWith(".css.js")||l.endsWith(".tpl.js")||c(l,u)||o.push(e)}}catch(s){}return o}
 function analyzeFile(e,t){const n=s(e,"utf-8"),r=i(t,e),a=n.split("\n").length;

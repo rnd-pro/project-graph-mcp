@@ -1,0 +1,13 @@
+--- src/mcp/tools.js ---
+@sig 1671e433
+export getGraph(path:string)→g,p,l,c,JSON.parse,m.clear|get or build project graph|uses smart mtime-based caching
+export getSkeleton(path:string)→getGraph,r,o|get compact project skeleton
+export getFocusZone(path:string,options:Object=)→getGraph,u,e.endsWith,c,t,Object.keys|get enriched focus zone|auto-detects from git diff or recent files
+export expand(symbol:string)→getGraph,t.split,e,classes.find,functions.find,e.slice|expand minified symbol to full details|extracts method code if specified
+export deps(symbol:string)→getGraph,edges.filter|get dependency tree for a symbol|shows imports, usedBy, calls
+export usages(symbol:string)→getGraph,e,calls.includes,e.includes,calls.some,c.push|find all usages of a symbol across project
+export getCallChain(options:Object=)→getGraph,e.push,f.add,l.shift,e.split,t.map|Object>→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|Object>→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|Object>→getGraph,caller.push,visitedNodes.add,queue.shift,current.split,sym.split|find shortest call path between two symbols|uses BFS
+export invalidateCache()→p,l,f,m.clear|delete cache file and clear memory cache
+PATTERNS: smart mtime caching|BFS for call chain|regex for method extraction
+EDGE_CASES: gracefully handles unreadable files/mtimes|handles missing symbols
+y(a)|getGraph — internal helper

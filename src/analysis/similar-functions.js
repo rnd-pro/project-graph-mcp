@@ -1,4 +1,4 @@
-// @ctx .context/src/analysis/similar-functions.ctx
+// @ctx similar-functions.ctx
 import{readFileSync as t,readdirSync as e,statSync as n}from"fs";import{join as s,relative as a,resolve as r}from"path";import{parse as l}from"../../vendor/acorn.mjs";
 import*as o from"../../vendor/walk.mjs";
 import{shouldExcludeDir as i,shouldExcludeFile as h,parseGitignore as c}from"../core/filters.js";

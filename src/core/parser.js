@@ -1,4 +1,4 @@
-// @ctx .context/src/core/parser.ctx
+// @ctx parser.ctx
 import{readFileSync as e,readdirSync as s,statSync as t,existsSync as n}from"fs";
 import{join as r,relative as o,resolve as i}from"path";
 import{parse as a}from"../../vendor/acorn.mjs";

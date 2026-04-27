@@ -1,4 +1,4 @@
-// @ctx .context/src/core/workspace.ctx
+// @ctx workspace.ctx
 import{resolve as r,isAbsolute as o,dirname as t}from"path";import{fileURLToPath as e}from"url";
 let s=null;
 const a=t(e(import.meta.url)),p=r(a,"..",".."),c=process.argv.find(r=>r.startsWith("--workspace="));c&&(s=c.split("=")[1],console.error(`[project-graph] Workspace from arg: ${s}`));

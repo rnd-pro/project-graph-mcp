@@ -20,3 +20,6 @@ coverage/
 # Tests
 *.test.js
 *.spec.js
+
+# Colocated documentation
+*.ctx

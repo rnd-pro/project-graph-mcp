@@ -1,0 +1,9 @@
+--- src/analysis/jsdoc-generator.js ---
+@sig 1f2fddef
+export generateJSDoc(filePath:string,options:Object=)→t,a,e,n,f.split,Math.max|(internal utility)
+s(t)|(internal utility)
+export generateJSDocFor(filePath:string,functionName:string,options:Object=)→generateJSDoc,name.endsWith|null→generateJSDoc,name.endsWith,results.find|null→generateJSDoc,name.endsWith,results.find|null→generateJSDoc,name.endsWith,results.find|generate JSDoc for a specific named function
+PATTERNS: AST tree walking via Acorn|reverse line scanning for existing JSDoc
+EDGE_CASES: skips getters/setters/constructors|infers types from AST defaults
+i(a)|buildJSDoc — internal helper
+o|buildJSDoc — internal helper

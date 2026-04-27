@@ -1,4 +1,4 @@
-// @ctx .context/src/analysis/complexity.ctx
+// @ctx complexity.ctx
 import{readFileSync as t,readdirSync as e,statSync as o}from"fs";import{join as n,relative as r,resolve as i}from"path";import{parse as a}from"../../vendor/acorn.mjs";
 import*as l from"../../vendor/walk.mjs";
 import{shouldExcludeDir as s,shouldExcludeFile as c,parseGitignore as m}from"../core/filters.js";

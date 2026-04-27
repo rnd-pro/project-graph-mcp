@@ -1,4 +1,4 @@
-// @ctx .context/src/compact/compact.ctx
+// @ctx compact.ctx
 import{resolveCtxRelPath as resolveCtxPath}from"./ctx-resolver.js";import{walkJSFiles}from"../core/file-walker.js";import{readFileSync as e,writeFileSync as t,existsSync as s}from"fs";import{join as r,extname as c,relative as a,basename as i,dirname as l}from"path";import{minify as u}from"../../vendor/terser.mjs";
 
 function addTopLevelNewlines(e){return e.replace(/;(import )/g,";\n$1").replace(/;(export )/g,";\n$1").replace(/\}(export )/g,"}\n$1").replace(/\}(function )/g,"}\n$1").replace(/\}(async function )/g,"}\n$1").replace(/\}(class )/g,"}\n$1").replace(/;(const |let |var )/g,";\n$1")}

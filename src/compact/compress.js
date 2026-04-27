@@ -1,4 +1,4 @@
-// @ctx .context/src/compact/compress.ctx
+// @ctx compress.ctx
 import{estimateTokens as i}from"../core/utils.js";import{readFileSync as e}from"fs";import{basename as t,extname as n}from"path";import{minify as a}from"../../vendor/terser.mjs";import{parse as s}from"../../vendor/acorn.mjs";import{simple as r}from"../../vendor/walk.mjs";
 const o=new Set([".js",".mjs",".ts",".tsx"]);
 

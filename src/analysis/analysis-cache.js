@@ -1,4 +1,4 @@
-// @ctx .context/src/analysis/analysis-cache.ctx
+// @ctx analysis-cache.ctx
 import{readFileSync as t,writeFileSync as e,mkdirSync as n,existsSync as r}from"fs";
 import{join as c,dirname as a}from"path";
 import{createHash as i}from"crypto";

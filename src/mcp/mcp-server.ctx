@@ -1,0 +1,6 @@
+--- src/mcp/mcp-server.js ---
+@sig 112b580b
+export createServer()→i.get,i.delete,e.reject,e.resolve,handleNotification,q|create MCP server instance|handles JSON-RPC 2.0 messages
+export startStdioServer()→JSON.stringify,console.log,createServer,JSON.parse,t.handleMessage,sendToClient|start MCP server with stdio transport
+PATTERNS: JSON-RPC 2.0|bidirectional stdio communication
+EDGE_CASES: handles timeout for roots/list|graceful parse error handling

@@ -1,4 +1,4 @@
-// @ctx .context/src/core/filters.ctx
+// @ctx filters.ctx
 import{readFileSync as e,existsSync as t}from"fs";
 import{join as r}from"path";
 const i=["node_modules","dist","build","coverage",".next",".nuxt",".output","__pycache__",".cache",".turbo","out"],n=["*.test.js","*.spec.js","*.min.js","*.bundle.js","*.d.ts",".project-graph-cache.json"];

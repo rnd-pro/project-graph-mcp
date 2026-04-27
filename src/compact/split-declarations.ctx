@@ -1,0 +1,6 @@
+--- src/compact/split-declarations.js ---
+@sig 66570947
+export splitDeclarations(code:string)→t,n.push,n.sort,r.slice,o.push,o.filter|split minified blob into one-declaration-per-line using AST
+export isSingleLineBlob(code:string)→r.split,t.startsWith,t|check if code has >3 declarations on ≤2 lines
+PATTERNS: Acorn AST node.start boundaries for splitting
+EDGE_CASES: (internal utility)

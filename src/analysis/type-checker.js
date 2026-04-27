@@ -1,4 +1,4 @@
-// @ctx .context/src/analysis/type-checker.ctx
+// @ctx type-checker.ctx
 import{execSync as t,spawn as e}from"child_process";import{existsSync as s}from"fs";import{resolve as n,join as r}from"path";
 function o(){try{return{available:!0,version:t("tsc --version",{encoding:"utf-8",timeout:5e3}).trim(),path:t("which tsc",{encoding:"utf-8",timeout:5e3}).trim()}}catch(e){try{return{available:!0,version:t("npx tsc --version",{encoding:"utf-8",timeout:15e3}).trim(),path:"npx tsc"}}catch(t){return{available:!1,version:null,path:null}}}}
 function i(t,e){const s=t.match(/^(.+?)\((\d+),(\d+)\):\s+(error|warning)\s+(TS\d+):\s+(.+)$/);return s?{file:s[1],line:parseInt(s[2]),column:parseInt(s[3]),severity:s[4],message:s[6],code:s[5]}:null}

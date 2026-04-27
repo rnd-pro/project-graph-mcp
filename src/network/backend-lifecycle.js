@@ -1,4 +1,4 @@
-// @ctx .context/src/network/backend-lifecycle.ctx
+// @ctx backend-lifecycle.ctx
 import{createHash as e,randomBytes as t}from"node:crypto";
 import{existsSync as r,mkdirSync as n,readFileSync as o,writeFileSync as c,unlinkSync as s,readdirSync as i}from"node:fs";
 import{join as a,resolve as l,basename as f}from"node:path";

@@ -1,0 +1,11 @@
+--- src/compact/doc-dialect.js ---
+@sig bccef7f4
+export generateDocDialect(graph:Object,rootPath:string)→r,s.push,c.push,c.join,edges.filter,h.push|generate compact doc-dialect string from graph|includes project/file/function levels
+export readContextDocs(rootPath:string)→i,x,t,n.set,relPath.startsWith,n.keys|read manual docs (mirror + colocated)|colocated overrides mirror
+export getProjectDocs(rootPath:string,parsed:Object,options:Object=)→readContextDocs,j,t,generateDocDialect,t.indexOf,t.slice|get project docs|merges manual .ctx and auto-generated dialect
+export checkStaleness(rootPath:string,parsed:Object)→i,x,t,e.match,E,o.push|check .ctx files staleness vs current AST
+export generateContextFiles(graph:Object,rootPath:string,parsed:Object,options:Object=)→i,s,n,r,c.push,c.join|generate .context/ templates|supports focus scope and overwrite merge
+PATTERNS: two-tier doc resolution (colocated > mirror)|AST signature hashing
+EDGE_CASES: preserves existing placeholders on overwrite|handles git diff for focus scope
+S(a,b)|resolveCtxMdPath — internal helper
+y(a,b,c,d,e,f,g)|buildFileTemplate — internal helper

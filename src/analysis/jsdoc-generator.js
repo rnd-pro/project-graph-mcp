@@ -1,4 +1,4 @@
-// @ctx .context/src/analysis/jsdoc-generator.ctx
+// @ctx jsdoc-generator.ctx
 import{readFileSync as t}from"fs";import{relative as e}from"path";import{parse as n}from"../../vendor/acorn.mjs";
 import*as r from"../../vendor/walk.mjs";
 import{getWorkspaceRoot as a}from"../core/workspace.js";

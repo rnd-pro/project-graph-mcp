@@ -1,4 +1,4 @@
-// @ctx .context/src/network/mdns.ctx
+// @ctx mdns.ctx
 import{spawn as t}from"node:child_process";import e from"node:dgram";
 const r="224.0.0.251";
 export function registerLocal(t,e){if("darwin"===process.platform)return n(t,e);if("linux"===process.platform){const e=c(t);if(e)return e}return o(t)}

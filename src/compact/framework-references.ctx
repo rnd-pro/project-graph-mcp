@@ -1,0 +1,7 @@
+--- src/compact/framework-references.js ---
+@sig 05360f4a
+fetchReference(t)→o,u.get,Date.now,AbortSignal.timeout,fetch,e.text|fetch remote markdown reference with caching and local fallback
+listAvailable()→Object.keys,r,t,r.endsWith,a,e.add|list available framework references from cache and local dir
+export getFrameworkReference(options:Object=)→listAvailable,t.includes,fetchReference,r.split,i,o.includes|get full reference docs for a framework or auto-detect
+PATTERNS: in-memory caching with TTL|fetch with AbortSignal timeout
+EDGE_CASES: gracefully handles fetch timeouts and write failures

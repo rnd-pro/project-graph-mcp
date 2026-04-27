@@ -1,0 +1,7 @@
+--- src/cli/cli-handlers.js ---
+@sig 0737c704
+R(r)→r.startsWith,r.find,q|(internal utility)
+PATTERNS: command definition map|lazy execution
+EDGE_CASES: falls back to cwd if no path given|validates required args
+O(a,b)|getArg — internal helper
+export CLI_HANDLERS|map of CLI command handlers

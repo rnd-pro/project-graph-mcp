@@ -1,0 +1,5 @@
+--- src/lang/lang-utils.js ---
+@sig 9df6d2e2
+export stripStringsAndComments(code:string,options:Object=)|strip comments and strings from code using state machine
+PATTERNS: character-by-character state machine string parsing
+EDGE_CASES: preserves template interpolations|handles triple quotes

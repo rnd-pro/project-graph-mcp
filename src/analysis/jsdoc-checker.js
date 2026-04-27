@@ -1,4 +1,4 @@
-// @ctx .context/src/analysis/jsdoc-checker.ctx
+// @ctx jsdoc-checker.ctx
 import{readFileSync as e,readdirSync as t,statSync as n}from"fs";import{join as s,relative as r,resolve as i}from"path";import{parse as o}from"../../vendor/acorn.mjs";
 import*as a from"../../vendor/walk.mjs";
 import{shouldExcludeDir as c,shouldExcludeFile as l,parseGitignore as u}from"../core/filters.js";

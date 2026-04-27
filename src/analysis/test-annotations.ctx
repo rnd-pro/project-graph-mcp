@@ -1,0 +1,11 @@
+--- src/analysis/test-annotations.js ---
+@sig b2010e5d
+export parseAnnotations(content:string,filePath:string)→t.split,t.startsWith,i,n.push,t.match,f.split|parse checklist lines into test feature objects
+export getAllFeatures(dir:string)→c,o,a,t,parseAnnotations,n.push|read and parse all test features from context dir
+export getPendingTests(dir:string)→c,getAllFeatures,r,n.push|return list of pending tests with file paths
+export markTestPassed(testId:string)→t.split,f|mark specific test id as passed [x]
+export markTestFailed(testId:string,reason:string)→t.split,f|mark specific test id as failed [!] with reason
+export getTestSummary(dir:string)→getAllFeatures,c.push,Math.round|compute total, passed, failed, pending counts
+export resetTestState()→process.cwd,o,a,t,e.replace,n|reset all test states to pending [ ]
+PATTERNS: regex markdown checklist parsing|file rewriting for state
+EDGE_CASES: handles unreadable files gracefully|handles missing failure reasons

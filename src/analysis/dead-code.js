@@ -1,4 +1,4 @@
-// @ctx .context/src/analysis/dead-code.ctx
+// @ctx dead-code.ctx
 import{readFileSync as e,readdirSync as t,statSync as n,existsSync as s}from"fs";import{join as o,relative as a,resolve as i,dirname as r}from"path";import{parse as c}from"../../vendor/acorn.mjs";
 import*as l from"../../vendor/walk.mjs";
 import{shouldExcludeDir as d,shouldExcludeFile as f,parseGitignore as p}from"../core/filters.js";

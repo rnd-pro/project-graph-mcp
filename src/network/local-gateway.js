@@ -1,4 +1,4 @@
-// @ctx .context/src/network/local-gateway.ctx
+// @ctx local-gateway.ctx
 import t from"node:http";import e from"node:net";import r from"node:fs";import o from"node:path";import{registerLocal as n}from"./mdns.js";
 const s=o.join(process.env.HOME||process.env.USERPROFILE||"/tmp",".local-gateway"),c=o.join(s,"services.json"),i=o.join(s,"gateway.pid"),a=o.join(s,"backends");
 function p(){try{return JSON.parse(r.readFileSync(c,"utf8"))}catch{return{}}}

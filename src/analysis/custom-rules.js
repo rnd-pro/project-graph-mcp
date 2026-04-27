@@ -1,4 +1,4 @@
-// @ctx .context/src/analysis/custom-rules.ctx
+// @ctx custom-rules.ctx
 import{readFileSync as e,writeFileSync as t,readdirSync as s,existsSync as n,statSync as r}from"fs";import{join as o,relative as c,dirname as i,resolve as l}from"path";import{fileURLToPath as u}from"url";import{shouldExcludeDir as f,shouldExcludeFile as a,parseGitignore as d}from"../core/filters.js";
 const p=i(u(import.meta.url)),h=o(p,"..","..","rules");
 let m=[];

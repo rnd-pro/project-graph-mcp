@@ -1,4 +1,4 @@
-// @ctx .context/src/compact/ctx-to-jsdoc.ctx
+// @ctx ctx-to-jsdoc.ctx
 import{walkJSFiles}from"../core/file-walker.js";import{resolveCtxPath}from"./ctx-resolver.js";import{buildJSDocFromRaw as u}from"./jsdoc-builder.js";import{readFileSync as t,writeFileSync as e,readdirSync as n,statSync as s,existsSync as o}from"fs";
 import{join as r,extname as i,relative as a}from"path";
 import{parse as c}from"../../vendor/acorn.mjs";

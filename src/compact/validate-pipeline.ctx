@@ -1,0 +1,12 @@
+--- src/compact/validate-pipeline.js ---
+@sig aa5dc47b
+@enrich: Replace each (internal utility) below. Read src/compact/validate-pipeline.js for context.
+  Rules: max 80ch, pipe|separated, abbrev (fn/ret/cfg/init/auth/db/msg).
+  Save this file after filling all markers. Remove @enrich lines when done.
+D(t,s)→c,e,f.split,u.startsWith,i.push,l|(internal utility)
+W(e)→Math.ceil|(internal utility)
+export validatePipeline(rootPath:string,options:Object=)→Date.now,p,u,r,n,S|run full Mode 4 validation pipeline|returns PASS/FAIL with contract, AST, token reports
+PATTERNS: 4-step pipeline (contracts→decompile→AST verify→tokens)|single-call validation
+EDGE_CASES: missing .full/→skip AST verify|missing src/→skip tokens|strict mode for extra contract checks
+E(a,b)|checkCompactStyle — internal helper
+export fixCompactStyle(rootPath:string,files:string[])|auto-fix compact style issues via terser re-minification

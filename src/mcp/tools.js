@@ -1,4 +1,4 @@
-// @ctx .context/src/mcp/tools.ctx
+// @ctx tools.ctx
 import{parseProject as e,parseFile as t,findJSFiles as n,findAllProjectFiles as r}from"../core/parser.js";
 import{buildGraph as s,createSkeleton as o}from"../core/graph-builder.js";
 import{readFileSync as c,statSync as i,writeFileSync as a,existsSync as l,unlinkSync as f}from"fs";

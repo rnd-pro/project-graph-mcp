@@ -1,0 +1,17 @@
+--- src/network/web-server.js ---
+@sig f4957190
+y(e)→Buffer.from,Buffer.alloc,n.writeUInt16BE,BigInt,n.writeBigUInt64BE,Buffer.concat|(internal utility)
+x(e,t)→JSON.stringify,e.send,T.delete|(internal utility)
+S(e,t)→e.split,x|(internal utility)
+w(e)→e.readUInt16BE,e.readBigUInt64BE,Number,e.slice,s.toString|(internal utility)
+P()→N,O,console.log,process.exit,setTimeout|(internal utility)
+O()→clearTimeout|(internal utility)
+k()→d.executeTool|(internal utility)
+N()|(internal utility)
+z()→O,P|(internal utility)
+A(e,a,s,i)→a.get,d.executeTool,n,s,a,o.dirname|(internal utility)
+export startWebServer(rootPath:string,options:Object)→i,o.resolve,o.basename,n.createHash,f.slice,parseInt|init HTTP/WS server, handle routing and WebSocket upgrades
+PATTERNS: custom HTTP routing|manual WebSocket frame parsing without deps
+EDGE_CASES: 15min auto-shutdown|unmasked server frames|ping/pong opcodes
+g(a,b)|serveStatic — internal helper
+u(a)|computeWSAccept — internal helper

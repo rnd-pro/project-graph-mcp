@@ -1,4 +1,4 @@
-// @ctx .context/src/compact/instructions.ctx
+// @ctx instructions.ctx
 import{readFileSync}from"fs";import{join,dirname}from"path";import{fileURLToPath}from"url";
 const __dir=dirname(fileURLToPath(import.meta.url));
 const _mdPath=join(__dir,"..","..","docs","AGENT_INSTRUCTIONS.md");

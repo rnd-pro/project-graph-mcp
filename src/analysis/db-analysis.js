@@ -1,4 +1,4 @@
-// @ctx .context/src/analysis/db-analysis.ctx
+// @ctx db-analysis.ctx
 import{parseProject as e}from"../core/parser.js";import{buildGraph as t}from"../core/graph-builder.js";
 export async function getDBSchema(t){const a=(await e(t)).tables||[];return{tables:a.map(e=>({name:e.name,columns:e.columns,file:e.file,line:e.line})),totalTables:a.length,totalColumns:a.reduce((e,t)=>e+t.columns.length,0)}}
 export async function getTableUsage(a,s){const n=await e(a),o=t(n),r={};for(const[e,t,a]of o.edges){if("R→"!==t&&"W→"!==t)continue;const n=a;if(s&&n!==s)continue;r[n]||(r[n]={readers:[],writers:[]});const l=o.reverseLegend[e]||e,d=o.nodes[e],i={name:l,file:d?.f||"?"};"R→"===t?r[n].readers.some(e=>e.name===l)||r[n].readers.push(i):r[n].writers.some(e=>e.name===l)||r[n].writers.push(i)}const l=Object.entries(r).map(([e,t])=>({table:e,readers:t.readers,writers:t.writers,totalReaders:t.readers.length,totalWriters:t.writers.length})).sort((e,t)=>t.totalReaders+t.totalWriters-(e.totalReaders+e.totalWriters));return{tables:l,totalTables:l.length,totalQueries:l.reduce((e,t)=>e+t.totalReaders+t.totalWriters,0)}}

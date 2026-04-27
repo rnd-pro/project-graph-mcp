@@ -1,4 +1,4 @@
-// @ctx .context/src/analysis/undocumented.ctx
+// @ctx undocumented.ctx
 import{readFileSync as t,readdirSync as e,statSync as n}from"fs";import{join as s,relative as o,resolve as r}from"path";import{parse as c}from"../../vendor/acorn.mjs";
 import*as i from"../../vendor/walk.mjs";
 import{shouldExcludeDir as l,shouldExcludeFile as a,parseGitignore as u}from"../core/filters.js";

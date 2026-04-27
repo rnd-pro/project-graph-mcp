@@ -1,4 +1,4 @@
-// @ctx .context/src/lang/lang-go.ctx
+// @ctx lang-go.ctx
 import{stripStringsAndComments as s}from"./lang-utils.js";
 export function parseGo(t,e){const n={file:e,classes:[],functions:[],imports:[],exports:[]},{imports:l,packageNames:o}=extractImports(t);n.imports=l;
 const i=s(t,{singleQuote:!1,backtick:!0,templateInterpolation:!1}),c=new Map,r=/^\s*type\s+([a-zA-Z_]\w*)\s+struct\s*\{/gm;

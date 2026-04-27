@@ -1,4 +1,4 @@
-// @ctx .context/src/compact/validate-pipeline.ctx
+// @ctx validate-pipeline.ctx
 import{walkJSFiles as S}from"../core/file-walker.js";import{estimateTokens as W}from"../core/utils.js";import{readFileSync as e,readdirSync as t,statSync as s,existsSync as n,writeFileSync as i,mkdirSync as o}from"fs";import{join as r,extname as a,relative as c,dirname as l,basename as d}from"path";import{execSync as f}from"node:child_process";import{parse as m}from"../../vendor/acorn.mjs";import{validateCtxContracts as p}from"./ctx-to-jsdoc.js";import{expandProject as u}from"./expand.js";import{parseProject as h}from"../core/parser.js";import{getGraph as g}from"../mcp/tools.js";import{generateContextFiles as x}from"./doc-dialect.js";import{simple as y}from"../../vendor/walk.mjs";import{splitDeclarations as j,isSingleLineBlob as w}from"./split-declarations.js";
 
 

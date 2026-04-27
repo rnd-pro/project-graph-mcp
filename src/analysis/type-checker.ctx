@@ -1,0 +1,6 @@
+--- src/analysis/type-checker.js ---
+@sig 5e85e31c
+export checkTypes(path:string,options:Object=)→n,o,l,path.includes,e,stdout.on|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|null, diagnostics: TypeDiagnostic[], summary: Object, hint: string|null →resolve,detectTsc,buildArgs,path.includes,spawn,stdout.on|spawn tsc process, collect and parse type diagnostics
+PATTERNS: subprocess spawning|regex CLI output parsing
+EDGE_CASES: falls back to npx if global tsc missing|auto-generates config args
+i(a,b)|parseDiagnosticLine — internal helper

@@ -1,0 +1,6 @@
+--- src/analysis/complexity.js ---
+@sig 9df5918d
+export analyzeComplexityFile(filePath:string,code:string)→a,u,h,o.push,l.simple|analyze complexity for all functions in a single file
+export getComplexity(path:string,options:Object=)→i,p,f,l.push,l.filter,l.sort|scan directory, filter and sort complexity results
+PATTERNS: AST tree walking via Acorn|cyclomatic complexity counting
+EDGE_CASES: parses arrow functions with blocks|ignores unparseable files

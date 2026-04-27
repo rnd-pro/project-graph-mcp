@@ -1,4 +1,4 @@
-// @ctx .context/src/lang/lang-python.ctx
+// @ctx lang-python.ctx
 import{stripStringsAndComments as s}from"./lang-utils.js";
 export function parsePython(t="",n=""){const e={file:n,classes:[],functions:[],imports:[],exports:[]},o=s(t,{singleQuote:!0,hashComment:!0,tripleQuote:!0}).split("\n");
 let l=null,i=null,c=-1;for(let s=0;s<o.length;s++){const t=o[s];if(!t.trim())continue;

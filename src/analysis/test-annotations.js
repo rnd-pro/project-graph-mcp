@@ -1,4 +1,4 @@
-// @ctx .context/src/analysis/test-annotations.ctx
+// @ctx test-annotations.ctx
 import{readFileSync as t,readdirSync as s,statSync as e,writeFileSync as n}from"fs";
 import{join as o,relative as r,resolve as c}from"path";
 function a(t){const n=[];try{for(const r of s(t)){const s=o(t,r);e(s).isDirectory()&&!r.startsWith(".")?n.push(...a(s)):r.endsWith(".ctx.md")&&n.push(s)}}catch(t){}return n}

@@ -1,0 +1,5 @@
+--- src/network/backend.js ---
+@sig d1e9720c
+cleanup()→o|remove port file on exit
+PATTERNS: executable CLI entrypoint|interval port file polling
+EDGE_CASES: graceful exit on SIGINT/SIGTERM

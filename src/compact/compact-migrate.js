@@ -1,4 +1,4 @@
-// @ctx .context/src/compact/compact-migrate.ctx
+// @ctx compact-migrate.ctx
 import{walkJSFiles}from"../core/file-walker.js";import{readFileSync as e,writeFileSync as t,existsSync as s}from"fs";import{join as o,extname as i,relative as r,basename as c,dirname as l}from"path";import{execSync as m}from"child_process";import{compactProject as f}from"./compact.js";import{validatePipeline as d}from"./validate-pipeline.js";import{setConfig as u}from"./mode-config.js";
 const p=new Set([".js",".mjs"]),g=new Set(["node_modules",".git","vendor",".context","dev-docs",".agent",".agents",".expanded"]);
 

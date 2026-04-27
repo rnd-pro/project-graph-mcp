@@ -1,0 +1,8 @@
+--- src/lang/lang-go.js ---
+@sig b212f0be
+export parseGo(code:string,filename:string)→extractImports,s,r.exec,getBody,t.substring,n.split|parse Go structs, interfaces, methods, and functions
+extractImports(s)→s.replace,l.exec,n.match,t.includes,t.push,e.add|extract Go imports and package names
+getBody(s,t)→s.substring|extract block body using brace counting
+extractCalls(s,t)→n.exec,s.includes,s.split,t.has,e.includes,e.push|extract function calls ignoring Go keywords
+PATTERNS: regex string extraction|brace counting for block scope
+EDGE_CASES: ignores Go keywords|strips package prefix if alias matches

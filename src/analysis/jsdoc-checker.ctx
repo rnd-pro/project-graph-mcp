@@ -1,0 +1,10 @@
+--- src/analysis/jsdoc-checker.js ---
+@sig f91e4d5d
+export checkJSDocFile(filePath:string,code:string)→o,n.exec,e.slice,o.exec,n.slice,o.startsWith|check JSDoc consistency in single file
+export checkJSDocConsistency(path:string)→i,f,e,r,checkJSDocFile,o.push|check JSDoc consistency in directory|aggregates errors and warnings
+PATTERNS: AST parsing|regex for initial JSDoc extraction|AST type inference
+EDGE_CASES: handles optional param [] syntax|handles union types in JSDoc
+m(a,b)|extractJSDocComments — internal helper
+p(a)|findJSDocBefore — internal helper
+h(a)|extractParamName — internal helper
+y(a)|inferTypeFromDefault — internal helper

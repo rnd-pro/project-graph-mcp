@@ -1,4 +1,4 @@
-// @ctx .context/src/compact/mode-config.ctx
+// @ctx mode-config.ctx
 import{readFileSync as e,writeFileSync as t,existsSync as r,mkdirSync as o}from"fs";
 import{join as i,dirname as c}from"path";
 const n=".context/config.json",a={mode:2,beautify:!0,autoValidate:!1,stripJSDoc:!1};
