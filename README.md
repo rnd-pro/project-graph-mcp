@@ -103,6 +103,9 @@ Best used as part of [**mcp-agent-portal**](https://github.com/rnd-pro/mcp-agent
 ```
 
 > [!TIP]
+> The Portal runs a **singleton backend** to prevent resource exhaustion when you open multiple IDE windows. It transparently spawns `project-graph-mcp` and `agent-pool-mcp` as child processes and aggregates their tools.
+
+> [!TIP]
 > One entry replaces separate configs for project-graph-mcp, agent-pool-mcp, and any other child servers.
 
 Also works standalone or alongside [**agent-pool-mcp**](https://www.npmjs.com/package/agent-pool-mcp) — multi-agent task delegation:
@@ -115,7 +118,7 @@ npx -y agent-pool-mcp config
 ```
 
 > [!IMPORTANT]
-> Each Gemini CLI worker can have its own project-graph-mcp instance — workers navigate the codebase independently, without blocking the primary agent.
+> Each Gemini CLI worker will automatically spawn its own instance of `project-graph-mcp` — workers navigate the codebase independently, without blocking the primary agent.
 
 ## Documentation
 
