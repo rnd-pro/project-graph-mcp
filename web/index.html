@@ -3,37 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Project Graph — Web Explorer</title>
-<meta name="description" content="Interactive codebase explorer powered by project-graph-mcp">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
-<link rel="stylesheet" href="style.css">
-<script type="importmap">{"imports":{"@symbiotejs/symbiote":"./vendor/symbiote/core/index.js","symbiote-node":"./vendor/symbiote-node/index.js"}}</script>
+<title>Project Graph — UI Moved</title>
+<style>
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: system-ui, -apple-system, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+  .box {
+    text-align: center;
+    max-width: 480px;
+    padding: 40px;
+  }
+  h2 { color: #a0a0b8; font-weight: 500; }
+  p { color: #888; line-height: 1.6; }
+  code {
+    background: #2a2a3e;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #7c8fff;
+  }
+  a { color: #7c8fff; }
+</style>
 </head>
 <body>
-<div class="app-shell">
-<header class="app-topbar">
-<div class="topbar-left">
-<span class="material-symbols-outlined" style="font-size:20px;color:var(--project-accent,var(--sn-node-selected,#4c8bf5))">hub</span>
-<span class="app-title">Project Graph</span>
-<span class="topbar-sep">·</span>
-<span id="project-name" class="project-name">Loading...</span>
-<span id="project-files" class="project-files"></span>
-<span id="compression-stats" class="compression-stats" style="display:none"></span>
+<div class="box">
+  <h2>⬡ UI has moved to agent-portal</h2>
+  <p>The web dashboard is no longer bundled with <code>project-graph-mcp</code>.</p>
+  <p>Install and run the unified control plane:</p>
+  <p><code>npx agent-portal</code></p>
+  <p style="margin-top: 24px; font-size: 13px;">
+    MCP tools are still available via this server's stdio/WebSocket interface.
+  </p>
 </div>
-<div class="topbar-right">
-<button id="follow-btn" class="follow-btn" title="Follow mode: UI follows agent actions">
-<span class="material-symbols-outlined">smart_toy</span>
-FOLLOW
-</button>
-<span id="agent-badge" class="agent-badge" style="display:none"></span>
-<span id="status-indicator" class="status connected"></span>
-</div>
-</header>
-<div class="app-workspace">
-<div class="app-content"></div>
-</div>
-</div>
-<script type="module" src="app.js"></script>
 </body>
 </html>
