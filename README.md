@@ -103,10 +103,7 @@ Best used as part of [**mcp-agent-portal**](https://github.com/rnd-pro/mcp-agent
 ```
 
 > [!TIP]
-> The Portal runs a **singleton backend** to prevent resource exhaustion when you open multiple IDE windows. It transparently spawns `project-graph-mcp` and `agent-pool-mcp` as child processes and aggregates their tools.
-
-> [!TIP]
-> One entry replaces separate configs for project-graph-mcp, agent-pool-mcp, and any other child servers.
+> The Portal runs a **singleton backend** to prevent resource exhaustion when you open multiple IDE windows. It transparently spawns `project-graph-mcp` and `agent-pool-mcp` as child processes and aggregates their tools. One entry replaces separate configs for all child servers.
 
 Also works standalone or alongside [**agent-pool-mcp**](https://www.npmjs.com/package/agent-pool-mcp) — multi-agent task delegation:
 
