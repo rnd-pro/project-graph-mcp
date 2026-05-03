@@ -85,7 +85,7 @@ npx project-graph-mcp help                # All commands
 ### Web Dashboard
 
 > [!NOTE]
-> The web dashboard has moved to [**mcp-agent-portal**](https://github.com/rnd-pro/mcp-agent-portal). Install it with `npx mcp-agent-portal` to get the full visual UI: file tree, code viewer, dependency graph, live monitoring, and marketplace.
+> `project-graph-mcp` is a **pure stdio MCP server** — it does not include a web server. For the visual UI (file tree, code viewer, dependency graph, live monitoring, marketplace), install [**mcp-agent-portal**](https://github.com/rnd-pro/mcp-agent-portal): `npx mcp-agent-portal`.
 
 ## MCP Ecosystem
 

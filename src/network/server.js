@@ -1,8 +1,113 @@
 #!/usr/bin/env node
 // @ctx server.ctx
-import e from"node:path";import t from"node:fs";let _v="0.0.0";try{const _d=e.dirname(new URL(import.meta.url).pathname);_v=JSON.parse(t.readFileSync(e.join(_d,"..","..","package.json"),"utf8")).version}catch{}if(process.argv[1]&&(process.argv[1].endsWith("server.js")||process.argv[1].endsWith("project-graph-mcp"))){const[,,o,...r]=process.argv;if("serve"===o){const t=r[0]||".";console.log("\n  [redirect] UI has moved to 'mcp-agent-portal'.");console.log("  Running: npx mcp-agent-portal\n");const{spawn:s}=await import("child_process");s("npx",["mcp-agent-portal"],{stdio:"inherit",cwd:e.resolve(t)})}else if(o){const{runCLI:e}=await import("../cli/cli.js");e(o,r)}else if(process.env.PROJECT_GRAPH_BACKEND){const{startStdioServer:e}=await import("../mcp/mcp-server.js");console.error("Starting Project Graph MCP (stdio, direct)..."),e()}else{const{setRoots:e,getWorkspaceRoot:o}=await import("../core/workspace.js"),{ensureBackend:r,startStdioProxy:s}=await import("./backend-lifecycle.js"),{createInterface:i}=await import("node:readline"),n=t.createWriteStream("/tmp/pg-init-debug.log",{flags:"a"});n.write(`\n=== NEW SESSION ${(new Date).toISOString()} ===\n`);
-const c=i({input:process.stdin,terminal:!1}),a=[];
-let l=!1,p=null,d=null;
-const startProxy=async e=>{if(!l){l=!0,c.removeAllListeners("line"),c.close(),n.write(`RESOLVED: ${e}\n`),n.end();try{const t=await r(e);console.error(`[project-graph] Connected to backend on port ${t} (project: ${e})`),s(t,a)}catch(e){console.error(`[project-graph] Singleton failed (${e.message}), falling back to direct stdio`);const{startStdioServer:t}=await import("../mcp/mcp-server.js");t(a)}}};c.on("line",t=>{try{const r=JSON.parse(t);if(n.write(`IN: ${r.method||`response:${r.id}`}\n`),"initialize"===r.method){d=r.id,r.params?.roots?.length>0&&(e(r.params.roots),n.write("ROOTS from initialize.params\n"));
-const t=JSON.stringify({jsonrpc:"2.0",id:r.id,result:{protocolVersion:"2025-06-18",capabilities:{tools:{},resources:{}},serverInfo:{name:"project-graph",version:_v}}});return n.write("OUT: initialize response\n"),void process.stdout.write(t+"\n")}if("initialized"===r.method||"notifications/initialized"===r.method){n.write("IN: initialized notification\n"),p=999999;
-const e=JSON.stringify({jsonrpc:"2.0",id:p,method:"roots/list"});return n.write(`OUT: roots/list request id=${p}\n`),process.stdout.write(e+"\n"),void setTimeout(()=>{if(!l){const e=o();n.write(`ROOTS timeout, using: ${e}\n`),startProxy(e)}},2e3)}if(void 0!==r.id&&r.id===p){n.write(`IN: roots/list response: ${JSON.stringify(r.result)}\n`);if(r.result?.roots?.length>0){e(r.result.roots)}const t=o();return n.write(`ROOTS resolved: ${t}\n`),void startProxy(t)}if(r.method&&void 0!==r.id){n.write(`BUFFERED: ${r.method} id=${r.id}\n`),a.push(t)}else{a.push(t)}}catch{a.push(t)}}),setTimeout(()=>{if(!l){const e=o();n.write(`TIMEOUT: fallback to ${e}\n`),console.error(`[project-graph] No roots received in 5s, using fallback: ${e}`),startProxy(e)}},5e3)}}
+import path from 'node:path';
+import fs from 'node:fs';
+
+let _v = '0.0.0';
+try {
+  let _d = path.dirname(new URL(import.meta.url).pathname);
+  _v = JSON.parse(fs.readFileSync(path.join(_d, '..', '..', 'package.json'), 'utf8')).version;
+} catch {}
+
+if (process.argv[1] && (process.argv[1].endsWith('server.js') || process.argv[1].endsWith('project-graph-mcp'))) {
+  let [,, command, ...args] = process.argv;
+
+  if (command === 'serve') {
+    // UI has been extracted to mcp-agent-portal
+    console.log('\n  [redirect] UI has moved to \'mcp-agent-portal\'.');
+    console.log('  Install: npm i -g mcp-agent-portal');
+    console.log('  Run:     npx mcp-agent-portal\n');
+    process.exit(0);
+  } else if (command) {
+    let { runCLI } = await import('../cli/cli.js');
+    runCLI(command, args);
+  } else {
+    // MCP stdio mode — always direct, no singleton backend
+    let { startStdioServer } = await import('../mcp/mcp-server.js');
+    let { setRoots, getWorkspaceRoot } = await import('../core/workspace.js');
+    let { createInterface } = await import('node:readline');
+
+    let rl = createInterface({ input: process.stdin, terminal: false });
+    let buffered = [];
+    let started = false;
+    let rootsRequestId = null;
+    let initializeId = null;
+
+    let startMCP = (root) => {
+      if (started) return;
+      started = true;
+      rl.removeAllListeners('line');
+      rl.close();
+      console.error(`[project-graph] Starting MCP stdio for: ${root}`);
+      startStdioServer(buffered);
+    };
+
+    rl.on('line', (line) => {
+      try {
+        let msg = JSON.parse(line);
+
+        if (msg.method === 'initialize') {
+          initializeId = msg.id;
+          if (msg.params?.roots?.length > 0) {
+            setRoots(msg.params.roots);
+          }
+          // Respond to initialize immediately
+          let response = JSON.stringify({
+            jsonrpc: '2.0',
+            id: msg.id,
+            result: {
+              protocolVersion: '2025-06-18',
+              capabilities: { tools: {}, resources: {} },
+              serverInfo: { name: 'project-graph', version: _v },
+            },
+          });
+          process.stdout.write(response + '\n');
+          return;
+        }
+
+        if (msg.method === 'initialized' || msg.method === 'notifications/initialized') {
+          // Request roots from client
+          rootsRequestId = 999999;
+          let rootsReq = JSON.stringify({ jsonrpc: '2.0', id: rootsRequestId, method: 'roots/list' });
+          process.stdout.write(rootsReq + '\n');
+          // Fallback: start after 2s if no roots response
+          setTimeout(() => {
+            if (!started) {
+              let root = getWorkspaceRoot();
+              startMCP(root);
+            }
+          }, 2000);
+          return;
+        }
+
+        // roots/list response
+        if (msg.id !== undefined && msg.id === rootsRequestId) {
+          if (msg.result?.roots?.length > 0) {
+            setRoots(msg.result.roots);
+          }
+          let root = getWorkspaceRoot();
+          startMCP(root);
+          return;
+        }
+
+        // Buffer other messages until MCP starts
+        if (msg.method && msg.id !== undefined) {
+          buffered.push(line);
+        } else {
+          buffered.push(line);
+        }
+      } catch {
+        buffered.push(line);
+      }
+    });
+
+    // Absolute fallback
+    setTimeout(() => {
+      if (!started) {
+        let root = getWorkspaceRoot();
+        console.error(`[project-graph] No roots received in 5s, using fallback: ${root}`);
+        startMCP(root);
+      }
+    }, 5000);
+  }
+}
