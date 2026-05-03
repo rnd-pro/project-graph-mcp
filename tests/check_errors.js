@@ -1,1 +1,1 @@
-console.log('Error test tool');
+console.log("Error test tool");

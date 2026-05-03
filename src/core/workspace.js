@@ -1,12 +1,15 @@
-// @ctx workspace.ctx
 import { resolve, isAbsolute, dirname } from "path";
+
 import { fileURLToPath } from "url";
 
 let allowedRoots = [];
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
 const defaultRoot = resolve(__dirname, "..", "..");
 
 const argRoot = process.argv.find(r => r.startsWith("--workspace="));
+
 if (argRoot) {
   let p = argRoot.split("=")[1];
   allowedRoots.push(p);
@@ -31,19 +34,14 @@ export function getWorkspaceRoot() {
 
 export function resolvePath(targetPath) {
   if (!targetPath) return getWorkspaceRoot();
-  
-  // If no roots explicitly set, fallback to single root logic
   let fallbackRoot = getWorkspaceRoot();
   let resolved = isAbsolute(targetPath) ? targetPath : resolve(fallbackRoot, targetPath);
-  
   if (allowedRoots.length > 0) {
-    // Check against all allowed roots
     let isAllowed = allowedRoots.some(root => resolved.startsWith(root));
     if (!isAllowed) {
       throw new Error(`Path traversal blocked: '${targetPath}' resolves outside all configured workspace roots.`);
     }
   } else {
-    // Check against fallback root
     if (!resolved.startsWith(fallbackRoot)) {
       throw new Error(`Path traversal blocked: '${targetPath}' resolves outside fallback workspace root '${fallbackRoot}'.`);
     }

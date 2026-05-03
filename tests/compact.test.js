@@ -1,49 +1,517 @@
-// @ctx .context/tests/compact.test.ctx
-import{describe as t,it as s,before as e,after as n}from"node:test";import o from"node:assert";import{mkdirSync as r,writeFileSync as c,readFileSync as a,rmSync as i,existsSync as u}from"fs";import{join as d}from"path";import{compactProject as l,expandProject as f}from"../src/compact/compact.js";import{editCompressed as m}from"../src/compact/compress.js";import{parseCtxFile as p,injectJSDoc as h,stripJSDoc as y,validateCtxContracts as g}from"../src/compact/ctx-to-jsdoc.js";import{parseFile as x}from"../src/core/parser.js";import{getConfig as j,setConfig as v,getModeWorkflow as b}from"../src/compact/mode-config.js";import{validatePipeline as VP,fixCompactStyle as FC}from"../src/compact/validate-pipeline.js";
-const E=d(import.meta.dirname,"__compact_test__");t("Compact Code Mode",()=>{e(()=>{r(E,{recursive:!0})}),n(()=>{i(E,{recursive:!0,force:!0})}),t("Parser param extraction",()=>{s("should extract simple params",async()=>{const t=await x("function foo(a, b) {}","test.js");o.deepStrictEqual(t.functions[0].params,["a","b"])}),s("should extract default params with = marker",async()=>{const t=await x("function foo(a, b = 42) {}","test.js");o.deepStrictEqual(t.functions[0].params,["a","b="])}),s("should extract rest params",async()=>{const t=await x("function foo(a, ...rest) {}","test.js");o.deepStrictEqual(t.functions[0].params,["a","...rest"])}),s("should extract destructured params as options",async()=>{const t=await x("function foo({ x, y }) {}","test.js");o.deepStrictEqual(t.functions[0].params,["options"])}),s("should detect async functions",async()=>{const t=await x("async function foo() {}","test.js");o.strictEqual(t.functions[0].async,!0)}),s("should detect non-async functions",async()=>{const t=await x("function foo() {}","test.js");o.strictEqual(t.functions[0].async,!1)}),s("should extract JSDoc types into params",async()=>{const t=await x("/**\n * @param {string} name\n * @param {Object} [options]\n */\nfunction greet(name, options = {}) {}","test.js");o.deepStrictEqual(t.functions[0].params,["name:string","options:Object="])}),s("should extract @returns type",async()=>{const t=await x("/**\n * @param {string} x\n * @returns {Promise<string>}\n */\nfunction fetch(x) {}","test.js");o.strictEqual(t.functions[0].returns,"Promise<string>")}),s("should handle rest param with JSDoc type",async()=>{const t=await x("/**\n * @param {...number} args\n */\nfunction sum(...args) {}","test.js");o.deepStrictEqual(t.functions[0].params,["...args:number"])}),s("should leave params untyped when no JSDoc exists",async()=>{const t=await x("function plain(a, b) {}","test.js");o.deepStrictEqual(t.functions[0].params,["a","b"]),o.strictEqual(t.functions[0].returns,null)})}),t("compactProject()",()=>{s("should compact JS files and report savings",async()=>{const t=d(E,"compact1");r(t,{recursive:!0}),c(d(t,"a.js"),'\n// This is a comment\nexport function hello(name) {\n  // inner comment\n  return "Hello, " + name;\n}\n',"utf-8");
-const s=await l(t);o.strictEqual(s.files,1),o.ok(s.compactedBytes<s.originalBytes,"Should reduce size"),o.ok(!s.errors,"No errors expected");
-const e=a(d(t,"a.js"),"utf-8");o.ok(!e.includes("// This is a comment"),"Comments removed"),o.ok(e.includes("hello"),"Function name preserved")}),s("dry run should not modify files",async()=>{const t=d(E,"compact2");r(t,{recursive:!0});
-const s="export function test() { return 42; }\n";c(d(t,"b.js"),s,"utf-8");
-const e=await l(t,{dryRun:!0});o.strictEqual(e.dryRun,!0),o.strictEqual(a(d(t,"b.js"),"utf-8"),s)}),s("should handle empty files",async()=>{const t=d(E,"compact3");r(t,{recursive:!0}),c(d(t,"empty.js"),"","utf-8");
-const s=await l(t);o.strictEqual(s.files,1),o.ok(!s.errors)}),s("should handle syntax errors gracefully",async()=>{const t=d(E,"compact4");r(t,{recursive:!0}),c(d(t,"good.js"),"export const x = 1;\n","utf-8"),c(d(t,"bad.js"),"function { broken syntax }\n","utf-8");
-const s=await l(t);o.ok(s.errors,"Should have errors"),o.strictEqual(s.errors.length,1),o.ok(s.errors[0].file.includes("bad.js")),o.ok(s.files>=1,"Good file still processed")}),s("should skip node_modules and vendor",async()=>{const t=d(E,"compact5");r(d(t,"node_modules"),{recursive:!0}),r(d(t,"src"),{recursive:!0}),c(d(t,"node_modules","lib.js"),"const x = 1;\n","utf-8"),c(d(t,"src","app.js"),"const y = 2;\n","utf-8");
-const s=await l(t);o.strictEqual(s.files,1),o.ok(s.fileList[0].includes("app.js"))})}),t("expandProject()",()=>{s("should beautify compacted code",async()=>{const t=d(E,"beautify1");r(t,{recursive:!0}),c(d(t,"c.js"),"export function foo(a,b){return a+b}","utf-8");
-const s=await f(t);o.strictEqual(s.files,1);
-const e=a(d(t,"c.js"),"utf-8");o.ok(e.includes("\n"),"Should have newlines"),o.ok(e.includes("foo"),"Function name preserved")}),s("compact → beautify round-trip preserves semantics",async()=>{const t=d(E,"roundtrip");r(t,{recursive:!0}),c(d(t,"math.js"),"export function add(a, b) {\n  return a + b;\n}\n\nexport function mul(x, y) {\n  return x * y;\n}\n","utf-8"),await l(t);
-const s=a(d(t,"math.js"),"utf-8");o.ok(s.includes("add")),o.ok(s.includes("mul")),await f(t);
-const e=a(d(t,"math.js"),"utf-8");o.ok(e.includes("function add")),o.ok(e.includes("function mul"))})}),t("parseCtxFile()",()=>{s("should parse file header",()=>{const t=p("--- src/utils.js ---\n@sig abc123");o.strictEqual(t.file,"src/utils.js")}),s("should parse exported function signatures",()=>{const t=p("export setRoots(roots)→console.error|set workspace root");o.strictEqual(t.functions.length,1),o.strictEqual(t.functions[0].name,"setRoots"),o.strictEqual(t.functions[0].params,"roots"),o.strictEqual(t.functions[0].exported,!0),o.strictEqual(t.functions[0].description,"set workspace root")}),s("should parse private functions",()=>{const t=p("helperFn(a,b)→calc|internal helper");o.strictEqual(t.functions[0].exported,!1)}),s("should skip {DESCRIBE} markers",()=>{const t=p("export foo()→bar|{DESCRIBE}");o.strictEqual(t.functions[0].description,"")}),s("should parse typed params",()=>{const t=p("export parse(filePath:string,options:Object=)→ast|parse source file");o.strictEqual(t.functions[0].params,"filePath:string,options:Object=")}),s("should parse return type from ctx signature",()=>{const t=p("export compressFile(path:string)→Promise<CompressResult>→readFileSync,minify|compress file");o.strictEqual(t.functions[0].name,"compressFile"),o.strictEqual(t.functions[0].returns,"Promise<CompressResult>"),o.strictEqual(t.functions[0].description,"compress file")}),s("should handle functions without return type",()=>{const t=p("processItem(item)→validate,save|process a single item");o.strictEqual(t.functions[0].returns,"")})}),t("injectJSDoc()",()=>{s("should inject JSDoc from .ctx file",()=>{const t=d(E,"inject1");r(d(t,"src"),{recursive:!0}),r(d(t,".context","src"),{recursive:!0}),c(d(t,"src","util.js"),'export function greet(name) {\n  return "Hello " + name;\n}\n',"utf-8"),c(d(t,".context","src","util.ctx"),"--- src/util.js ---\n@sig abc123\nexport greet(name:string)→String.concat|generate greeting message\n","utf-8");
-const s=h(t);o.strictEqual(s.injected,1);
-const e=a(d(t,"src","util.js"),"utf-8");o.ok(e.includes("/**"),"JSDoc block injected"),o.ok(e.includes("generate greeting message")),o.ok(e.includes("@param"))}),s("should not duplicate JSDoc on re-run",()=>{const t=d(E,"inject2");r(d(t,"src"),{recursive:!0}),r(d(t,".context","src"),{recursive:!0}),c(d(t,"src","util.js"),'/**\n * already documented\n * @param {string} name\n */\nexport function greet(name) {\n  return "Hello " + name;\n}\n',"utf-8"),c(d(t,".context","src","util.ctx"),"--- src/util.js ---\nexport greet(name:string)|generate greeting\n","utf-8");
-const s=h(t);o.strictEqual(s.injected,0,"Should not inject duplicates")}),s("should skip when no .ctx file exists",()=>{const t=d(E,"inject3");r(d(t,"src"),{recursive:!0}),c(d(t,"src","orphan.js"),"function lonely() {}\n","utf-8");
-const s=h(t);o.strictEqual(s.skipped,1),o.strictEqual(s.injected,0)})}),t("stripJSDoc()",()=>{s("should remove JSDoc blocks",()=>{const t=d(E,"strip1");r(t,{recursive:!0}),c(d(t,"doc.js"),"/**\n * JSDoc block\n * @param {string} name\n */\nfunction foo(name) {}\n","utf-8");
-const s=y(t);o.strictEqual(s.stripped,1),o.ok(s.savedBytes>0);
-const e=a(d(t,"doc.js"),"utf-8");o.ok(!e.includes("/**"),"JSDoc removed"),o.ok(e.includes("function foo"),"Code preserved")}),s("should preserve JSDoc-like content inside strings",()=>{const t=d(E,"strip2");r(t,{recursive:!0}),c(d(t,"safe.js"),'const msg = "/** this is not a comment */";\nfunction bar() {}\n',"utf-8"),y(t);
-const s=a(d(t,"safe.js"),"utf-8");o.ok(s.includes("/** this is not a comment */"),"String content preserved")}),s("should not modify files without JSDoc",()=>{const t=d(E,"strip3");r(t,{recursive:!0}),c(d(t,"clean.js"),"function clean() {}\n","utf-8");
-const s=y(t);o.strictEqual(s.stripped,0)}),s("dry run should not modify files",()=>{const t=d(E,"strip4");r(t,{recursive:!0});
-const s="/** JSDoc */ function foo() {}\n";c(d(t,"dr.js"),s,"utf-8");
-const e=y(t,{dryRun:!0});o.strictEqual(e.dryRun,!0),o.strictEqual(a(d(t,"dr.js"),"utf-8"),s)})}),t("validateCtxContracts()",()=>{s("should validate matching contracts",()=>{const t=d(E,"validate1");r(d(t,"src"),{recursive:!0}),r(d(t,".context","src"),{recursive:!0}),c(d(t,"src","math.js"),"export function add(a, b) { return a + b; }\n","utf-8"),c(d(t,".context","src","math.ctx"),"--- src/math.js ---\n@sig abc123\nexport add(a:number,b:number)→number|addition\n","utf-8");
-const s=g(t);o.strictEqual(s.summary.errors,0),o.strictEqual(s.summary.warnings,0)}),s("should detect param count mismatch",()=>{const t=d(E,"validate2");r(d(t,"src"),{recursive:!0}),r(d(t,".context","src"),{recursive:!0}),c(d(t,"src","util.js"),"function process(a, b, c) {}\n","utf-8"),c(d(t,".context","src","util.ctx"),"--- src/util.js ---\nprocess(a,b)|process items\n","utf-8");
-const s=g(t);o.ok(s.summary.errors>0);
-const e=s.violations.find(t=>t.message.includes("2 params"));o.ok(e,"Should report param count mismatch")}),s("should detect function missing from source",()=>{const t=d(E,"validate3");r(d(t,"src"),{recursive:!0}),r(d(t,".context","src"),{recursive:!0}),c(d(t,"src","api.js"),"function existing() {}\n","utf-8"),c(d(t,".context","src","api.ctx"),"--- src/api.js ---\nexisting()|exists\nremoved()|was deleted\n","utf-8");
-const s=g(t).violations.find(t=>t.message.includes("removed"));o.ok(s,"Should report missing function"),o.strictEqual(s.severity,"warning")}),s("should handle compound types with commas",()=>{const t=d(E,"validate4");r(d(t,"src"),{recursive:!0}),r(d(t,".context","src"),{recursive:!0}),c(d(t,"src","obj.js"),"function process(data) {}\n","utf-8"),c(d(t,".context","src","obj.ctx"),"--- src/obj.js ---\nprocess(data:{name: string, value: number})|process data\n","utf-8");
-const s=g(t);o.strictEqual(s.summary.errors,0,"Compound type should count as 1 param")})}),t("editCompressed()",()=>{s("should replace a function by symbol name",async()=>{const t=d(E,"edit1");r(t,{recursive:!0});
-const s=d(t,"math.js");c(s,"function add(a, b) {\n  return a + b;\n}\n\nfunction mul(x, y) {\n  return x * y;\n}\n","utf-8"),await m(s,"add","function add(a, b) { return a + b + 1; }");
-const e=a(s,"utf-8");o.ok(e.includes("a + b + 1"),"Function body replaced"),o.ok(e.includes("mul"),"Other functions preserved")}),s("should replace an exported function",async()=>{const t=d(E,"edit2");r(t,{recursive:!0});
-const s=d(t,"api.js");c(s,'export function greet(name) {\n  return "Hello " + name;\n}\n',"utf-8"),await m(s,"greet",'export function greet(name) { return "Hi " + name; }');
-const e=a(s,"utf-8");o.ok(e.includes("Hi"),"Exported function replaced"),o.ok(e.includes("export"),"Export keyword preserved")}),s("should support dry run",async()=>{const t=d(E,"edit3");r(t,{recursive:!0});
-const s=d(t,"dry.js"),e="function test() { return 1; }\n";c(s,e,"utf-8");
-const n=await m(s,"test","function test() { return 2; }",{dryRun:!0});o.strictEqual(n.dryRun,!0),o.strictEqual(a(s,"utf-8"),e,"File unchanged")}),s("should throw on unknown symbol",async()=>{const t=d(E,"edit4");r(t,{recursive:!0});
-const s=d(t,"miss.js");c(s,"function existing() {}\n","utf-8"),await o.rejects(()=>m(s,"nonExistent","function nonExistent() {}"),/not found/)})}),t("Mode Config",()=>{s("should return defaults when no config exists",()=>{const t=d(E,"mode1");r(t,{recursive:!0});
-const s=j(t);o.strictEqual(s.mode,2),o.strictEqual(s.beautify,!0),o.strictEqual(s.autoValidate,!1)}),s("should write and read config",()=>{const t=d(E,"mode2");r(t,{recursive:!0}),v(t,{mode:1});
-const s=j(t);o.strictEqual(s.mode,1)}),s("should reject invalid mode",()=>{const t=d(E,"mode3");r(t,{recursive:!0}),o.throws(()=>v(t,{mode:5}),/Invalid mode/)}),s("should merge with existing config",()=>{const t=d(E,"mode4");r(t,{recursive:!0}),v(t,{mode:2,beautify:!1}),v(t,{autoValidate:!0});
-const s=j(t);o.strictEqual(s.mode,2),o.strictEqual(s.beautify,!1),o.strictEqual(s.autoValidate,!0)}),s("should return workflow recommendations",()=>{const t=b(1);o.ok(t.read.includes("directly"));
-const s=b(2);o.ok(s.read.includes("get_compressed_file")),o.ok(s.edit.includes("edit_compressed"))})}),t("Audit Gap: editCompressed edge cases",()=>{s("should replace a class declaration",async()=>{const t=d(E,"gap1");r(t,{recursive:!0});
-const s=d(t,"cls.js");c(s,'class Dog {\n  bark() { return "woof"; }\n}\n\nfunction other() {}\n',"utf-8"),await m(s,"Dog",'class Dog {\n  bark() { return "woof!"; }\n  run() {}\n}');
-const e=a(s,"utf-8");o.ok(e.includes("woof!"),"Class body replaced"),o.ok(e.includes("run"),"New method added"),o.ok(e.includes("other"),"Other functions preserved")}),s("should replace a variable-assigned function",async()=>{const t=d(E,"gap2");r(t,{recursive:!0});
-const s=d(t,"arrow.js");c(s,"const add = (a, b) => a + b;\nconst sub = (a, b) => a - b;\n","utf-8"),await m(s,"add","const add = (a, b) => a + b + 1;");
-const e=a(s,"utf-8");o.ok(e.includes("+ 1"),"Arrow function replaced"),o.ok(e.includes("sub"),"Other variables preserved")}),s("should reject invalid syntax in replacement",async()=>{const t=d(E,"gap3");r(t,{recursive:!0});
-const s=d(t,"bad.js");c(s,"function foo() { return 1; }\n","utf-8"),await o.rejects(()=>m(s,"foo","function foo( { broken syntax"),/invalid syntax/),o.ok(a(s,"utf-8").includes("return 1"),"File not corrupted")})}),t("Audit Gap: validateCtxContracts edge cases",()=>{s("should handle empty .ctx files gracefully",()=>{const t=d(E,"gap4");r(d(t,"src"),{recursive:!0}),r(d(t,".context","src"),{recursive:!0}),c(d(t,"src","empty.js"),"function a() {}\n","utf-8"),c(d(t,".context","src","empty.ctx"),"","utf-8");
-const s=g(t);o.strictEqual(typeof s.files,"number")}),s("should report issues in strict mode",()=>{const t=d(E,"gap5");r(d(t,"src"),{recursive:!0}),r(d(t,".context","src"),{recursive:!0}),c(d(t,"src","fn.js"),"export function hello(name) {}\n","utf-8"),c(d(t,".context","src","fn.ctx"),"--- src/fn.js ---\nhello(name:string)|greet\n","utf-8");
-const s=g(t,{strict:!0});o.strictEqual(typeof s.summary,"object")})}),t("Audit Gap: mode-config edge cases",()=>{s("should handle corrupted JSON and return defaults",()=>{const t=d(E,"gap6");r(d(t,".context"),{recursive:!0}),c(d(t,".context","config.json"),"{{invalid json","utf-8");
-const s=j(t);o.strictEqual(s.mode,2,"Returns default mode"),o.strictEqual(s.beautify,!0,"Returns default beautify")}),s("should auto-create .context directory",()=>{const t=d(E,"gap7");r(t,{recursive:!0}),v(t,{mode:1}),o.ok(u(d(t,".context","config.json")),"Config file created"),o.strictEqual(j(t).mode,1)})}),t("Audit Gap: splitTopLevelParams via validator",()=>{s("should handle nested generics",()=>{const t=d(E,"gap8");r(d(t,"src"),{recursive:!0}),r(d(t,".context","src"),{recursive:!0}),c(d(t,"src","gen.js"),"function transform(data, options) {}\n","utf-8"),c(d(t,".context","src","gen.ctx"),"--- src/gen.js ---\ntransform(data:Array<Map<string, number>>,options:{deep: boolean, limit: number})|transform data\n","utf-8");
-const s=g(t);o.strictEqual(s.summary.errors,0,"Nested generics should count as 2 params")})}),t("Validate Pipeline Style Checks",()=>{s("should detect long-names in unminified code",async()=>{const t=d(E,"vp1");r(t,{recursive:!0});c(d(t,"a.js"),"function calculateTotalPrice(items, discount, taxRate) { return items; }\nfunction formatCurrencyValue(amount) { return amount; }\nfunction parseUserInput(raw) { return raw; }\nfunction validateEmailAddress(email) { return email; }","utf-8");const s=await VP(t,{skipDecompile:!0});o.ok(s.style.details.some(e=>"long-names"===e.rule))}),s("should detect missing-ctx-header",async()=>{const t=d(E,"vp2");r(t,{recursive:!0});c(d(t,"a.js"),"const x=1;","utf-8");const s=await VP(t,{skipDecompile:!0});o.ok(s.style.details.some(e=>"missing-ctx-header"===e.rule))}),s("should detect multi-line-imports",async()=>{const t=d(E,"vp3");r(t,{recursive:!0});c(d(t,"a.js"),"import {a} from 'a';\nimport {b} from 'b';","utf-8");const s=await VP(t,{skipDecompile:!0});o.ok(s.style.details.some(e=>"multi-line-imports"===e.rule))}),s("should detect indented-lines",async()=>{const t=d(E,"vp4");r(t,{recursive:!0});c(d(t,"a.js"),"function foo() {\n  return 1;\n}","utf-8");const s=await VP(t,{skipDecompile:!0});o.ok(s.style.details.some(e=>"indented-lines"===e.rule))}),s("should detect {DESCRIBE} markers in .ctx",async()=>{const t=d(E,"vp6");r(t,{recursive:!0});r(d(t,".context"),{recursive:!0});c(d(t,"a.js"),"// @ctx .context/a.ctx\nconst e=1;","utf-8");c(d(t,".context","a.ctx"),"--- a.js ---\nexport foo()|{DESCRIBE}\nPATTERNS: {DESCRIBE}","utf-8");const s=await VP(t,{skipDecompile:!0});o.ok(s.style.details.some(e=>"incomplete-ctx"===e.rule&&e.message.includes("DESCRIBE")))}),s("should detect exports missing from .ctx",async()=>{const t=d(E,"vp7");r(t,{recursive:!0});r(d(t,".context"),{recursive:!0});c(d(t,"a.js"),"// @ctx .context/a.ctx\nexport function e(){}\nexport const t=1;","utf-8");c(d(t,".context","a.ctx"),"--- a.js ---\ne()|does stuff","utf-8");const s=await VP(t,{skipDecompile:!0});const ic=s.style.details.filter(e=>"incomplete-ctx"===e.rule);o.ok(ic.some(e=>e.message.includes("t")),"should report missing export t")}),s("should pass for compliant compact file",async()=>{const t=d(E,"vp5");r(t,{recursive:!0});r(d(t,".context"),{recursive:!0});c(d(t,"a.js"),"// @ctx .context/a.ctx\nconst e=1;","utf-8");c(d(t,".context","a.ctx"),"# a\nContext stub","utf-8");const s=await VP(t,{skipDecompile:!0});o.strictEqual(s.style.issues,0)})})});
+import { describe as t, it as s, before as e, after as n } from "node:test";
+
+import o from "node:assert";
+
+import { mkdirSync as r, writeFileSync as c, readFileSync as a, rmSync as i, existsSync as u } from "fs";
+
+import { join as d } from "path";
+
+import { compactProject as l, expandProject as f } from "../src/compact/compact.js";
+
+import { editCompressed as m } from "../src/compact/compress.js";
+
+import { parseCtxFile as p, injectJSDoc as h, stripJSDoc as y, validateCtxContracts as g } from "../src/compact/ctx-to-jsdoc.js";
+
+import { parseFile as x } from "../src/core/parser.js";
+
+import { getConfig as j, setConfig as v, getModeWorkflow as b } from "../src/compact/mode-config.js";
+
+import { validatePipeline as VP, fixCompactStyle as FC } from "../src/compact/validate-pipeline.js";
+
+const E = d(import.meta.dirname, "__compact_test__");
+
+t("Compact Code Mode", () => {
+  e(() => {
+    r(E, {
+      recursive: !0
+    });
+  }), n(() => {
+    i(E, {
+      recursive: !0,
+      force: !0
+    });
+  }), t("Parser param extraction", () => {
+    s("should extract simple params", async () => {
+      const t = await x("function foo(a, b) {}", "test.js");
+      o.deepStrictEqual(t.functions[0].params, [ "a", "b" ]);
+    }), s("should extract default params with = marker", async () => {
+      const t = await x("function foo(a, b = 42) {}", "test.js");
+      o.deepStrictEqual(t.functions[0].params, [ "a", "b=" ]);
+    }), s("should extract rest params", async () => {
+      const t = await x("function foo(a, ...rest) {}", "test.js");
+      o.deepStrictEqual(t.functions[0].params, [ "a", "...rest" ]);
+    }), s("should extract destructured params as options", async () => {
+      const t = await x("function foo({ x, y }) {}", "test.js");
+      o.deepStrictEqual(t.functions[0].params, [ "options" ]);
+    }), s("should detect async functions", async () => {
+      const t = await x("async function foo() {}", "test.js");
+      o.strictEqual(t.functions[0].async, !0);
+    }), s("should detect non-async functions", async () => {
+      const t = await x("function foo() {}", "test.js");
+      o.strictEqual(t.functions[0].async, !1);
+    }), s("should extract JSDoc types into params", async () => {
+      const t = await x("/**\n * @param {string} name\n * @param {Object} [options]\n */\nfunction greet(name, options = {}) {}", "test.js");
+      o.deepStrictEqual(t.functions[0].params, [ "name:string", "options:Object=" ]);
+    }), s("should extract @returns type", async () => {
+      const t = await x("/**\n * @param {string} x\n * @returns {Promise<string>}\n */\nfunction fetch(x) {}", "test.js");
+      o.strictEqual(t.functions[0].returns, "Promise<string>");
+    }), s("should handle rest param with JSDoc type", async () => {
+      const t = await x("/**\n * @param {...number} args\n */\nfunction sum(...args) {}", "test.js");
+      o.deepStrictEqual(t.functions[0].params, [ "...args:number" ]);
+    }), s("should leave params untyped when no JSDoc exists", async () => {
+      const t = await x("function plain(a, b) {}", "test.js");
+      o.deepStrictEqual(t.functions[0].params, [ "a", "b" ]), o.strictEqual(t.functions[0].returns, null);
+    });
+  }), t("compactProject()", () => {
+    s("should compact JS files and report savings", async () => {
+      const t = d(E, "compact1");
+      r(t, {
+        recursive: !0
+      }), c(d(t, "a.js"), '\n// This is a comment\nexport function hello(name) {\n  // inner comment\n  return "Hello, " + name;\n}\n', "utf-8");
+      const s = await l(t);
+      o.strictEqual(s.files, 1), o.ok(s.compactedBytes < s.originalBytes, "Should reduce size"), 
+      o.ok(!s.errors, "No errors expected");
+      const e = a(d(t, "a.js"), "utf-8");
+      o.ok(!e.includes("// This is a comment"), "Comments removed"), o.ok(e.includes("hello"), "Function name preserved");
+    }), s("dry run should not modify files", async () => {
+      const t = d(E, "compact2");
+      r(t, {
+        recursive: !0
+      });
+      const s = "export function test() { return 42; }\n";
+      c(d(t, "b.js"), s, "utf-8");
+      const e = await l(t, {
+        dryRun: !0
+      });
+      o.strictEqual(e.dryRun, !0), o.strictEqual(a(d(t, "b.js"), "utf-8"), s);
+    }), s("should handle empty files", async () => {
+      const t = d(E, "compact3");
+      r(t, {
+        recursive: !0
+      }), c(d(t, "empty.js"), "", "utf-8");
+      const s = await l(t);
+      o.strictEqual(s.files, 1), o.ok(!s.errors);
+    }), s("should handle syntax errors gracefully", async () => {
+      const t = d(E, "compact4");
+      r(t, {
+        recursive: !0
+      }), c(d(t, "good.js"), "export const x = 1;\n", "utf-8"), c(d(t, "bad.js"), "function { broken syntax }\n", "utf-8");
+      const s = await l(t);
+      o.ok(s.errors, "Should have errors"), o.strictEqual(s.errors.length, 1), o.ok(s.errors[0].file.includes("bad.js")), 
+      o.ok(s.files >= 1, "Good file still processed");
+    }), s("should skip node_modules and vendor", async () => {
+      const t = d(E, "compact5");
+      r(d(t, "node_modules"), {
+        recursive: !0
+      }), r(d(t, "src"), {
+        recursive: !0
+      }), c(d(t, "node_modules", "lib.js"), "const x = 1;\n", "utf-8"), c(d(t, "src", "app.js"), "const y = 2;\n", "utf-8");
+      const s = await l(t);
+      o.strictEqual(s.files, 1), o.ok(s.fileList[0].includes("app.js"));
+    });
+  }), t("expandProject()", () => {
+    s("should beautify compacted code", async () => {
+      const t = d(E, "beautify1");
+      r(t, {
+        recursive: !0
+      }), c(d(t, "c.js"), "export function foo(a,b){return a+b}", "utf-8");
+      const s = await f(t);
+      o.strictEqual(s.files, 1);
+      const e = a(d(t, "c.js"), "utf-8");
+      o.ok(e.includes("\n"), "Should have newlines"), o.ok(e.includes("foo"), "Function name preserved");
+    }), s("compact → beautify round-trip preserves semantics", async () => {
+      const t = d(E, "roundtrip");
+      r(t, {
+        recursive: !0
+      }), c(d(t, "math.js"), "export function add(a, b) {\n  return a + b;\n}\n\nexport function mul(x, y) {\n  return x * y;\n}\n", "utf-8"), 
+      await l(t);
+      const s = a(d(t, "math.js"), "utf-8");
+      o.ok(s.includes("add")), o.ok(s.includes("mul")), await f(t);
+      const e = a(d(t, "math.js"), "utf-8");
+      o.ok(e.includes("function add")), o.ok(e.includes("function mul"));
+    });
+  }), t("parseCtxFile()", () => {
+    s("should parse file header", () => {
+      const t = p("--- src/utils.js ---\n@sig abc123");
+      o.strictEqual(t.file, "src/utils.js");
+    }), s("should parse exported function signatures", () => {
+      const t = p("export setRoots(roots)→console.error|set workspace root");
+      o.strictEqual(t.functions.length, 1), o.strictEqual(t.functions[0].name, "setRoots"), 
+      o.strictEqual(t.functions[0].params, "roots"), o.strictEqual(t.functions[0].exported, !0), 
+      o.strictEqual(t.functions[0].description, "set workspace root");
+    }), s("should parse private functions", () => {
+      const t = p("helperFn(a,b)→calc|internal helper");
+      o.strictEqual(t.functions[0].exported, !1);
+    }), s("should skip {DESCRIBE} markers", () => {
+      const t = p("export foo()→bar|{DESCRIBE}");
+      o.strictEqual(t.functions[0].description, "");
+    }), s("should parse typed params", () => {
+      const t = p("export parse(filePath:string,options:Object=)→ast|parse source file");
+      o.strictEqual(t.functions[0].params, "filePath:string,options:Object=");
+    }), s("should parse return type from ctx signature", () => {
+      const t = p("export compressFile(path:string)→Promise<CompressResult>→readFileSync,minify|compress file");
+      o.strictEqual(t.functions[0].name, "compressFile"), o.strictEqual(t.functions[0].returns, "Promise<CompressResult>"), 
+      o.strictEqual(t.functions[0].description, "compress file");
+    }), s("should handle functions without return type", () => {
+      const t = p("processItem(item)→validate,save|process a single item");
+      o.strictEqual(t.functions[0].returns, "");
+    });
+  }), t("injectJSDoc()", () => {
+    s("should inject JSDoc from .ctx file", () => {
+      const t = d(E, "inject1");
+      r(d(t, "src"), {
+        recursive: !0
+      }), r(d(t, ".context", "src"), {
+        recursive: !0
+      }), c(d(t, "src", "util.js"), 'export function greet(name) {\n  return "Hello " + name;\n}\n', "utf-8"), 
+      c(d(t, ".context", "src", "util.ctx"), "--- src/util.js ---\n@sig abc123\nexport greet(name:string)→String.concat|generate greeting message\n", "utf-8");
+      const s = h(t);
+      o.strictEqual(s.injected, 1);
+      const e = a(d(t, "src", "util.js"), "utf-8");
+      o.ok(e.includes("/**"), "JSDoc block injected"), o.ok(e.includes("generate greeting message")), 
+      o.ok(e.includes("@param"));
+    }), s("should not duplicate JSDoc on re-run", () => {
+      const t = d(E, "inject2");
+      r(d(t, "src"), {
+        recursive: !0
+      }), r(d(t, ".context", "src"), {
+        recursive: !0
+      }), c(d(t, "src", "util.js"), '/**\n * already documented\n * @param {string} name\n */\nexport function greet(name) {\n  return "Hello " + name;\n}\n', "utf-8"), 
+      c(d(t, ".context", "src", "util.ctx"), "--- src/util.js ---\nexport greet(name:string)|generate greeting\n", "utf-8");
+      const s = h(t);
+      o.strictEqual(s.injected, 0, "Should not inject duplicates");
+    }), s("should skip when no .ctx file exists", () => {
+      const t = d(E, "inject3");
+      r(d(t, "src"), {
+        recursive: !0
+      }), c(d(t, "src", "orphan.js"), "function lonely() {}\n", "utf-8");
+      const s = h(t);
+      o.strictEqual(s.skipped, 1), o.strictEqual(s.injected, 0);
+    });
+  }), t("stripJSDoc()", () => {
+    s("should remove JSDoc blocks", () => {
+      const t = d(E, "strip1");
+      r(t, {
+        recursive: !0
+      }), c(d(t, "doc.js"), "/**\n * JSDoc block\n * @param {string} name\n */\nfunction foo(name) {}\n", "utf-8");
+      const s = y(t);
+      o.strictEqual(s.stripped, 1), o.ok(s.savedBytes > 0);
+      const e = a(d(t, "doc.js"), "utf-8");
+      o.ok(!e.includes("/**"), "JSDoc removed"), o.ok(e.includes("function foo"), "Code preserved");
+    }), s("should preserve JSDoc-like content inside strings", () => {
+      const t = d(E, "strip2");
+      r(t, {
+        recursive: !0
+      }), c(d(t, "safe.js"), 'const msg = "/** this is not a comment */";\nfunction bar() {}\n', "utf-8"), 
+      y(t);
+      const s = a(d(t, "safe.js"), "utf-8");
+      o.ok(s.includes("/** this is not a comment */"), "String content preserved");
+    }), s("should not modify files without JSDoc", () => {
+      const t = d(E, "strip3");
+      r(t, {
+        recursive: !0
+      }), c(d(t, "clean.js"), "function clean() {}\n", "utf-8");
+      const s = y(t);
+      o.strictEqual(s.stripped, 0);
+    }), s("dry run should not modify files", () => {
+      const t = d(E, "strip4");
+      r(t, {
+        recursive: !0
+      });
+      const s = "/** JSDoc */ function foo() {}\n";
+      c(d(t, "dr.js"), s, "utf-8");
+      const e = y(t, {
+        dryRun: !0
+      });
+      o.strictEqual(e.dryRun, !0), o.strictEqual(a(d(t, "dr.js"), "utf-8"), s);
+    });
+  }), t("validateCtxContracts()", () => {
+    s("should validate matching contracts", () => {
+      const t = d(E, "validate1");
+      r(d(t, "src"), {
+        recursive: !0
+      }), r(d(t, ".context", "src"), {
+        recursive: !0
+      }), c(d(t, "src", "math.js"), "export function add(a, b) { return a + b; }\n", "utf-8"), 
+      c(d(t, ".context", "src", "math.ctx"), "--- src/math.js ---\n@sig abc123\nexport add(a:number,b:number)→number|addition\n", "utf-8");
+      const s = g(t);
+      o.strictEqual(s.summary.errors, 0), o.strictEqual(s.summary.warnings, 0);
+    }), s("should detect param count mismatch", () => {
+      const t = d(E, "validate2");
+      r(d(t, "src"), {
+        recursive: !0
+      }), r(d(t, ".context", "src"), {
+        recursive: !0
+      }), c(d(t, "src", "util.js"), "function process(a, b, c) {}\n", "utf-8"), c(d(t, ".context", "src", "util.ctx"), "--- src/util.js ---\nprocess(a,b)|process items\n", "utf-8");
+      const s = g(t);
+      o.ok(s.summary.errors > 0);
+      const e = s.violations.find(t => t.message.includes("2 params"));
+      o.ok(e, "Should report param count mismatch");
+    }), s("should detect function missing from source", () => {
+      const t = d(E, "validate3");
+      r(d(t, "src"), {
+        recursive: !0
+      }), r(d(t, ".context", "src"), {
+        recursive: !0
+      }), c(d(t, "src", "api.js"), "function existing() {}\n", "utf-8"), c(d(t, ".context", "src", "api.ctx"), "--- src/api.js ---\nexisting()|exists\nremoved()|was deleted\n", "utf-8");
+      const s = g(t).violations.find(t => t.message.includes("removed"));
+      o.ok(s, "Should report missing function"), o.strictEqual(s.severity, "warning");
+    }), s("should handle compound types with commas", () => {
+      const t = d(E, "validate4");
+      r(d(t, "src"), {
+        recursive: !0
+      }), r(d(t, ".context", "src"), {
+        recursive: !0
+      }), c(d(t, "src", "obj.js"), "function process(data) {}\n", "utf-8"), c(d(t, ".context", "src", "obj.ctx"), "--- src/obj.js ---\nprocess(data:{name: string, value: number})|process data\n", "utf-8");
+      const s = g(t);
+      o.strictEqual(s.summary.errors, 0, "Compound type should count as 1 param");
+    });
+  }), t("editCompressed()", () => {
+    s("should replace a function by symbol name", async () => {
+      const t = d(E, "edit1");
+      r(t, {
+        recursive: !0
+      });
+      const s = d(t, "math.js");
+      c(s, "function add(a, b) {\n  return a + b;\n}\n\nfunction mul(x, y) {\n  return x * y;\n}\n", "utf-8"), 
+      await m(s, "add", "function add(a, b) { return a + b + 1; }");
+      const e = a(s, "utf-8");
+      o.ok(e.includes("a + b + 1"), "Function body replaced"), o.ok(e.includes("mul"), "Other functions preserved");
+    }), s("should replace an exported function", async () => {
+      const t = d(E, "edit2");
+      r(t, {
+        recursive: !0
+      });
+      const s = d(t, "api.js");
+      c(s, 'export function greet(name) {\n  return "Hello " + name;\n}\n', "utf-8"), 
+      await m(s, "greet", 'export function greet(name) { return "Hi " + name; }');
+      const e = a(s, "utf-8");
+      o.ok(e.includes("Hi"), "Exported function replaced"), o.ok(e.includes("export"), "Export keyword preserved");
+    }), s("should support dry run", async () => {
+      const t = d(E, "edit3");
+      r(t, {
+        recursive: !0
+      });
+      const s = d(t, "dry.js"), e = "function test() { return 1; }\n";
+      c(s, e, "utf-8");
+      const n = await m(s, "test", "function test() { return 2; }", {
+        dryRun: !0
+      });
+      o.strictEqual(n.dryRun, !0), o.strictEqual(a(s, "utf-8"), e, "File unchanged");
+    }), s("should throw on unknown symbol", async () => {
+      const t = d(E, "edit4");
+      r(t, {
+        recursive: !0
+      });
+      const s = d(t, "miss.js");
+      c(s, "function existing() {}\n", "utf-8"), await o.rejects(() => m(s, "nonExistent", "function nonExistent() {}"), /not found/);
+    });
+  }), t("Mode Config", () => {
+    s("should return defaults when no config exists", () => {
+      const t = d(E, "mode1");
+      r(t, {
+        recursive: !0
+      });
+      const s = j(t);
+      o.strictEqual(s.mode, 2), o.strictEqual(s.beautify, !0), o.strictEqual(s.autoValidate, !1);
+    }), s("should write and read config", () => {
+      const t = d(E, "mode2");
+      r(t, {
+        recursive: !0
+      }), v(t, {
+        mode: 1
+      });
+      const s = j(t);
+      o.strictEqual(s.mode, 1);
+    }), s("should reject invalid mode", () => {
+      const t = d(E, "mode3");
+      r(t, {
+        recursive: !0
+      }), o.throws(() => v(t, {
+        mode: 5
+      }), /Invalid mode/);
+    }), s("should merge with existing config", () => {
+      const t = d(E, "mode4");
+      r(t, {
+        recursive: !0
+      }), v(t, {
+        mode: 2,
+        beautify: !1
+      }), v(t, {
+        autoValidate: !0
+      });
+      const s = j(t);
+      o.strictEqual(s.mode, 2), o.strictEqual(s.beautify, !1), o.strictEqual(s.autoValidate, !0);
+    }), s("should return workflow recommendations", () => {
+      const t = b(1);
+      o.ok(t.read.includes("directly"));
+      const s = b(2);
+      o.ok(s.read.includes("get_compressed_file")), o.ok(s.edit.includes("edit_compressed"));
+    });
+  }), t("Audit Gap: editCompressed edge cases", () => {
+    s("should replace a class declaration", async () => {
+      const t = d(E, "gap1");
+      r(t, {
+        recursive: !0
+      });
+      const s = d(t, "cls.js");
+      c(s, 'class Dog {\n  bark() { return "woof"; }\n}\n\nfunction other() {}\n', "utf-8"), 
+      await m(s, "Dog", 'class Dog {\n  bark() { return "woof!"; }\n  run() {}\n}');
+      const e = a(s, "utf-8");
+      o.ok(e.includes("woof!"), "Class body replaced"), o.ok(e.includes("run"), "New method added"), 
+      o.ok(e.includes("other"), "Other functions preserved");
+    }), s("should replace a variable-assigned function", async () => {
+      const t = d(E, "gap2");
+      r(t, {
+        recursive: !0
+      });
+      const s = d(t, "arrow.js");
+      c(s, "const add = (a, b) => a + b;\nconst sub = (a, b) => a - b;\n", "utf-8"), await m(s, "add", "const add = (a, b) => a + b + 1;");
+      const e = a(s, "utf-8");
+      o.ok(e.includes("+ 1"), "Arrow function replaced"), o.ok(e.includes("sub"), "Other variables preserved");
+    }), s("should reject invalid syntax in replacement", async () => {
+      const t = d(E, "gap3");
+      r(t, {
+        recursive: !0
+      });
+      const s = d(t, "bad.js");
+      c(s, "function foo() { return 1; }\n", "utf-8"), await o.rejects(() => m(s, "foo", "function foo( { broken syntax"), /invalid syntax/), 
+      o.ok(a(s, "utf-8").includes("return 1"), "File not corrupted");
+    });
+  }), t("Audit Gap: validateCtxContracts edge cases", () => {
+    s("should handle empty .ctx files gracefully", () => {
+      const t = d(E, "gap4");
+      r(d(t, "src"), {
+        recursive: !0
+      }), r(d(t, ".context", "src"), {
+        recursive: !0
+      }), c(d(t, "src", "empty.js"), "function a() {}\n", "utf-8"), c(d(t, ".context", "src", "empty.ctx"), "", "utf-8");
+      const s = g(t);
+      o.strictEqual(typeof s.files, "number");
+    }), s("should report issues in strict mode", () => {
+      const t = d(E, "gap5");
+      r(d(t, "src"), {
+        recursive: !0
+      }), r(d(t, ".context", "src"), {
+        recursive: !0
+      }), c(d(t, "src", "fn.js"), "export function hello(name) {}\n", "utf-8"), c(d(t, ".context", "src", "fn.ctx"), "--- src/fn.js ---\nhello(name:string)|greet\n", "utf-8");
+      const s = g(t, {
+        strict: !0
+      });
+      o.strictEqual(typeof s.summary, "object");
+    });
+  }), t("Audit Gap: mode-config edge cases", () => {
+    s("should handle corrupted JSON and return defaults", () => {
+      const t = d(E, "gap6");
+      r(d(t, ".context"), {
+        recursive: !0
+      }), c(d(t, ".context", "config.json"), "{{invalid json", "utf-8");
+      const s = j(t);
+      o.strictEqual(s.mode, 2, "Returns default mode"), o.strictEqual(s.beautify, !0, "Returns default beautify");
+    }), s("should auto-create .context directory", () => {
+      const t = d(E, "gap7");
+      r(t, {
+        recursive: !0
+      }), v(t, {
+        mode: 1
+      }), o.ok(u(d(t, ".context", "config.json")), "Config file created"), o.strictEqual(j(t).mode, 1);
+    });
+  }), t("Audit Gap: splitTopLevelParams via validator", () => {
+    s("should handle nested generics", () => {
+      const t = d(E, "gap8");
+      r(d(t, "src"), {
+        recursive: !0
+      }), r(d(t, ".context", "src"), {
+        recursive: !0
+      }), c(d(t, "src", "gen.js"), "function transform(data, options) {}\n", "utf-8"), 
+      c(d(t, ".context", "src", "gen.ctx"), "--- src/gen.js ---\ntransform(data:Array<Map<string, number>>,options:{deep: boolean, limit: number})|transform data\n", "utf-8");
+      const s = g(t);
+      o.strictEqual(s.summary.errors, 0, "Nested generics should count as 2 params");
+    });
+  }), t("Validate Pipeline Style Checks", () => {
+    s("should detect long-names in unminified code", async () => {
+      const t = d(E, "vp1");
+      r(t, {
+        recursive: !0
+      });
+      c(d(t, "a.js"), "function calculateTotalPrice(items, discount, taxRate) { return items; }\nfunction formatCurrencyValue(amount) { return amount; }\nfunction parseUserInput(raw) { return raw; }\nfunction validateEmailAddress(email) { return email; }", "utf-8");
+      const s = await VP(t, {
+        skipDecompile: !0
+      });
+      o.ok(s.style.details.some(e => "long-names" === e.rule));
+    }), s("should detect missing-ctx-header", async () => {
+      const t = d(E, "vp2");
+      r(t, {
+        recursive: !0
+      });
+      c(d(t, "a.js"), "const x=1;", "utf-8");
+      const s = await VP(t, {
+        skipDecompile: !0
+      });
+      o.ok(s.style.details.some(e => "missing-ctx-header" === e.rule));
+    }), s("should detect multi-line-imports", async () => {
+      const t = d(E, "vp3");
+      r(t, {
+        recursive: !0
+      });
+      c(d(t, "a.js"), "import {a} from 'a';\nimport {b} from 'b';", "utf-8");
+      const s = await VP(t, {
+        skipDecompile: !0
+      });
+      o.ok(s.style.details.some(e => "multi-line-imports" === e.rule));
+    }), s("should detect indented-lines", async () => {
+      const t = d(E, "vp4");
+      r(t, {
+        recursive: !0
+      });
+      c(d(t, "a.js"), "function foo() {\n  return 1;\n}", "utf-8");
+      const s = await VP(t, {
+        skipDecompile: !0
+      });
+      o.ok(s.style.details.some(e => "indented-lines" === e.rule));
+    }), s("should detect {DESCRIBE} markers in .ctx", async () => {
+      const t = d(E, "vp6");
+      r(t, {
+        recursive: !0
+      });
+      r(d(t, ".context"), {
+        recursive: !0
+      });
+      c(d(t, "a.js"), "// @ctx .context/a.ctx\nconst e=1;", "utf-8");
+      c(d(t, ".context", "a.ctx"), "--- a.js ---\nexport foo()|{DESCRIBE}\nPATTERNS: {DESCRIBE}", "utf-8");
+      const s = await VP(t, {
+        skipDecompile: !0
+      });
+      o.ok(s.style.details.some(e => "incomplete-ctx" === e.rule && e.message.includes("DESCRIBE")));
+    }), s("should detect exports missing from .ctx", async () => {
+      const t = d(E, "vp7");
+      r(t, {
+        recursive: !0
+      });
+      r(d(t, ".context"), {
+        recursive: !0
+      });
+      c(d(t, "a.js"), "// @ctx .context/a.ctx\nexport function e(){}\nexport const t=1;", "utf-8");
+      c(d(t, ".context", "a.ctx"), "--- a.js ---\ne()|does stuff", "utf-8");
+      const s = await VP(t, {
+        skipDecompile: !0
+      });
+      const ic = s.style.details.filter(e => "incomplete-ctx" === e.rule);
+      o.ok(ic.some(e => e.message.includes("t")), "should report missing export t");
+    }), s("should pass for compliant compact file", async () => {
+      const t = d(E, "vp5");
+      r(t, {
+        recursive: !0
+      });
+      r(d(t, ".context"), {
+        recursive: !0
+      });
+      c(d(t, "a.js"), "// @ctx .context/a.ctx\nconst e=1;", "utf-8");
+      c(d(t, ".context", "a.ctx"), "# a\nContext stub", "utf-8");
+      const s = await VP(t, {
+        skipDecompile: !0
+      });
+      o.strictEqual(s.style.issues, 0);
+    });
+  });
+});

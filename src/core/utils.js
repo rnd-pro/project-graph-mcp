@@ -1,2 +1,4 @@
-// @ctx utils.ctx
-export function estimateTokens(e){const t="string"==typeof e?e:JSON.stringify(e);return Math.ceil(t.length/4)}
+export function estimateTokens(e) {
+  const t = "string" == typeof e ? e : JSON.stringify(e);
+  return Math.ceil(t.length / 4);
+}
