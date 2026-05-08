@@ -1,8 +1,0 @@
---- web/panels/ProjectList/ProjectList.js ---
-@sig 698604ad
-class ProjectList extends t|2m,2$|Symbiote component for list of projects
-  .initCallback()|bind projects-updated event|init local state
-  .renderCallback()|toggle empty message visibility based on state
-  CALLS→e.addEventListener,sub
-PATTERNS: dashboard state sync|reactive DOM visibility
-EDGE_CASES: empty project list

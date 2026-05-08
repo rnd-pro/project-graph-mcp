@@ -1,9 +1,0 @@
---- web/panels/health-panel.js ---
-@sig 704e9048
-class HealthPanel extends e|3m,2$|Symbiote component for project health dashboard
-  .initCallback()|bind skeleton-loaded event|trigger initial load
-  ._loadHealth()|fetch analysis summary|render health metrics grid
-  ._metric()|render single health metric row
-  CALLS→_loadHealth,s.addEventListener,setTimeout,t,Object.keys,Object.values,_metric,Math.round
-PATTERNS: API data fetching|dynamic HTML rendering|skeleton data usage
-EDGE_CASES: missing analysis API|empty skeleton|missing cache stats

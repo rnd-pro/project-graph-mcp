@@ -1,7 +1,0 @@
---- web/panels/EventItem/EventItem.js ---
-@sig 68b18a72
-class EventItem extends t|1m,13$|Symbiote component for dashboard event log item
-  .renderCallback()|bind state to DOM|format time/args|handle expand click
-  CALLS→sub,Object.keys,JSON.stringify,setAttribute,removeAttribute
-PATTERNS: reactive DOM binding|JSON serialization for args
-EDGE_CASES: empty args|missing timestamp

@@ -1,7 +1,0 @@
---- web/panels/ActionBoard/ActionBoard.js ---
-@sig 5e74f370
-class ActionBoard extends t|1m,1$|Symbiote component for dashboard action board
-  .initCallback()|bind global-tool-event|reverse event order|update UI state
-  CALLS→console.log,o.addEventListener
-PATTERNS: reactive state binding|global event listener
-EDGE_CASES: empty events array|missing event detail

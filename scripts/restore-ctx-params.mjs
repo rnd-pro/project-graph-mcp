@@ -1,72 +1,71 @@
 #!/usr/bin/env node
-import { execSync } from "child_process";
-
-import { readFileSync, writeFileSync, existsSync } from "fs";
-
-import { join, dirname, basename, extname, relative } from "path";
-
-import { parse } from "../vendor/acorn.mjs";
-
-import { simple } from "../vendor/walk.mjs";
+import { execSync } from 'child_process';
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'fs';
+import { join, dirname, basename, extname, relative } from 'path';
+import { parse } from '../vendor/acorn.mjs';
+import { simple } from '../vendor/walk.mjs';
 
 const ROOT = process.cwd();
-
-const HISTORY_COMMITS = [ "42c0be5", "84d53fc", "44c19a3", "bdf8ca4" ];
+const HISTORY_COMMITS = [ '42c0be5', '84d53fc', '44c19a3', 'bdf8ca4' ];
 
 function getHistoricalPaths(currentPath) {
-  const base = basename(currentPath);
-  const paths = [ currentPath ];
-  if (currentPath.startsWith("src/")) {
-    paths.push("src/" + base);
+  let base = basename(currentPath);
+  let paths = [ currentPath ];
+  if (currentPath.startsWith('src/')) {
+    paths.push('src/' + base);
   }
   return paths;
 }
 
 function getOriginalFunctions(commit, filePath) {
-  const fns = new Map;
-  for (const p of getHistoricalPaths(filePath)) {
+  let fns = new Map();
+  for (let p of getHistoricalPaths(filePath)) {
     let code;
     try {
       code = execSync(`git show ${commit}:${p}`, {
         cwd: ROOT,
-        encoding: "utf-8",
-        stdio: [ "pipe", "pipe", "pipe" ]
+        encoding: 'utf-8',
+        stdio: [ 'pipe', 'pipe', 'pipe' ],
       });
     } catch {
       continue;
     }
-    const lines = code.split("\n");
+    let lines = code.split('\n');
     if (lines.length < 5) continue;
     try {
-      const ast = parse(code, {
-        ecmaVersion: "latest",
-        sourceType: "module"
+      let ast = parse(code, {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
       });
       simple(ast, {
         FunctionDeclaration(node) {
           if (node.id) {
-            const params = node.params.map(p => {
-              if (p.type === "Identifier") return p.name;
-              if (p.type === "AssignmentPattern" && p.left.type === "Identifier") return p.left.name + "=";
-              if (p.type === "RestElement" && p.argument.type === "Identifier") return "..." + p.argument.name;
-              return "?";
+            let params = node.params.map(p => {
+              if (p.type === 'Identifier') return p.name;
+              if (p.type === 'AssignmentPattern' && p.left.type === 'Identifier') {
+                return p.left.name + '=';
+              }
+              if (p.type === 'RestElement' && p.argument.type === 'Identifier') {
+                return '...' + p.argument.name;
+              }
+              return '?';
             });
             fns.set(node.id.name, {
               params: params,
-              exported: false
+              exported: false,
             });
           }
-        }
+        },
       });
-      for (const node of ast.body) {
-        if (node.type === "ExportNamedDeclaration") {
+      for (let node of ast.body) {
+        if (node.type === 'ExportNamedDeclaration') {
           if (node.declaration?.id) {
-            const fn = fns.get(node.declaration.id.name);
+            let fn = fns.get(node.declaration.id.name);
             if (fn) fn.exported = true;
           }
           if (node.specifiers) {
-            for (const sp of node.specifiers) {
-              const fn = fns.get(sp.local.name);
+            for (let sp of node.specifiers) {
+              let fn = fns.get(sp.local.name);
               if (fn) {
                 fn.exported = true;
                 fn.exportedAs = sp.exported.name;
@@ -84,65 +83,70 @@ function getOriginalFunctions(commit, filePath) {
 }
 
 function walkDir(dir, ext) {
-  const out = [];
+  let out = [];
   try {
-    for (const f of require("fs").readdirSync(dir)) {
-      const p = join(dir, f);
-      if (require("fs").statSync(p).isDirectory()) out.push(...walkDir(p, ext)); else if (f.endsWith(ext)) out.push(p);
+    for (let f of readdirSync(dir)) {
+      let p = join(dir, f);
+      if (statSync(p).isDirectory()) {
+        out.push(...walkDir(p, ext));
+      } else if (f.endsWith(ext)) {
+        out.push(p);
+      }
     }
   } catch {}
   return out;
 }
 
-const ctxFiles = execSync('find .context -name "*.ctx" -type f', {
+let ctxFiles = execSync('find .context -name "*.ctx" -type f', {
   cwd: ROOT,
-  encoding: "utf-8"
-}).split("\n").filter(Boolean);
+  encoding: 'utf-8',
+}).split('\n').filter(Boolean);
 
 let totalUpdated = 0;
-
 let totalParamsFixed = 0;
 
-for (const ctxRel of ctxFiles) {
-  const ctxPath = join(ROOT, ctxRel);
-  let ctxContent = readFileSync(ctxPath, "utf-8");
-  const srcRel = ctxRel.replace(".context/", "").replace(".ctx", ".js");
+for (let ctxRel of ctxFiles) {
+  let ctxPath = join(ROOT, ctxRel);
+  let ctxContent = readFileSync(ctxPath, 'utf-8');
+  let srcRel = ctxRel.replace('.context/', '').replace('.ctx', '.js');
   let origFns = null;
-  for (const commit of HISTORY_COMMITS) {
-    const fns = getOriginalFunctions(commit, srcRel);
+  for (let commit of HISTORY_COMMITS) {
+    let fns = getOriginalFunctions(commit, srcRel);
     if (fns.size > 0) {
       origFns = fns;
       break;
     }
   }
   if (!origFns || origFns.size === 0) continue;
-  const srcPath = join(ROOT, srcRel);
+  let srcPath = join(ROOT, srcRel);
   if (!existsSync(srcPath)) continue;
-  const srcCode = readFileSync(srcPath, "utf-8");
-  const currentFns = [];
+  let srcCode = readFileSync(srcPath, 'utf-8');
+  let currentFns = [];
   try {
-    const ast = parse(srcCode, {
-      ecmaVersion: "latest",
-      sourceType: "module"
+    let ast = parse(srcCode, {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
     });
     simple(ast, {
       FunctionDeclaration(node) {
-        if (node.id) currentFns.push({
-          name: node.id.name,
-          params: node.params.length,
-          exported: false
-        });
-      }
+        if (node.id) {
+          currentFns.push({
+            name: node.id.name,
+            params: node.params.length,
+            exported: false,
+          });
+        }
+      },
     });
-    for (const node of ast.body) {
-      if (node.type === "ExportNamedDeclaration") {
+    for (let node of ast.body) {
+      if (node.type === 'ExportNamedDeclaration') {
         if (node.declaration?.id) {
-          const fn = currentFns.find(f => f.name === node.declaration.id.name);
+          let fn = currentFns.find(f => f.name === node.declaration.id.name);
           if (fn) fn.exported = true;
         }
         if (node.specifiers) {
-          for (const sp of node.specifiers) {
-            const fn = currentFns.find(f => f.name === sp.local.name);
+          for (let sp of node.specifiers) {
+            let fn = currentFns.find(f => f.name === sp.local.name);
             if (fn) {
               fn.exported = true;
               fn.exportedAs = sp.exported.name;
@@ -154,13 +158,13 @@ for (const ctxRel of ctxFiles) {
   } catch {
     continue;
   }
-  const origArr = [ ...origFns.entries() ];
+  let origArr = [ ...origFns.entries() ];
   let changed = false;
-  for (const currFn of currentFns) {
-    const exportName = currFn.exportedAs || currFn.name;
+  for (let currFn of currentFns) {
+    let exportName = currFn.exportedAs || currFn.name;
     let origEntry = origFns.get(exportName);
     if (!origEntry) {
-      for (const [name, fn] of origFns) {
+      for (let [name, fn] of origFns) {
         if (fn.exportedAs === exportName || name === exportName) {
           origEntry = fn;
           break;
@@ -168,10 +172,14 @@ for (const ctxRel of ctxFiles) {
       }
     }
     if (!origEntry) continue;
-    const origParams = origEntry.params.join(",");
-    const patterns = [ new RegExp(`(export\\s+${exportName})\\([^)]*\\)`, "g"), new RegExp(`(export\\s+${currFn.name})\\([^)]*\\)`, "g"), new RegExp(`(^${currFn.name})\\([^)]*\\)`, "gm") ];
-    for (const pat of patterns) {
-      const newCtx = ctxContent.replace(pat, `$1(${origParams})`);
+    let origParams = origEntry.params.join(',');
+    let patterns = [
+      new RegExp(`(export\\s+${exportName})\\([^)]*\\)`, 'g'),
+      new RegExp(`(export\\s+${currFn.name})\\([^)]*\\)`, 'g'),
+      new RegExp(`(^${currFn.name})\\([^)]*\\)`, 'gm'),
+    ];
+    for (let pat of patterns) {
+      let newCtx = ctxContent.replace(pat, `$1(${origParams})`);
       if (newCtx !== ctxContent) {
         ctxContent = newCtx;
         changed = true;
@@ -179,8 +187,8 @@ for (const ctxRel of ctxFiles) {
       }
     }
   }
-  if (ctxContent.includes("(auto-documented)")) {
-    ctxContent = ctxContent.replace(/\(auto-documented\)/g, "{NEEDS_DESCRIPTION}");
+  if (ctxContent.includes('(auto-documented)')) {
+    ctxContent = ctxContent.replace(/\(auto-documented\)/g, '{NEEDS_DESCRIPTION}');
     changed = true;
   }
   if (changed) {

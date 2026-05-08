@@ -1,9 +1,0 @@
---- web/panels/dep-graph.js ---
-@sig 1d0e7ae9
-class DepGraph extends s|3m,1$|Symbiote component for file dependency graph
-  .initCallback()|bind events|render overview|handle file clicks
-  ._renderOverview()|calculate and render project skeleton stats
-  ._loadDeps()|parse skeleton data for file|render imports/exports/fns/classes
-  CALLS→_loadDeps,n.addEventListener,_renderOverview,target.closest,t,addEventListener,Object.values,Object.keys
-PATTERNS: skeleton data parsing|dynamic HTML generation|event delegation
-EDGE_CASES: file missing in graph|empty skeleton|missing dependencies
