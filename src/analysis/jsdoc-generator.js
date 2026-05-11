@@ -80,7 +80,7 @@ export function generateJSDoc(o, s = {}) {
 
 function i(t) {
   const e = [ "/**" ];
-  e.push(` * TODO: Add description for ${t.name}`);
+  e.push(` * Describe ${t.name}.`);
   for (const n of t.params) {
     const t = o(n), r = s(n);
     e.push(` * @param {${r}} ${t}`);

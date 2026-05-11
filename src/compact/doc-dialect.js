@@ -132,7 +132,7 @@ export function getProjectDocs(e, s, n = {}) {
     const i = S(s, o);
     if (i) {
       const e = t(i, "utf-8").trim();
-      e && !e.match(/^#[^\n]*\n+## Notes\n+## TODO\n+## Decisions\s*$/) && (c += "\n\n" + e);
+      e && !e.match(/^#[^\n]*\n+## Notes\n+## Follow-ups\n+## Decisions\s*$/) && (c += "\n\n" + e);
     }
     return c;
   }
@@ -305,7 +305,7 @@ async function y(e, c, h, f, u, x, j) {
   } catch {}
   const A = r(e, a(e)) + ".ctx.md", L = i(D, A);
   if (!s(L)) {
-    const t = `# ${r(e)}\n\n## Notes\n\n## TODO\n\n## Decisions\n`;
+    const t = `# ${r(e)}\n\n## Notes\n\n## Follow-ups\n\n## Decisions\n`;
     o(L, t, "utf-8");
   }
   return {
