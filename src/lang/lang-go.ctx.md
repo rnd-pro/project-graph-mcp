@@ -13,5 +13,5 @@
 - Mapped Go structs and interfaces to the generic `classes` array to maintain compatibility with JS/TS and Python graph builders.
 - Two-pass import extraction: first parses import blocks `import (...)`, then single-line imports.
 
-## TODO
+## Follow-ups
 - Improve receiver type tracking to map method calls more accurately to their corresponding structs.

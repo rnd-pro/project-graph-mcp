@@ -13,5 +13,5 @@
 ## Decisions
 - Replaced actual string content with spaces instead of removing it to ensure that subsequent regex matches report the correct line and column indices.
 
-## TODO
+## Follow-ups
 - Add support for nested template literals spanning multiple lines.

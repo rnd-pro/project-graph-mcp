@@ -13,5 +13,5 @@
 - Keeps `module: true` and `mangle: false` to ensure the output remains highly readable for LLMs.
 - JSDoc extraction uses `acorn` and `walk` to accurately attach comments to exported signatures.
 
-## TODO
+## Follow-ups
 - Add support for stripping type annotations in TypeScript to save even more tokens.

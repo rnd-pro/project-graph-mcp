@@ -13,5 +13,5 @@
 - Prioritizes colocated `.ctx` files over mirrored ones (`.context/src/`) to allow localized overrides.
 - Embeds `{DESCRIBE}` markers so agents can auto-fill missing documentation via delegation.
 
-## TODO
+## Follow-ups
 - Refine AST signature hash logic when fully integrated.

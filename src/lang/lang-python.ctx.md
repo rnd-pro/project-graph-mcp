@@ -14,5 +14,5 @@
 - Used regex and indentation counting instead of a full Python AST parser to keep dependencies zero and execution fast.
 - Chosen to pre-process and remove docstrings and comments to avoid matching text inside them.
 
-## TODO
+## Follow-ups
 - Better support for deeply nested class scopes and inner functions.

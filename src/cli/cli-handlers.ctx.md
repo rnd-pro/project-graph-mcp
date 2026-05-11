@@ -13,5 +13,5 @@
 - Isolated from `cli.js` to drastically reduce cyclomatic complexity and improve module testability.
 - Avoided 3rd-party arg parsers to keep the bundle size small and load time extremely fast.
 
-## TODO
+## Follow-ups
 - Standardize flag parsing into a unified utility function to prevent repeated `args.includes` checks.

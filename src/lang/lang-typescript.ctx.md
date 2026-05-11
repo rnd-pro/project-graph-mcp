@@ -14,5 +14,5 @@
 - Chose regex over Acorn to prevent catastrophic backtracking and support broken/incomplete code.
 - Chosen to strip comments and strings first (`lang-utils.js`) to simplify the regex logic.
 
-## TODO
+## Follow-ups
 - Improve support for complex nested arrow functions and object destructuring in exports.

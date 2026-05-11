@@ -15,6 +15,6 @@
 - Regex comment extraction was chosen over Acorn's comment array to more easily control comment-to-node distance heuristics
 - The default strictness level (`tests`) enforces a test-driven development culture by requiring test checklists in `.ctx.md` files
 
-## TODO
+## Follow-ups
 - Validate that `@param` and `@returns` tags actually match the function's real signature
 - Add support for detecting undocumented exported variables and constants

@@ -13,5 +13,5 @@
 - Encapsulates rules directly as a constant string rather than a separate Markdown file to make it easily importable and injectable by the MCP server.
 - Organizes agent guidelines into clear categories (coding, testing, quality) for structured reasoning.
 
-## TODO
+## Follow-ups
 - Potentially split the large string into a separate `.md` file that is read at runtime if it grows too large.

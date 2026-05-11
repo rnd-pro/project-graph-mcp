@@ -16,6 +16,6 @@
 - Structural hashing over raw text comparison allows detecting similar logic even when variable names differ
 - Scoring breakdown (params: 50%, structure: 25%, calls: 15%, async: 10%) was tuned to favor semantic similarity over pure syntax
 
-## TODO
+## Follow-ups
 - Add support for variable-assigned arrow functions
 - Implement AST normalization to catch logically identical blocks with different loop types (e.g., `for` vs `forEach`)

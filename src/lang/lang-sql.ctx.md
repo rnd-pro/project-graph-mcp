@@ -14,5 +14,5 @@
 - Chose a zero-dependency regex approach instead of a full SQL AST parser for performance and simplicity across dialects.
 - Extracts queries directly from raw source code (Python/Go/JS) before comments/strings are stripped.
 
-## TODO
+## Follow-ups
 - Enhance parsing for complex subqueries and CTEs (`WITH` clauses).

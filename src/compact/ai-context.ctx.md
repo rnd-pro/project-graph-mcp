@@ -12,5 +12,5 @@
 - Estimates token count roughly by dividing string length by 4 for fast, dependency-free calculation.
 - Designed to minimize round-trips for the agent when first entering a codebase.
 
-## TODO
+## Follow-ups
 - Token estimation could be swapped for a real tokenizer if accuracy becomes critical.

@@ -13,5 +13,5 @@
 - Separated `mcp-server.js` from individual tool logic to decouple the RPC protocol layer from graph operations.
 - Used contextual coaching hints to improve autonomous agent workflows without changing raw tool output.
 
-## TODO
+## Follow-ups
 - Add support for SSE (Server-Sent Events) or other MCP transports.

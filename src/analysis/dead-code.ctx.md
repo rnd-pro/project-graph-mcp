@@ -16,6 +16,6 @@
 - Regex usage heuristic chosen over full AST scope tracking to keep memory usage low and execution fast
 - Orphan exports are checked globally to prevent false positives in library-like internal modules
 
-## TODO
+## Follow-ups
 - Implement full scope analysis for variable usage to eliminate regex false positives
 - Add support for detecting dead properties on objects and classes

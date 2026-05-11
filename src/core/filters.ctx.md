@@ -13,5 +13,5 @@
 - Rolled a custom lightweight wildcard/gitignore matcher instead of bringing in heavy glob dependencies.
 - Placed default ignores inside the code to ensure sensible zero-config behavior out of the box.
 
-## TODO
+## Follow-ups
 - Add full support for `!` negation patterns in `.gitignore`.

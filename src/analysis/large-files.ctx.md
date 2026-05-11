@@ -15,6 +15,6 @@
 - Thresholds (lines > 300/500, functions > 10/15, classes > 1/3, exports > 5/10) were chosen based on standard clean code heuristics
 - Point system allows a file to be flagged as warning/critical even if it only fails significantly on one metric (e.g., 600 lines)
 
-## TODO
+## Follow-ups
 - Consider adding metrics for deeply nested scopes or raw byte size
 - Allow custom threshold configuration via a `.gemini/complexity.json` file

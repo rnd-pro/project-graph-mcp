@@ -18,5 +18,5 @@
 - [ ] expand: expand minified symbol → returns full details with methods
 - [ ] getCallChain: find path A→B → returns shortest BFS chain
 
-## TODO
+## Follow-ups
 - Implement truly incremental graph updates instead of full rebuilds on single file changes.

@@ -13,5 +13,5 @@
 - State stored in `.ctx.md` files (not in-memory) — survives process restarts and is visible in version control.
 - Designed to allow testing features incrementally without needing a full test-runner suite like Jest or Playwright.
 
-## TODO
+## Follow-ups
 - Support nested checklist hierarchies for complex test scenarios.

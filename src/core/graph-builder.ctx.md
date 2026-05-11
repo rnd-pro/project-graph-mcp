@@ -13,5 +13,5 @@
 - Token efficiency is the primary goal: minified keys drastically reduce context usage for LLM prompts.
 - Separated graph building from parsing to allow caching and fast incremental updates.
 
-## TODO
+## Follow-ups
 - Add edge types for class inheritance and property access chains.

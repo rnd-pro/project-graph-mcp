@@ -13,5 +13,5 @@
 - Uses AST parsing (`acorn`) instead of regex for function extraction to guarantee accuracy across arrow functions, methods, and exports.
 - Treats missing JSDoc as a non-issue here; that is delegated to the `undocumented.js` checker.
 
-## TODO
+## Follow-ups
 - Expand inferred type checks to include TypeScript annotations if they exist in `.ts` files.

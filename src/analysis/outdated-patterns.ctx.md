@@ -15,6 +15,6 @@
 - Sync-in-async detection specifically targets `*Sync` property calls to avoid false positives on standard synchronous utility functions
 - Hardcoded replacement map for Node built-ins ensures the tool remains fast and doesn't require external vulnerability databases
 
-## TODO
+## Follow-ups
 - Add auto-fix capabilities for simple replacements like `var` to `let`/`const`
 - Extend redundant dependency list for Node 22+ (e.g., test runner built-ins)

@@ -16,6 +16,6 @@
 - Arrow function threshold (>5) chosen to prevent cluttering reports with simple callbacks or array methods
 - Base complexity starts at 1, representing the single path through a straight-line function
 
-## TODO
+## Follow-ups
 - Add cognitive complexity calculation as an alternative metric
 - Support configuring complexity rating thresholds via project config

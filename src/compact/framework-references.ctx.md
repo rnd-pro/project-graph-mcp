@@ -13,5 +13,5 @@
 - Selected an in-memory cache with file-system backup to ensure agents always have access to framework rules, even when offline.
 - Used a predefined map (`REMOTE_SOURCES`) for known framework URLs rather than fetching dynamically to ensure security and predictability.
 
-## TODO
+## Follow-ups
 - Support fetching references from a central registry or allowing projects to define their own remote references in `package.json`.

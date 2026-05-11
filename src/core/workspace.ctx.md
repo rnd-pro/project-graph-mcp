@@ -13,5 +13,5 @@
 - Centralized path resolution to prevent inconsistent relative path issues across different CLI and MCP contexts.
 - Added strict path bounds checking as a critical security measure against rogue agent requests.
 
-## TODO
+## Follow-ups
 - Support multiple independent workspace roots instead of combining into a single root.

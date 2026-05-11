@@ -12,5 +12,5 @@
 - Separates interface signatures from body content hashes to avoid invalidating documentation or structural caches when only internal function logic changes.
 - Stores data as pretty-printed JSON for easy inspection and debugging.
 
-## TODO
+## Follow-ups
 - Cross-file analysis (like dead code or similarity) is currently uncacheable; could explore strategies for caching these.

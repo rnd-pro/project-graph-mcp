@@ -13,5 +13,5 @@
 - Extracted handlers into `cli-handlers.js` to keep the entry file purely focused on routing and stdout.
 - Used a simple array/dictionary approach for commands instead of heavy CLI frameworks like Commander.
 
-## TODO
+## Follow-ups
 - Add support for piping stdin directly into certain commands.

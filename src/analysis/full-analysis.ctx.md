@@ -15,6 +15,6 @@
 - Penalties are strictly capped per category (e.g., max -20 for complexity) so that a massive number of minor issues in one category doesn't completely eclipse the rest of the score
 - The `Promise.all` approach for cross-file metrics ensures they run concurrently to minimize the latency penalty of dynamic execution
 
-## TODO
+## Follow-ups
 - Add historical score tracking to measure health degradation or improvement over time
 - Allow projects to define custom weights for the penalty scoring via configuration

@@ -13,5 +13,5 @@
 - Uses `tsconfig.json` or `jsconfig.json` if present, otherwise injects sensible defaults for JS projects (`--allowJs`, `--checkJs`, `--noEmit`).
 - Spawns a child process rather than using TS compiler API directly to avoid a heavy `typescript` dependency.
 
-## TODO
+## Follow-ups
 - Add caching for type check results to speed up repeated validations on unchanged files.

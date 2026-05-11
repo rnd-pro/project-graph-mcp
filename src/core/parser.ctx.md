@@ -13,5 +13,5 @@
 - Used `acorn` and `acorn-walk` for lightweight, fast, standard JS parsing instead of heavier TS compiler API.
 - Unified DB extraction with general call extraction in a single AST walk for better performance.
 
-## TODO
+## Follow-ups
 - Add support for detecting dynamic imports and `require` statements.

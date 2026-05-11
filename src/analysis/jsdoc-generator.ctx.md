@@ -12,5 +12,5 @@
 - Leaves `TODO` markers in descriptions and test annotations to actively prompt developers (or AI agents) to complete them.
 - Simplifies destructured object parameters to just `options` and arrays to `args` for cleaner generated docs.
 
-## TODO
+## Follow-ups
 - Better type inference from function body assignments (e.g., inferring return type from `return` statements).

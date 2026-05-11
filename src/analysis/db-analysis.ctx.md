@@ -13,5 +13,5 @@
 - Implemented a best-effort, zero-dependency approach to find DB dead code to provide immediate value without requiring a heavy SQL AST parser or runtime tracing.
 - Decided to map DB operations as specific graph edges (`R→`, `W→`) for unified graph querying.
 
-## TODO
+## Follow-ups
 - Improve precision of column usage tracking by integrating a more robust SQL query tokenizer.

@@ -15,6 +15,6 @@
 - Chosen line-by-line regex matching over full AST traversal for custom rules to make rule authoring simple for end users (no AST knowledge required)
 - Storing rules as separate JSON files in the `/rules` directory allows easy community sharing and versioning of rulesets
 
-## TODO
+## Follow-ups
 - Implement full block comment awareness for the string/comment exclusion heuristic
 - Add auto-fix application functionality using the `replacement` field in rule definitions
