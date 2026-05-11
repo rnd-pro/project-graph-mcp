@@ -302,7 +302,7 @@ const me = {
   get_ai_context: e => {
     const t = [ `💡 Context loaded: ${e.totalTokens} tokens (${e.savings} savings vs ${e.vsOriginal} original).` ];
     return t.push("💡 Use expand() to drill into specific symbols. Use get_compressed_file() for additional files."), 
-    t.push("📋 Read .context/*.ctx files for typed signatures and documentation. Check .gemini/AGENTS.md for project-specific rules."), 
+    t.push("📋 Read .context/*.ctx files for typed signatures and documentation. Check repository-level agent instructions for project-specific rules."),
     e.staleFiles?.length > 0 && t.push(`⚠️ ${e.staleFiles.length} .ctx docs are stale. Run generate_context_docs({ scope: ${JSON.stringify(e.staleFiles)}, overwrite: true }) then delegate_task({ skill: "doc-enricher" }) to update.`), 
     t;
   },

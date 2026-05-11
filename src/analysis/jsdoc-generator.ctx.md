@@ -9,7 +9,7 @@
 - Ignores constructors, getters/setters, and methods starting with `_` (assumed private).
 
 ## Decisions
-- Leaves `TODO` markers in descriptions and test annotations to actively prompt developers (or AI agents) to complete them.
+- Uses neutral placeholder descriptions so generated JSDoc does not introduce persistent audit debt markers.
 - Simplifies destructured object parameters to just `options` and arrays to `args` for cleaner generated docs.
 
 ## Follow-ups

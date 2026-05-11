@@ -1,4 +1,4 @@
 === PROJECT: . ===
-ARCH: {DESCRIBE}
-FLOW: {DESCRIBE}
+ARCH: project graph MCP server for AST skeletons, compact context docs, graph queries, and audits
+FLOW: scan workspace -> build graph/docs/cache -> expose MCP tools for agent navigation and validation
 STATS: 66 files|13 classes|271 functions
