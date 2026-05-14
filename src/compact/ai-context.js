@@ -66,8 +66,8 @@ export async function getAiContext(a, l = {}) {
   const u = {};
   const allJS = r(p);
   const wantAll = f.includes("*");
-  const useSkeleton = "includeSkeleton" in l ? l.includeSkeleton : !wantAll;
-  const useDocs = "includeDocs" in l ? l.includeDocs : !wantAll;
+  const useSkeleton = l.includeSkeleton !== undefined ? l.includeSkeleton : !wantAll;
+  const useDocs = l.includeDocs !== undefined ? l.includeDocs : !wantAll;
   if (allJS.length === 0) {
     u.hint = "No JS/TS files found. Check the path — it should point to your source directory.";
   }
