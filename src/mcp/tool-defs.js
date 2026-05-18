@@ -158,10 +158,33 @@ const e = {
         }
       }
     }
+  },
+  graph_metadata: {
+    name: 'graph_metadata',
+    description: 'Read and validate project-local graph metadata sidecar. Actions: get|validate',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['get', 'validate'],
+          description: 'Metadata action to perform',
+        },
+        path: {
+          type: 'string',
+          description: 'Project root path',
+        },
+        metadata: {
+          type: 'object',
+          description: 'For validate: metadata object to validate instead of reading the sidecar',
+        },
+      },
+      required: ['action', 'path'],
+    },
   }
 };
 
-export const TOOLS = [ e.get_skeleton, e.get_focus_zone, e.get_ai_context, e.invalidate_cache, e.get_usage_guide, e.get_agent_instructions, e.get_custom_rules, e.set_custom_rule, e.check_custom_rules, e.get_framework_reference, {
+export const TOOLS = [ e.get_skeleton, e.get_focus_zone, e.get_ai_context, e.invalidate_cache, e.get_usage_guide, e.get_agent_instructions, e.get_custom_rules, e.set_custom_rule, e.check_custom_rules, e.get_framework_reference, e.graph_metadata, {
   name: "navigate",
   description: "Navigate the project graph. Actions: expand|deps|usages|call_chain|sub_projects",
   inputSchema: {

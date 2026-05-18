@@ -36,6 +36,8 @@ import { getCustomRules as P, setCustomRule as O, checkCustomRules as I } from "
 
 import { getFrameworkReference as J } from "../compact/framework-references.js";
 
+import graphMetadata from './graph-metadata.js';
+
 import { setRoots as q, resolvePath as A } from "../core/workspace.js";
 
 import { getDBSchema as N, getTableUsage as L, getDBDeadTables as M } from "../analysis/db-analysis.js";
@@ -144,6 +146,10 @@ const me = {
   get_framework_reference: e => J({
     framework: e.framework,
     path: e.path ? A(e.path) : void 0
+  }),
+  graph_metadata: e => graphMetadata({
+    ...e,
+    path: e.path ? A(e.path) : e.path
   }),
   get_db_schema: e => N(A(e.path)),
   get_table_usage: e => L(A(e.path), e.table),
