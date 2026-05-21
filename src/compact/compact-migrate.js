@@ -12,8 +12,6 @@ import { validatePipeline as d } from "./validate-pipeline.js";
 
 import { setConfig as u } from "./mode-config.js";
 
-const p = new Set([ ".js", ".mjs" ]), g = new Set([ "node_modules", ".git", "vendor", ".context", "dev-docs", ".agent", ".agents", ".expanded" ]);
-
 async function y(t) {
   const n = e(t, "utf-8"), a = new Set;
   try {
@@ -96,7 +94,7 @@ export async function compactMigrate(t, n = {}) {
       throw new Error("Not a git repository or git not available: " + e.message);
     }
   }(t);
-  const s = h(t), o = [];
+  const s = walkJSFiles(t), o = [];
   for (const n of s) {
     const a = r(t, n), s = await y(n), i = e(n, "utf-8");
     o.push({

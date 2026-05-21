@@ -19,6 +19,7 @@
 .pgignore
 
 # ── Debug & temp files ──
+tmp/
 web/debug-*.js
 web/test-*.html
 web/test-*.json

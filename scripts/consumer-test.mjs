@@ -1,18 +1,54 @@
-import { execSync, spawn } from "node:child_process";
+import { execFileSync, execSync, spawn } from "node:child_process";
 
-import { rmSync, mkdirSync, copyFileSync, readdirSync } from "node:fs";
+import { rmSync, mkdirSync, copyFileSync, readdirSync, writeFileSync } from "node:fs";
 
 import { join, dirname } from "node:path";
 
 import { fileURLToPath } from "node:url";
 
-import http from "node:http";
-
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const ROOT_DIR = join(__dirname, "..");
 
-const TEST_DIR = join(ROOT_DIR, "tests", "tmp-consumer-test");
+const TEST_DIR = join(ROOT_DIR, "tmp", "consumer-test");
+
+let cleaned = false;
+
+function cleanup() {
+  if (cleaned) return;
+  cleaned = true;
+  rmSync(TEST_DIR, {
+    recursive: true,
+    force: true
+  });
+}
+
+function fail(message, error) {
+  console.error(`❌ ${message}`);
+  if (error?.stdout) console.error(`[stdout]\n${error.stdout.toString()}`);
+  if (error?.stderr) console.error(`[stderr]\n${error.stderr.toString()}`);
+  cleanup();
+  process.exit(1);
+}
+
+function runNpx(args, options = {}) {
+  return execFileSync("npx", args, {
+    cwd: TEST_DIR,
+    encoding: "utf8",
+    timeout: 15_000,
+    ...options
+  });
+}
+
+process.on("exit", cleanup);
+process.on("SIGINT", () => {
+  cleanup();
+  process.exit(130);
+});
+process.on("SIGTERM", () => {
+  cleanup();
+  process.exit(143);
+});
 
 console.log("🚀 Starting Consumer Packaging Test...");
 
@@ -75,89 +111,103 @@ execSync(`npm install ./${tarball}`, {
   stdio: "inherit"
 });
 
-console.log("\n🟢 Starting the MCP web server...");
+writeFileSync(join(TEST_DIR, "sample.js"), "export function sample() { return 1; }\n");
 
-const PORT = 19876;
+console.log("\n🧪 Verifying installed CLI...");
 
-const serverProcess = spawn("npx", [ "project-graph-mcp", "serve", ".", "--port", PORT.toString() ], {
+try {
+  const help = runNpx([ "project-graph-mcp", "help" ]);
+  if (!help.includes("Start MCP stdio server") || !help.includes("skeleton <path>")) {
+    fail("CLI help output did not include expected commands.");
+  }
+  console.log("  ✅ CLI help loaded");
+
+  const skeletonRaw = runNpx([ "project-graph-mcp", "skeleton", "." ]);
+  const skeleton = JSON.parse(skeletonRaw);
+  if (skeleton.v !== 1 || !skeleton.L || typeof skeleton.s !== "object") {
+    fail("CLI skeleton command returned an unexpected shape.");
+  }
+  console.log("  ✅ CLI skeleton command returned JSON");
+} catch (error) {
+  fail("Installed CLI check failed.", error);
+}
+
+console.log("\n🟢 Starting the MCP stdio server...");
+
+const serverProcess = spawn("npx", [ "project-graph-mcp" ], {
   cwd: TEST_DIR,
-  stdio: "pipe"
+  stdio: [ "pipe", "pipe", "pipe" ]
 });
 
-let serverReady = false;
+let stdoutBuffer = "";
+let stderrBuffer = "";
+let serverExited = false;
 
 serverProcess.stdout.on("data", data => {
-  const output = data.toString();
-  if (output.includes(`localhost:${PORT}`)) {
-    serverReady = true;
-  }
+  stdoutBuffer += data.toString();
 });
 
 serverProcess.stderr.on("data", data => {
-  console.error(`[SERVER ERR]: ${data.toString()}`);
+  stderrBuffer += data.toString();
 });
 
-function checkUrl(url) {
+serverProcess.on("exit", () => {
+  serverExited = true;
+});
+
+function waitForStdoutLine(predicate, timeoutMs = 10_000) {
   return new Promise(resolve => {
-    const req = http.get(url, res => {
-      resolve(res.statusCode);
-    });
-    req.on("error", () => resolve(0));
-    req.setTimeout(2e3, () => {
-      req.destroy();
-      resolve(0);
-    });
+    const started = Date.now();
+    const interval = setInterval(() => {
+      const lines = stdoutBuffer.split(/\r?\n/).filter(Boolean);
+      const match = lines.find(line => {
+        try {
+          return predicate(JSON.parse(line));
+        } catch {
+          return false;
+        }
+      });
+      if (match || Date.now() - started > timeoutMs || serverExited) {
+        clearInterval(interval);
+        resolve(match || null);
+      }
+    }, 100);
   });
 }
 
-console.log("⏳ Waiting for server to boot...");
-
-let attempts = 0;
-
-const checkInterval = setInterval(async () => {
-  attempts++;
-  if (serverReady || attempts > 10) {
-    clearInterval(checkInterval);
-    if (!serverReady) {
-      console.error("❌ Server failed to start within 10 seconds.");
-      serverProcess.kill();
-      process.exit(1);
-    }
-    console.log("✅ Server booted successfully. Running integrity checks...");
-    let allPassed = true;
-    const uiStatus = await checkUrl(`http://127.0.0.1:${PORT}/`);
-    if (uiStatus === 200) {
-      console.log("  ✅ [200] Main UI loaded");
-    } else {
-      console.error(`  ❌ [${uiStatus}] Main UI failed to load`);
-      allPassed = false;
-    }
-    const engineFileStatus = await checkUrl(`http://127.0.0.1:${PORT}/vendor/symbiote-node/engine/packs/transform/template-builder.handler.js`);
-    if (engineFileStatus === 200) {
-      console.log("  ✅ [200] symbiote-node engine files loaded successfully");
-    } else {
-      console.error(`  ❌ [${engineFileStatus}] symbiote-node engine files missing (packaging error!)`);
-      allPassed = false;
-    }
-    const apiStatus = await checkUrl(`http://127.0.0.1:${PORT}/api/server-status`);
-    if (apiStatus === 200) {
-      console.log("  ✅ [200] /api/server-status responded");
-    } else {
-      console.error(`  ❌ [${apiStatus}] /api/server-status failed`);
-      allPassed = false;
-    }
-    console.log("\n🛑 Shutting down server...");
-    serverProcess.kill();
-    rmSync(TEST_DIR, {
-      recursive: true,
-      force: true
-    });
-    if (allPassed) {
-      console.log("\n🎉 ALL CONSUMER TESTS PASSED. Ready for publish.");
-      process.exit(0);
-    } else {
-      console.log("\n⚠️ CONSUMER TESTS FAILED. Fix packaging issues before publish.");
-      process.exit(1);
-    }
+const initializeRequest = {
+  jsonrpc: "2.0",
+  id: 1,
+  method: "initialize",
+  params: {
+    protocolVersion: "2025-06-18",
+    capabilities: {},
+    clientInfo: {
+      name: "consumer-test",
+      version: "0.0.0"
+    },
+    roots: [
+      {
+        uri: `file://${TEST_DIR}`,
+        name: "consumer-test"
+      }
+    ]
   }
-}, 1e3);
+};
+
+serverProcess.stdin.write(`${JSON.stringify(initializeRequest)}\n`);
+
+const initializeResponse = await waitForStdoutLine(message => message.id === 1 && message.result?.serverInfo?.name === "project-graph");
+
+if (!initializeResponse) {
+  serverProcess.kill();
+  fail(`MCP stdio server did not initialize.\n[stdout]\n${stdoutBuffer}\n[stderr]\n${stderrBuffer}`);
+}
+
+console.log("  ✅ MCP stdio initialize responded");
+
+console.log("\n🛑 Shutting down server...");
+serverProcess.kill();
+cleanup();
+console.log("\n🎉 ALL CONSUMER TESTS PASSED. Ready for publish.");
+process.exit(0);
