@@ -61,8 +61,6 @@ cd project-graph-mcp
 npm install
 ```
 
-> **Note:** The `--recursive` flag is required to fetch the `vendor/symbiote-node` submodule.
-
 </details>
 
 ### CLI

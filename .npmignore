@@ -7,6 +7,8 @@
 .agent/
 .agents/
 .gemini/
+.cursorrules
+.windsurfrules
 
 # ── Generated context & cache ──
 .context/
@@ -42,13 +44,6 @@ dev-docs/
 
 # ── Docs images (referenced via GitHub raw URLs in README) ──
 docs/img/
-
-# ── Vendor bloat — engine/demo/tests not used by project-graph-mcp ──
-vendor/symbiote-node/demo/
-vendor/symbiote-node/tests/
-vendor/symbiote-node/test-ssr.js
-vendor/symbiote-node/.git
-vendor/symbiote-node/.agent/
 
 # ── Misc dev files ──
 test-graph.js

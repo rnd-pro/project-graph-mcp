@@ -7,11 +7,14 @@ tmp/
 .agent/
 .agents/
 .gemini/
+.cursorrules
+.windsurfrules
 .context/
 .contextignore
 .expanded/
 dev-docs/
 tests/benchmark*
+tests/tmp-consumer-test/
 trace.json
 canvas-debug.png
 canvas-render-test.png

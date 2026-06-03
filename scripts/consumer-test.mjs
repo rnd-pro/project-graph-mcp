@@ -111,6 +111,17 @@ execSync(`npm install ./${tarball}`, {
   stdio: "inherit"
 });
 
+const symbioteOutput = execSync("npm ls @symbiotejs/symbiote --all", {
+  cwd: TEST_DIR,
+  encoding: "utf8"
+});
+
+if (!symbioteOutput.includes("@symbiotejs/symbiote@3.8.0-webmcp.2")) {
+  fail("Consumer install resolved an unexpected @symbiotejs/symbiote version.");
+}
+
+console.log("  ✅ Consumer resolved @symbiotejs/symbiote@3.8.0-webmcp.2");
+
 writeFileSync(join(TEST_DIR, "sample.js"), "export function sample() { return 1; }\n");
 
 console.log("\n🧪 Verifying installed CLI...");
