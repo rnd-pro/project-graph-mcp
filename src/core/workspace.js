@@ -6,7 +6,7 @@ let allowedRoots = [];
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const defaultRoot = resolve(__dirname, "..", "..");
+const defaultRoot = process.cwd();
 
 const argRoot = process.argv.find(r => r.startsWith("--workspace="));
 

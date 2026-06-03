@@ -99,6 +99,16 @@ if (process.argv[1] && (process.argv[1].endsWith("server.js") || process.argv[1]
         buffered.push(line);
       }
     });
+    rl.on("close", () => {
+      if (!started) {
+        console.error("[project-graph] stdin closed before MCP started, exiting");
+        process.exit(0);
+      }
+    });
+    process.stdin.on("close", () => {
+      console.error("[project-graph] stdin pipe closed, exiting");
+      process.exit(0);
+    });
     setTimeout(() => {
       if (!started) {
         let root = getWorkspaceRoot();
@@ -108,3 +118,6 @@ if (process.argv[1] && (process.argv[1].endsWith("server.js") || process.argv[1]
     }, 5e3);
   }
 }
+
+process.on("SIGTERM", () => { process.exit(0); });
+process.on("SIGHUP", () => { process.exit(0); });
