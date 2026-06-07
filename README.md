@@ -61,6 +61,8 @@ cd project-graph-mcp
 npm install
 ```
 
+> **Note:** The source checkout no longer needs the former `vendor/symbiote-node` submodule.
+
 </details>
 
 ### CLI
