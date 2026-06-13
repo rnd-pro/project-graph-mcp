@@ -1,6 +1,6 @@
 import { readFileSync as e, readdirSync as s, statSync as t, existsSync as n } from "fs";
 
-import { join as r, relative as o, resolve as i } from "path";
+import { join as r, relative as o, resolve as i, dirname as q } from "path";
 
 import { parse as a } from "../../vendor/acorn.mjs";
 
@@ -25,7 +25,13 @@ export async function parseFile(e, s) {
     functions: [],
     imports: [],
     exports: [],
-    importSources: []
+    importSources: [],
+    web: {
+      registrations: [],
+      eventListeners: [],
+      dispatches: [],
+      subscriptions: []
+    }
   }, n = [];
   let r;
   try {
@@ -51,7 +57,7 @@ export async function parseFile(e, s) {
         const n = e.slice(a.index + a[0].length, t - 1), r = e.slice(t).match(/^\s+(\[?\w+(?:\.\w+)*\]?)/);
         if (!r) continue;
         let i = r[1];
-        i.startsWith("[") && (i = i.slice(1)), i.endsWith("]") && (i = i.slice(0, -1)), 
+        i.startsWith("[") && (i = i.slice(1)), i.endsWith("]") && (i = i.slice(0, -1)),
         i.includes(".") || o.push({
           name: i,
           type: n
@@ -69,8 +75,8 @@ export async function parseFile(e, s) {
   c.simple(r, {
     ImportDeclaration(e) {
       const _names = [];
-      for (const s of e.specifiers) "ImportDefaultSpecifier" === s.type ? (t.imports.push(s.local.name), 
-      _names.push(s.local.name)) : "ImportSpecifier" === s.type && (t.imports.push(s.imported.name), 
+      for (const s of e.specifiers) "ImportDefaultSpecifier" === s.type ? (t.imports.push(s.local.name),
+      _names.push(s.local.name)) : "ImportSpecifier" === s.type && (t.imports.push(s.imported.name),
       _names.push(s.imported.name));
       if (e.source && e.source.value) {
         t.importSources.push({
@@ -86,6 +92,13 @@ export async function parseFile(e, s) {
     ExportDefaultDeclaration(e) {
       e.declaration && e.declaration.id && i.add(e.declaration.id.name);
     },
+    CallExpression(e) {
+      const s = C(e);
+      s?.tag && t.web.registrations.push(s);
+      const n = P(e);
+      n && N(n.name, t.web[n.type]);
+      N(H(e), t.web.subscriptions);
+    },
     ClassDeclaration(e) {
       const n = {
         name: e.id.name,
@@ -98,7 +111,7 @@ export async function parseFile(e, s) {
         file: s,
         line: e.loc.start.line
       };
-      for (const s of e.body.body) if ("MethodDefinition" === s.type && "constructor" !== s.key.name) n.methods.push(s.key.name), 
+      for (const s of e.body.body) if ("MethodDefinition" === s.type && "constructor" !== s.key.name) n.methods.push(s.key.name),
       j(s.value.body, n.calls, n.dbReads, n.dbWrites); else if ("PropertyDefinition" === s.type && "init$" === s.key.name && s.value && "ObjectExpression" === s.value.type) for (const e of s.value.properties) e.key && e.key.name && n.properties.push(e.key.name);
       t.classes.push(n);
     },
@@ -228,9 +241,61 @@ function j(e, s, t, n) {
 function S(e) {
   if (!e || !e.quasis) return "";
   let s = "";
-  for (let t = 0; t < e.quasis.length; t++) s += e.quasis[t].value.cooked || e.quasis[t].value.raw || "", 
+  for (let t = 0; t < e.quasis.length; t++) s += e.quasis[t].value.cooked || e.quasis[t].value.raw || "",
   t < e.expressions?.length && (s += "$" + (t + 1));
   return s;
+}
+
+function A(e) {
+  return "Literal" === e?.type && "string" == typeof e.value ? e.value : "TemplateLiteral" === e?.type && 0 === e.expressions?.length ? S(e) : null;
+}
+
+function M(e) {
+  return "Identifier" === e?.type ? e.name : "Literal" === e?.type && "string" == typeof e.value ? e.value : null;
+}
+
+function C(e) {
+  const s = e?.callee;
+  if ("MemberExpression" !== s?.type) return null;
+  const t = M(s.property), n = s.object;
+  if ("reg" === t) return {
+    tag: A(e.arguments?.[0]),
+    className: "Identifier" === n?.type ? n.name : null
+  };
+  if ("define" === t && "Identifier" === n?.type && "customElements" === n.name) return {
+    tag: A(e.arguments?.[0]),
+    className: "Identifier" === e.arguments?.[1]?.type ? e.arguments[1].name : null
+  };
+  return null;
+}
+
+function P(e) {
+  const s = e?.callee;
+  if ("MemberExpression" !== s?.type) return null;
+  const t = M(s.property);
+  if ("addEventListener" === t) return {
+    type: "eventListeners",
+    name: A(e.arguments?.[0])
+  };
+  if ("dispatchEvent" === t) {
+    const s = e.arguments?.[0], t = "NewExpression" === s?.type && ("Identifier" === s.callee?.type && ("CustomEvent" === s.callee.name || "Event" === s.callee.name)) ? A(s.arguments?.[0]) : null;
+    return t ? {
+      type: "dispatches",
+      name: t
+    } : null;
+  }
+  return null;
+}
+
+function H(e) {
+  const s = e?.callee;
+  if ("MemberExpression" !== s?.type) return null;
+  const t = M(s.property);
+  return "sub" === t || "pub" === t || "multiPub" === t ? A(e.arguments?.[0]) : null;
+}
+
+function N(e, s) {
+  e && Array.isArray(s) && !s.includes(e) && s.push(e);
 }
 
 export function discoverSubProjects(a) {
@@ -268,13 +333,15 @@ export async function parseProject(s, t = {}) {
     imports: [],
     exports: [],
     tables: [],
-    fileImports: {}
-  }, a = i(s), c = findJSFiles(s);
+    fileImports: {},
+    web: []
+  }, a = i(s), c = findJSFiles(s), l = {};
   for (const s of c) try {
     const t = e(s, "utf-8"), r = o(a, s), i = await v(t, r);
-    n.files.push(r), n.classes.push(...i.classes), n.functions.push(...i.functions), 
+    n.files.push(r), n.classes.push(...i.classes), n.functions.push(...i.functions),
     n.imports.push(...i.imports), n.exports.push(...i.exports), i.tables?.length && n.tables.push(...i.tables);
     if (i.importSources?.length) n.fileImports[r] = i.importSources;
+    i.web && (l[r] = i.web);
   } catch (e) {}
   if (t.recursive) {
     const e = discoverSubProjects(s);
@@ -284,7 +351,13 @@ export async function parseProject(s, t = {}) {
       for (const t of e.files) n.files.push(r(s.path, t));
       for (const t of e.classes) t.file = r(s.path, t.file), n.classes.push(t);
       for (const t of e.functions) t.file = r(s.path, t.file), n.functions.push(t);
-      n.imports.push(...e.imports), n.exports.push(...e.exports), e.tables?.length && n.tables.push(...e.tables), 
+      n.imports.push(...e.imports), n.exports.push(...e.exports), e.tables?.length && n.tables.push(...e.tables),
+      e.web?.length && n.web.push(...e.web.map(e => ({
+        ...e,
+        file: e.file ? r(s.path, e.file) : e.file,
+        template: e.template ? r(s.path, e.template) : e.template,
+        style: e.style ? r(s.path, e.style) : e.style
+      }))),
       n.subProjects.push({
         name: s.name,
         path: s.path,
@@ -292,8 +365,85 @@ export async function parseProject(s, t = {}) {
       });
     } catch {}
   }
-  return n.imports = [ ...new Set(n.imports) ], n.exports = [ ...new Set(n.exports) ], 
+  return n.web.push(...buildWebComponents(n, l, a)), n.imports = [ ...new Set(n.imports) ], n.exports = [ ...new Set(n.exports) ],
   n;
+}
+
+function buildWebComponents(e, s, t) {
+  const n = [];
+  for (const r of e.classes || []) {
+    const o = s[r.file];
+    if (!o) continue;
+    const i = e.fileImports?.[r.file] || [], a = i.find(e => e.s?.endsWith(".tpl.js"))?.s || null, c = i.find(e => e.s?.endsWith(".css.js"))?.s || null, l = resolveImportFile(t, r.file, a), p = resolveImportFile(t, r.file, c), u = o.registrations.find(e => e.className === r.name) || (1 === o.registrations.length ? o.registrations[0] : null);
+    if (!l && !p && !u?.tag && "Symbiote" !== r.extends) continue;
+    const f = l ? readTemplateMetadata(t, l, u?.tag) : {}, d = p ? readStyleMetadata(t, p) : {};
+    n.push({
+      className: r.name,
+      tag: u?.tag || null,
+      file: r.file,
+      template: l,
+      style: p,
+      children: f.children || [],
+      refs: f.refs || [],
+      bindings: f.bindings || [],
+      templateEvents: f.events || [],
+      itemTags: f.itemTags || [],
+      eventListeners: o.eventListeners || [],
+      dispatches: o.dispatches || [],
+      subscriptions: o.subscriptions || [],
+      cssTokens: d.tokens || []
+    });
+  }
+  return n;
+}
+
+function resolveImportFile(e, s, t) {
+  if (!t || !t.startsWith(".")) return null;
+  const a = i(r(e, q(s)), t);
+  return n(a) ? o(e, a).replaceAll("\\", "/") : null;
+}
+
+function readTemplateMetadata(s, t, n) {
+  try {
+    const o = e(r(s, t), "utf-8"), i = extractBindings(o);
+    return {
+      children: U([ ...o.matchAll(/<([a-z][\w.-]*-[\w.-]*)\b/g) ].map(e => e[1]).filter(e => e !== n)),
+      refs: U([ ...o.matchAll(/\bref=["']([^"']+)["']/g) ].map(e => e[1])),
+      bindings: i.bindings,
+      events: i.events,
+      itemTags: U([ ...o.matchAll(/["']item-tag["']\s*:\s*["']([^"']+)["']/g) ].map(e => e[1]))
+    };
+  } catch {
+    return {};
+  }
+}
+
+function extractBindings(e) {
+  const s = [], t = [];
+  for (const n of e.matchAll(/\$\{\{([\s\S]*?)\}\}/g)) {
+    const e = n[1] || "";
+    for (const n of e.matchAll(/["']?([@:\w.-]+)["']?\s*:\s*["']([^"']+)["']/g)) s.push(`${n[1]}:${n[2]}`),
+    n[1].startsWith("on") && t.push(n[1].slice(2).toLowerCase());
+  }
+  return {
+    bindings: U(s),
+    events: U(t)
+  };
+}
+
+function readStyleMetadata(s, t) {
+  try {
+    const n = e(r(s, t), "utf-8");
+    return {
+      tokens: U([ ...n.matchAll(/--[a-zA-Z0-9_-]+/g) ].map(e => e[0]))
+    };
+  } catch {
+    return {};
+  }
+}
+
+function U(e) {
+  return [ ...new Set((e || []).map(e => String(e || "").trim()).filter(Boolean)) ];
 }
 
 async function v(e, s) {

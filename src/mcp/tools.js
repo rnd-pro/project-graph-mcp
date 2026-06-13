@@ -157,12 +157,15 @@ export async function deps(e) {
   if (!r) return {
     error: `Unknown symbol: ${e}. Run get_skeleton on your project first, then use symbols from the L (Legend) field.`
   };
-  const s = n.edges.filter(t => t[2].startsWith(e)).map(e => e[0]), o = n.edges.filter(t => t[0] === e).map(e => e[2]);
+  const s = n.edges.filter(t => "F→" !== t[1] && t[2].startsWith(e)).map(e => e[0]), o = n.edges.filter(t => t[0] === e && "→" === t[1]).map(e => e[2]), c = n.edges.filter(t => t[0] === e && "F→" === t[1]).map(e => e[2]), i = n.edges.filter(t => t[0] === e && "E→" === t[1]).map(e => e[2]);
   return {
     symbol: e,
     imports: r.i || [],
     usedBy: [ ...new Set(s) ],
-    calls: [ ...new Set(o) ]
+    calls: [ ...new Set(o) ],
+    files: [ ...new Set(c) ],
+    elements: [ ...new Set(i) ],
+    web: r.w || n.web?.[e] || null
   };
 }
 

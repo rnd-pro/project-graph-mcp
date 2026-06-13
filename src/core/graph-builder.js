@@ -15,8 +15,33 @@ function e(e) {
   return t && t.length > 0 ? e[0].toLowerCase() + t[0] : e.slice(0, 2);
 }
 
+const WEB_LIMIT = 16;
+
+function compactList(e, s = WEB_LIMIT) {
+  return [ ...new Set((e || []).map(e => String(e || "").trim()).filter(Boolean)) ].slice(0, s);
+}
+
+function compactWeb(e) {
+  const s = {
+    tag: e.tag || void 0,
+    file: e.file || void 0,
+    template: e.template || void 0,
+    style: e.style || void 0,
+    children: compactList(e.children),
+    refs: compactList(e.refs),
+    bindings: compactList(e.bindings),
+    events: compactList([ ...(e.templateEvents || []), ...(e.eventListeners || []) ]),
+    dispatches: compactList(e.dispatches),
+    subscriptions: compactList(e.subscriptions),
+    itemTags: compactList(e.itemTags),
+    tokens: compactList(e.cssTokens)
+  };
+  for (const [e, t] of Object.entries(s)) (Array.isArray(t) && 0 === t.length || void 0 === t) && delete s[e];
+  return s;
+}
+
 export function buildGraph(e) {
-  const s = e.classes || [], t = e.functions || [], o = [ ...s.map(e => e.name), ...t.map(e => e.name), ...s.flatMap(e => e.methods || []) ], n = minifyLegend([ ...new Set(o) ]), c = Object.fromEntries(Object.entries(n).map(([e, s]) => [ s, e ])), f = {
+  const s = e.classes || [], t = e.functions || [], o = [ ...s.map(e => e.name), ...t.map(e => e.name), ...s.flatMap(e => e.methods || []) ], n = minifyLegend([ ...new Set(o) ]), c = Object.fromEntries(Object.entries(n).map(([e, s]) => [ s, e ])), _webByClass = new Map((e.web || []).map(e => [ `${e.file}:${e.className}`, e ])), _fileImports = e.fileImports || {}, f = {
     v: 1,
     legend: n,
     reverseLegend: c,
@@ -31,19 +56,24 @@ export function buildGraph(e) {
     orphans: [],
     duplicates: {},
     files: e.files || [],
-    fileImports: e.fileImports || {}
+    fileImports: _fileImports,
+    web: {}
   };
   for (const e of s) {
-    const s = n[e.name];
+    const s = n[e.name], _imports = e.imports?.length ? e.imports : (_fileImports[e.file] || []).map(e => e.s).filter(Boolean), _web = _webByClass.get(`${e.file}:${e.name}`);
     f.nodes[s] = {
       t: "C",
       x: e.extends || void 0,
       m: (e.methods || []).map(e => n[e] || e),
       $: (e.properties || []).length ? e.properties : void 0,
-      i: e.imports?.length ? e.imports : void 0,
+      i: _imports.length ? _imports : void 0,
       f: e.file || void 0,
       l: e.line || void 0
     };
+    if (_web) {
+      const e = compactWeb(_web);
+      f.nodes[s].w = e, f.web[s] = e;
+    }
     for (const t of e.calls || []) if (t.includes(".")) {
       const [e, o] = t.split(".");
       if (n[e]) {
@@ -76,6 +106,12 @@ export function buildGraph(e) {
     cols: s.columns.map(e => e.name),
     f: s.file || void 0
   };
+  const _tagToAlias = {};
+  for (const [e, s] of Object.entries(f.web)) s.tag && (_tagToAlias[s.tag] = e);
+  for (const [e, s] of Object.entries(f.web)) {
+    for (const t of [ s.template, s.style ].filter(Boolean)) f.edges.push([ e, "F→", t ]);
+    for (const t of s.children || []) _tagToAlias[t] && _tagToAlias[t] !== e && f.edges.push([ e, "E→", _tagToAlias[t] ]);
+  }
   const l = new Set;
   for (const e of f.edges) {
     const s = e[2].split(".")[0];
@@ -151,5 +187,6 @@ export function createSkeleton(e, s = null) {
     }
     if (Object.keys(_I).length > 0) l.I = _I;
   }
+  if (Object.keys(e.web || {}).length > 0) l.W = e.web;
   return l;
 }

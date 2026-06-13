@@ -1,7 +1,7 @@
 const e = {
   get_skeleton: {
     name: "get_skeleton",
-    description: "Get compact minified project overview (10-50x smaller than source). Returns legend, stats, and node summaries.",
+    description: "Get compact minified project overview (10-50x smaller than source). Returns legend, stats, node summaries, file imports, and W web component summaries when present.",
     inputSchema: {
       type: "object",
       properties: {
@@ -186,7 +186,7 @@ const e = {
 
 export const TOOLS = [ e.get_skeleton, e.get_focus_zone, e.get_ai_context, e.invalidate_cache, e.get_usage_guide, e.get_agent_instructions, e.get_custom_rules, e.set_custom_rule, e.check_custom_rules, e.get_framework_reference, e.graph_metadata, {
   name: "navigate",
-  description: "Navigate the project graph. Actions: expand|deps|usages|call_chain|sub_projects",
+  description: "Navigate the project graph. Actions: expand|deps|usages|call_chain|sub_projects. deps returns code calls plus web template/style/component links when present.",
   inputSchema: {
     type: "object",
     properties: {
