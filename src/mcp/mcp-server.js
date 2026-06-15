@@ -259,7 +259,7 @@ const me = {
   invalidate_cache: () => [ "✅ Cache cleared. Run get_skeleton() to rebuild the project graph." ],
   get_dead_code: e => {
     const t = [ "💡 Review each item before removing — some may be used dynamically." ];
-    return e.unusedExports?.length > 20 && t.push('💡 Consider delegating cleanup to agent-pool: delegate_task({ prompt: "Remove dead code..." })'), 
+    return e.unusedExports?.length > 20 && t.push('💡 Consider routing cleanup through Agent Portal orchestration with resume_chat and a scoped prompt.'),
     t;
   },
   get_full_analysis: () => [ '💡 Focus on items with "critical" severity first.', "💡 Run individual tools (get_complexity, get_dead_code) for detailed breakdowns." ],
@@ -301,7 +301,7 @@ const me = {
     return e.created?.length > 0 && t.push(`✅ Created ${e.created.length} .ctx files with @sig hashes.`), 
     e.skipped?.length > 0 && t.push(`ℹ️ Skipped ${e.skipped.length} existing files. Use overwrite=true to regenerate (descriptions are preserved via merge).`), 
     e.templates && Object.keys(e.templates).length > 0 && (t.push("📝 .ctx files have {DESCRIBE} markers. To enrich automatically:"), 
-    t.push('   delegate_task({ prompt: "Enrich .context/*.ctx files — replace {DESCRIBE} with compact descriptions", skill: "doc-enricher" })'), 
+    t.push('   In Agent Portal, use resume_chat with a scoped prompt: "Enrich .context/*.ctx files — replace {DESCRIBE} with compact descriptions".'),
     t.push("   Or enrich manually: read source files and replace {DESCRIBE} markers with pipe-separated descriptions (max 80 chars).")), 
     t;
   },
@@ -309,7 +309,7 @@ const me = {
     const t = [ `💡 Context loaded: ${e.totalTokens} tokens (${e.savings} savings vs ${e.vsOriginal} original).` ];
     return t.push("💡 Use expand() to drill into specific symbols. Use get_compressed_file() for additional files."), 
     t.push("📋 Read .context/*.ctx files for typed signatures and documentation. Check repository-level agent instructions for project-specific rules."),
-    e.staleFiles?.length > 0 && t.push(`⚠️ ${e.staleFiles.length} .ctx docs are stale. Run generate_context_docs({ scope: ${JSON.stringify(e.staleFiles)}, overwrite: true }) then delegate_task({ skill: "doc-enricher" }) to update.`), 
+    e.staleFiles?.length > 0 && t.push(`⚠️ ${e.staleFiles.length} .ctx docs are stale. Run generate_context_docs({ scope: ${JSON.stringify(e.staleFiles)}, overwrite: true }) then route doc enrichment through Agent Portal orchestration.`),
     t;
   },
   validate_ctx_contracts: e => {

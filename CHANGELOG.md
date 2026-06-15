@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+- Public Agent Portal integration docs now describe `mcp-agent-portal` as the unified orchestration gateway and `agent-pool-mcp` as Agent Portal's internal execution runtime.
+- MCP hints that previously recommended raw `delegate_task` now direct users to route delegated work through Agent Portal orchestration.
+
 ## [2.2.8] — 2026-04-24
 
 ### Fixed

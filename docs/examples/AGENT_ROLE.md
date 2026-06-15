@@ -119,7 +119,7 @@ EDGE_CASES: Python uses regex, not AST|Go interfaces ≠ classes
 | Step | How |
 |------|-----|
 | 1. Generate | `generate_context_docs` creates templates with `{DESCRIBE}` markers + `@sig` hash |
-| 2. Enrich | Delegate to agent-pool: `delegate_task({ skill: "doc-enricher" })` |
+| 2. Enrich | Use Agent Portal orchestration, for example `resume_chat` with an explicit doc-enrichment prompt and files scope |
 | 3. Monitor | `check_stale_docs` detects when source changes invalidate docs |
 | 4. Update | Regenerate with `overwrite: true` — existing descriptions are preserved |
 

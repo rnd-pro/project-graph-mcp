@@ -103,19 +103,18 @@ Best used as part of [**mcp-agent-portal**](https://github.com/rnd-pro/mcp-agent
 ```
 
 > [!TIP]
-> The Portal runs a **singleton backend** to prevent resource exhaustion when you open multiple IDE windows. It transparently spawns `project-graph-mcp` and `agent-pool-mcp` as child processes and aggregates their tools. One entry replaces separate configs for all child servers.
+> The Portal runs a **singleton backend** to prevent resource exhaustion when you open multiple IDE windows. It transparently spawns `project-graph-mcp` as a public child tool server and keeps `agent-pool-mcp` as its internal execution runtime. One `mcp-agent-portal` entry replaces separate public configs for child servers.
 
-Also works standalone or alongside [**agent-pool-mcp**](https://www.npmjs.com/package/agent-pool-mcp) — multi-agent task delegation:
+Also works standalone when you need only project graph tools:
 
 ```bash
-# Generate configs with correct paths for both servers:
+# Generate a config with the correct path for this server:
 npx -y project-graph-mcp config
-npx -y agent-pool-mcp config
-# Or use mcp-agent-portal which bundles both.
+# Or use mcp-agent-portal as the unified orchestration gateway.
 ```
 
 > [!IMPORTANT]
-> Each Gemini CLI worker will automatically spawn its own instance of `project-graph-mcp` — workers navigate the codebase independently, without blocking the primary agent.
+> Agent workers launched by Agent Portal can use their own `project-graph-mcp` instance to navigate the codebase independently without blocking the primary orchestrator.
 
 ## Documentation
 
@@ -127,7 +126,7 @@ npx -y agent-pool-mcp config
 
 ## Related Projects
 - [mcp-agent-portal](https://github.com/rnd-pro/mcp-agent-portal) — Unified MCP aggregator + web dashboard + AI agent runtime
-- [agent-pool-mcp](https://github.com/rnd-pro/agent-pool-mcp) — Multi-agent orchestration via Gemini CLI
+- [agent-pool-mcp](https://github.com/rnd-pro/agent-pool-mcp) — Internal execution runtime used by Agent Portal orchestration
 - [Symbiote.js](https://github.com/symbiotejs/symbiote.js) — Isomorphic Reactive Web Components framework
 - [JSDA-Kit](https://github.com/rnd-pro/jsda-kit) — SSG/SSR toolkit for modern web applications
 
